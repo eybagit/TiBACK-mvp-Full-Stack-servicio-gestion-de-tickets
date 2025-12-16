@@ -1,0 +1,234 @@
+/*
+ * Layout Hyper - Sidebar, Header, Contenido Principal
+ * Estructura principal de la aplicación
+ */
+
+/* Layout principal */
+.hyper-layout {
+  min-height: 100vh;
+  background-color: var(--ct-gray-100);
+}
+
+/* Sidebar izquierdo */
+.hyper-sidebar {
+  width: 187px;
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 1000;
+  transition: width 0.3s ease, transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+  font-size: 0.88rem;
+  display: block !important;
+  visibility: visible !important;
+}
+
+.hyper-sidebar.collapsed {
+  width: 70px;
+}
+
+.hyper-sidebar.hidden {
+  transform: translateX(-100%);
+  visibility: hidden;
+  opacity: 0;
+}
+
+.hyper-sidebar:not(.hidden) {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: translateX(0) !important;
+}
+
+.hyper-sidebar-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hyper-logo {
+  color: white;
+  text-decoration: none;
+}
+
+.hyper-logo i {
+  color: var(--sidebar-active);
+}
+
+/* Navegación del sidebar */
+.hyper-nav-title {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ct-gray-500);
+}
+
+.hyper-nav-item {
+  color: var(--sidebar-text);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.hyper-nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  text-decoration: none;
+}
+
+.hyper-nav-item.active {
+  background-color: var(--sidebar-active);
+  color: white;
+}
+
+.hyper-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: white;
+}
+
+.hyper-nav-item i {
+  width: 20px;
+  text-align: center;
+}
+
+/* Contenido principal */
+.hyper-main-content {
+  margin-left: 187px;
+  transition: margin-left 0.3s ease;
+}
+
+.hyper-main-content.sidebar-collapsed {
+  margin-left: 70px;
+}
+
+.hyper-main-content.sidebar-hidden {
+  margin-left: 0;
+}
+
+/* Header superior */
+.hyper-header {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hyper-sidebar-toggle {
+  background: none;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.hyper-search input {
+  border-radius: 25px;
+  padding-left: 2.5rem;
+  width: 300px;
+  transition: all 0.3s ease;
+}
+
+.hyper-search input:focus {
+  border-color: var(--sidebar-active);
+  box-shadow: 0 0 0 0.2rem rgba(91, 115, 232, 0.25);
+}
+
+.hyper-search i {
+  position: absolute;
+  left: 0.75rem;
+}
+
+.hyper-header-btn {
+  background: none;
+  border: none;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.hyper-notification-badge {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  font-size: 0.6rem;
+  min-width: 16px;
+  text-align: center;
+}
+
+/* Perfil de usuario */
+.hyper-user-profile {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.hyper-user-avatar {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+}
+
+/* Footer con sidebar */
+.footer-with-sidebar {
+  margin-left: 260px;
+  transition: margin-left 0.3s ease;
+}
+
+.footer-with-sidebar.sidebar-collapsed {
+  margin-left: 70px;
+}
+
+.footer-with-sidebar.sidebar-hidden {
+  margin-left: 0;
+}
+
+.footer {
+  position: relative;
+  z-index: 1;
+}
+
+/* Scrollbar personalizado del sidebar */
+.hyper-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.hyper-sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hyper-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.hyper-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hyper-sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .hyper-sidebar.show {
+    transform: translateX(0);
+  }
+  
+  .hyper-main-content {
+    margin-left: 0;
+  }
+  
+  .hyper-search input {
+    width: 200px;
+  }
+  
+  .footer-with-sidebar {
+    margin-left: 0;
+  }
+  
+  .footer-with-sidebar.sidebar-collapsed {
+    margin-left: 0;
+  }
+}

@@ -1,0 +1,74 @@
+/*
+ * Timeline y Animaciones
+ * Estilos para timeline de tickets y animaciones generales
+ */
+
+/* Timeline */
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--ct-blue), var(--ct-success));
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -2rem;
+  top: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 0 3px var(--ct-gray-200);
+}
+
+.timeline-content {
+  background: var(--ct-gray-100);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border-left: 3px solid #007bff;
+}
+
+.timeline-item:last-child .timeline-content {
+  border-left-color: #28a745;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hyper-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
