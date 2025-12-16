@@ -1,0 +1,61 @@
+/* 
+ * Variables CSS - Paleta de colores Hyper
+ * Sistema de diseño base para toda la aplicación
+ */
+
+:root {
+  /* Paleta de colores Hyper */
+  --ct-blue: #2c8ef8;
+  --ct-indigo: #727cf5;
+  --ct-purple: #6b5eae;
+  --ct-pink: #ff679b;
+  --ct-red: #fa5c7c;
+  --ct-orange: #fd7e14;
+  --ct-yellow: #ffc35a;
+  --ct-green: #0acf97;
+  --ct-teal: #02a8b5;
+  --ct-cyan: #39afd1;
+  --ct-black: #000;
+  --ct-white: #fff;
+  --ct-gray: #8a969c;
+  --ct-gray-dark: #343a40;
+  --ct-gray-100: #f6f7fb;
+  --ct-gray-200: #eef2f7;
+  --ct-gray-300: #e5e8eb;
+  --ct-gray-400: #ced4da;
+  --ct-gray-500: #a1a9b1;
+  --ct-gray-600: #8a969c;
+  --ct-gray-700: #6c757d;
+  --ct-gray-800: #343a40;
+  --ct-gray-900: #313a46;
+  --ct-primary: #727cf5;
+  --ct-secondary: #6c757d;
+  --ct-success: #0acf97;
+  --ct-info: #39afd1;
+  --ct-warning: #ffc35a;
+  --ct-danger: #fa5c7c;
+  --ct-light: #eef2f7;
+  --ct-dark: #313a46;
+
+  /* Variables del sidebar usando la paleta Hyper */
+  --sidebar-bg: var(--ct-gray-900);
+  --sidebar-text: var(--ct-gray-400);
+  --sidebar-active: var(--ct-primary);
+  
+  /* Colores de botones usando la paleta Hyper */
+  --btn-sidebar-primary: var(--ct-primary);
+  --btn-sidebar-secondary: var(--ct-secondary);
+  --btn-sidebar-accent: var(--ct-gray-600);
+  --btn-sidebar-success: var(--ct-success);
+  --btn-sidebar-warning: var(--ct-warning);
+  --btn-sidebar-teal: var(--ct-teal);
+}
+
+/* Reducción global del tamaño de letra */
+html {
+  font-size: 0.88rem;
+}
+
+body {
+  font-size: 0.88rem;
+}

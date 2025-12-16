@@ -1,0 +1,207 @@
+/*
+ * Status Dots - Puntos de Estado, Prioridad, Asignación
+ * Indicadores visuales para estados de tickets
+ */
+
+/* Puntos de color para estados */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.status-dot.solucionado {
+  background-color: var(--ct-success);
+}
+
+.status-dot.en-proceso {
+  background-color: var(--ct-warning);
+}
+
+.status-dot.en-espera {
+  background-color: var(--ct-info);
+}
+
+.status-dot.activo {
+  background-color: var(--ct-blue);
+}
+
+/* Puntos de prioridad */
+.priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.priority-dot.alta {
+  background-color: var(--ct-danger);
+}
+
+.priority-dot.media {
+  background-color: var(--ct-warning);
+}
+
+.priority-dot.baja {
+  background-color: var(--ct-success);
+}
+
+/* Puntos de asignación */
+.assignment-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.assignment-dot.asignado {
+  background-color: var(--ct-success);
+}
+
+.assignment-dot.sin-asignar {
+  background-color: var(--ct-secondary);
+}
+
+/* Puntos de ID, Título, Fecha */
+.id-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  background-color: var(--ct-blue);
+}
+
+.title-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  background-color: var(--ct-purple);
+}
+
+.date-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  background-color: var(--ct-info);
+}
+
+/* Puntos de calificación */
+.rating-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.rating-dot.calificado {
+  background-color: var(--ct-warning);
+}
+
+.rating-dot.sin-calificar {
+  background-color: var(--ct-secondary);
+}
+
+/* Clases para puntos de color inline */
+html body .dot-ct-blue {
+  width: 8px;
+  height: 8px;
+  background-color: var(--ct-blue);
+}
+
+html body .dot-ct-purple {
+  width: 8px;
+  height: 8px;
+  background-color: var(--ct-purple);
+}
+
+html body .dot-ct-success {
+  width: 8px;
+  height: 8px;
+  background-color: var(--ct-success);
+}
+
+html body .dot-ct-warning {
+  width: 8px;
+  height: 8px;
+  background-color: var(--ct-warning);
+}
+
+html body .dot-ct-info {
+  width: 8px;
+  height: 8px;
+  background-color: var(--ct-info);
+}
+
+html body .dot-ct-danger {
+  width: 8px;
+  height: 8px;
+  background-color: var(--ct-danger);
+}
+
+html body .dot-ct-secondary {
+  width: 8px;
+  height: 8px;
+  background-color: var(--ct-secondary);
+}
+
+html body .dot-ct-gray-dark {
+  width: 8px;
+  height: 8px;
+  background-color: var(--ct-gray-dark);
+}
+
+html body .dot-ct-teal {
+  width: 8px;
+  height: 8px;
+  background-color: var(--ct-teal);
+}
+
+html body .dot-ct-orange {
+  width: 8px;
+  height: 8px;
+  background-color: var(--ct-orange);
+}
+
+/* Puntos dinámicos por estado */
+html body .dot-estado-solucionado { width: 8px; height: 8px; background-color: var(--ct-success); }
+html body .dot-estado-en-proceso { width: 8px; height: 8px; background-color: var(--ct-warning); }
+html body .dot-estado-en-espera { width: 8px; height: 8px; background-color: var(--ct-info); }
+html body .dot-estado-escalado { width: 8px; height: 8px; background-color: var(--ct-danger); }
+html body .dot-estado-activo { width: 8px; height: 8px; background-color: var(--ct-warning); }
+html body .dot-prioridad-critica { width: 8px; height: 8px; background-color: var(--ct-gray-dark); }
+html body .dot-prioridad-alta { width: 8px; height: 8px; background-color: var(--ct-danger); }
+html body .dot-prioridad-media { width: 8px; height: 8px; background-color: var(--ct-warning); }
+html body .dot-prioridad-baja { width: 8px; height: 8px; background-color: var(--ct-success); }
+
+/* Protección universal para mantener tamaño de puntos */
+html body * .status-dot,
+html body * .priority-dot,
+html body * .assignment-dot,
+html body * .id-dot,
+html body * .title-dot,
+html body * .date-dot,
+html body * .rating-dot {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  min-height: 8px;
+  max-width: 8px;
+  max-height: 8px;
+  flex-shrink: 0;
+  flex-grow: 0;
+  flex-basis: 8px;
+  display: inline-block;
+  vertical-align: middle;
+  box-sizing: border-box;
+  border-radius: 50%;
+}

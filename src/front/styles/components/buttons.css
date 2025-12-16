@@ -1,0 +1,147 @@
+/*
+ * Estilos de Botones - Paleta Hyper
+ * Botones primarios, secundarios y sidebar
+ */
+
+.btn-primary {
+  background-color: #727cf5 !important;
+  border-color: #727cf5 !important;
+}
+
+.btn-primary:hover {
+  background-color: #606af9 !important;
+  border-color: #606af9 !important;
+}
+
+/* Botones de acciones con colores de la paleta del SideBarCentral */
+html body .btn-sidebar-primary {
+  background-color: var(--btn-sidebar-primary);
+  border-color: var(--btn-sidebar-primary);
+  color: white;
+  box-shadow: 0 2px 4px rgba(91, 115, 232, 0.2);
+  transition: all 0.3s ease;
+}
+
+html body .btn-sidebar-primary:hover,
+html body .btn-sidebar-primary:focus,
+html body .btn-sidebar-primary:active {
+  background-color: var(--ct-indigo);
+  border-color: var(--ct-indigo);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(114, 124, 245, 0.3);
+}
+
+html body .btn-sidebar-secondary {
+  background-color: var(--btn-sidebar-secondary);
+  border-color: var(--btn-sidebar-secondary);
+  color: white;
+  box-shadow: 0 2px 4px rgba(42, 48, 66, 0.2);
+  transition: all 0.3s ease;
+}
+
+html body .btn-sidebar-secondary:hover,
+html body .btn-sidebar-secondary:focus,
+html body .btn-sidebar-secondary:active {
+  background-color: var(--ct-gray-900);
+  border-color: var(--ct-gray-900);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(42, 48, 66, 0.3);
+}
+
+html body .btn-sidebar-accent {
+  background-color: var(--btn-sidebar-accent);
+  border-color: var(--btn-sidebar-accent);
+  color: white;
+  box-shadow: 0 2px 4px rgba(166, 176, 207, 0.2);
+  transition: all 0.3s ease;
+}
+
+html body .btn-sidebar-accent:hover,
+html body .btn-sidebar-accent:focus,
+html body .btn-sidebar-accent:active {
+  background-color: var(--ct-gray-500);
+  border-color: var(--ct-gray-500);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(166, 176, 207, 0.3);
+}
+
+html body .btn-sidebar-success {
+  background-color: var(--btn-sidebar-success);
+  border-color: var(--btn-sidebar-success);
+  color: white;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+  transition: all 0.3s ease;
+}
+
+html body .btn-sidebar-success:hover,
+html body .btn-sidebar-success:focus,
+html body .btn-sidebar-success:active {
+  background-color: var(--ct-success);
+  border-color: var(--ct-success);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+html body .btn-sidebar-warning {
+  background-color: var(--btn-sidebar-warning);
+  border-color: var(--btn-sidebar-warning);
+  color: var(--ct-dark);
+  box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
+  transition: all 0.3s ease;
+}
+
+html body .btn-sidebar-warning:hover,
+html body .btn-sidebar-warning:focus,
+html body .btn-sidebar-warning:active {
+  background-color: var(--ct-warning);
+  border-color: var(--ct-warning);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+}
+
+html body .btn-sidebar-teal {
+  background-color: var(--btn-sidebar-teal);
+  border-color: var(--btn-sidebar-teal);
+  color: white;
+  box-shadow: 0 2px 4px rgba(10, 207, 151, 0.2);
+  transition: all 0.3s ease;
+}
+
+html body .btn-sidebar-teal:hover,
+html body .btn-sidebar-teal:focus,
+html body .btn-sidebar-teal:active {
+  background-color: var(--ct-teal);
+  border-color: var(--ct-teal);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(10, 207, 151, 0.3);
+}
+
+/* Botones CT (Clases del tema) */
+html body .btn-ct-primary {
+  background-color: var(--ct-primary);
+  border-color: var(--ct-primary);
+  color: white;
+}
+
+html body .btn-ct-secondary {
+  background-color: var(--ct-secondary);
+  border-color: var(--ct-secondary);
+  color: white;
+}
+
+html body .btn-ct-danger-outline {
+  border-color: var(--ct-danger);
+  color: var(--ct-danger);
+  background-color: transparent;
+}
+
+html body .btn-ct-success-outline {
+  border-color: var(--ct-success);
+  color: var(--ct-success);
+  background-color: transparent;
+}
+
+/* Gradiente primario */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--sidebar-active) 0%, var(--ct-indigo) 100%);
+}

@@ -1,0 +1,80 @@
+/*
+ * Utilities - Clases Helper y Utilidades
+ * Clases de ayuda para estilos comunes
+ */
+
+/* Iconos CT */
+html body .icon-ct-primary { color: var(--ct-primary); }
+html body .icon-ct-success { color: var(--ct-success); }
+html body .icon-ct-warning { color: var(--ct-warning); }
+html body .icon-ct-info { color: var(--ct-info); }
+html body .icon-ct-dark { color: var(--ct-dark); }
+html body .spinner-ct-primary { color: var(--ct-primary); }
+
+/* Contenedores y dimensiones */
+html body .loading-container { min-height: 60vh; }
+html body .spinner-large { width: 3rem; height: 3rem; }
+html body .image-responsive { max-height: 400px; }
+html body .avatar-large { width: 60px; height: 60px; }
+html body .avatar-small { width: 32px; height: 32px; }
+html body .full-height { height: 100vh; }
+
+/* Avatar del header (tamaño fijo) */
+html body .avatar-header-normal {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+}
+
+html body .avatar-header-normal.rounded-circle {
+  width: 60px !important;
+  height: 60px !important;
+  min-width: 60px !important;
+  min-height: 60px !important;
+  max-width: 60px !important;
+  max-height: 60px !important;
+  flex-shrink: 0 !important;
+  border-radius: 50% !important;
+  aspect-ratio: 1 / 1 !important;
+}
+
+/* Z-index */
+html body .z-index-10 { z-index: 10; }
+html body .z-index-1000 { z-index: 1000; }
+
+/* Dropdowns */
+html body .dropdown-menu-custom { top: 100%; z-index: 1000; }
+html body .dropdown-menu-min-width { min-width: 200px; z-index: 1000; }
+html body .dropdown-menu-positioned { right: 0; top: 100%; min-width: 250px; }
+
+/* Iconos y thumbnails */
+html body .icon-small { font-size: 0.8rem; }
+html body .icon-tiny { font-size: 12px; }
+html body .thumbnail-small { width: 30px; height: 30px; object-fit: cover; }
+html body .cursor-pointer { cursor: pointer; }
+
+/* Modal */
+html body .modal-backdrop-custom { background-color: rgba(0,0,0,0.5); }
+
+/* Flecha del dropdown */
+.rotate-180 {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
+}
+
+/* Gráficos placeholder */
+.hyper-chart-placeholder {
+  height: 300px;
+  background: linear-gradient(135deg, var(--ct-gray-100) 0%, var(--ct-gray-300) 100%);
+}
+
+/* Actividad reciente */
+.hyper-activity-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.hyper-activity-icon.sold { background-color: var(--bs-success); }
+.hyper-activity-icon.product { background-color: var(--bs-info); }
+.hyper-activity-icon.message { background-color: var(--bs-warning); }
+.hyper-activity-icon.upload { background-color: var(--sidebar-active); }

@@ -1,0 +1,100 @@
+/*
+ * Badges y Cards - Clases CT
+ * Estilos para tarjetas y badges del tema
+ */
+
+/* Badges */
+html body .badge-ct-success {
+  background-color: var(--ct-success);
+}
+
+/* Cards */
+html body .card-ct-primary {
+  background-color: var(--ct-primary);
+  color: white;
+}
+
+html body .card-ct-secondary {
+  background-color: var(--ct-secondary);
+  color: white;
+}
+
+html body .card-ct-warning {
+  background-color: var(--ct-warning);
+  color: white;
+}
+
+html body .card-ct-success {
+  background-color: var(--ct-success);
+  color: white;
+}
+
+html body .card-ct-info {
+  background-color: var(--ct-info);
+  color: white;
+}
+
+html body .card-ct-dark {
+  background-color: var(--ct-dark);
+  color: white;
+}
+
+html body .card-ct-danger {
+  background-color: var(--ct-danger);
+  color: white;
+}
+
+/* Tarjetas de métricas - Gradientes */
+.hyper-metric-icon.customers {
+  background: linear-gradient(135deg, var(--ct-primary) 0%, var(--ct-purple) 100%);
+}
+
+.hyper-metric-icon.orders {
+  background: linear-gradient(135deg, var(--ct-pink) 0%, var(--ct-danger) 100%);
+}
+
+.hyper-metric-icon.revenue {
+  background: linear-gradient(135deg, var(--ct-blue) 0%, var(--ct-cyan) 100%);
+}
+
+.hyper-metric-icon.growth {
+  background: linear-gradient(135deg, var(--ct-green) 0%, var(--ct-teal) 100%);
+}
+
+.hyper-metric-value {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+/* Widgets */
+.hyper-widget {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.hyper-widget:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.hyper-widget-btn {
+  background: none;
+  transition: all 0.3s ease;
+}
+
+/* Animación de cards */
+.card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.card:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.card:nth-child(4) {
+  animation-delay: 0.3s;
+}
