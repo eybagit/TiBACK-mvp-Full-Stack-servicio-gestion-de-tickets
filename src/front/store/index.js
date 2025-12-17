@@ -12,6 +12,7 @@ export { initialStore } from './slices/initialStore.js';
 // Re-exportar acciones
 export { authActions } from './actions/authActions.js';
 export { websocketActions } from './actions/websocketActions.js';
+export { clienteActions } from './actions/clienteActions.js';
 
 // Importar slices para combinar
 import { authReducer } from './slices/authSlice.js';
@@ -30,6 +31,9 @@ import {
   miscReducer,
 } from './slices/entitySlices.js';
 
+// Importar slice de ClientePage (arquitectura tiback-hello)
+import { clienteReducer } from './slices/clienteSlice.js';
+
 // Combinar todos los reducers en un mapa
 const allReducers = {
   ...authReducer,
@@ -45,6 +49,8 @@ const allReducers = {
   ...ticketsCerradosReducer,
   ...apiReducer,
   ...miscReducer,
+  // Reducer de ClientePage
+  ...clienteReducer,
 };
 
 /**

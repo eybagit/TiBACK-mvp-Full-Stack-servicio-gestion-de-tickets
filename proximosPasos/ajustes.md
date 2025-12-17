@@ -1,10 +1,35 @@
 # 📋 PLAN DE AJUSTES - AUDITORÍA DEL PROYECTO TiBACK
 
-> **Fecha:** 16 de Diciembre, 2024  
+> **Fecha:** 17 de Diciembre, 2024  
 > **Rama:** `macroAjuste`  
-> **Estado:** PENDIENTE
+> **Estado:** EN PROGRESO - PLANIFICANDO MODULARIZACIÓN
 
 ---
+
+## 🚀 ESTADO ACTUAL (17/12/2024 - 17:55)
+
+### ✅ INFRAESTRUCTURA CREADA
+
+1. **Store Global Implementado:**
+   - ✅ `store/slices/clienteSlice.js` - 60+ reducers listos
+   - ✅ `store/actions/clienteActions.js` - 20+ acciones listas
+
+2. **Componentes Extraídos (listos para usar):**
+   - ✅ `components/ClienteDashboard.jsx` (251 líneas)
+   - ✅ `components/ClienteTicketForm.jsx` (87 líneas)
+   - ✅ `components/ClienteProfile.jsx` (151 líneas)
+   - ✅ `components/ClienteTicketsList.jsx` (612 líneas)
+
+### ⚠️ ClientePage.jsx - RESTAURADO A ORIGINAL
+- **Estado actual:** 2934 líneas (original, sin cambios de arquitectura)
+- **Motivo:** Los intentos de reemplazo masivo causaron errores sintácticos
+- **Siguiente paso:** Crear plan de ataque detallado antes de modificar
+
+### 📋 SIGUIENTE PASO
+Ver plan detallado en: `proximosPasos/cirugia/clientePageModular.md`
+
+---
+
 
 ## 🔍 RESUMEN DE AUDITORÍA
 
@@ -14,13 +39,20 @@ Se revisaron los 4 archivos de documentación:
 - `ATAQUE.md` - Plan de implementación
 - `modular.md` - Regla de 500 líneas
 
+### Reglas Principales Identificadas:
+1. **❌ NO useState** - Solo useReducer + Context API
+2. **❌ NO useNavigate** - Solo Link declarativo
+3. **❌ NO llamadas API directas** - Solo crudActions centralizadas
+4. **❌ NO archivos >500 líneas** - Modularidad obligatoria
+5. **❌ NO formularios controlados** - Solo FormData + defaultValue
+6. **✅ Bootstrap responsive** obligatorio
+7. **✅ CSS modular** en styles/
+
 ---
 
 ## 🔴 VIOLACIONES CRÍTICAS ENCONTRADAS
 
-### 1. Uso de `useState` (PROHIBIDO según arquitectura.md línea 44)
-
-**Regla violada:** "❌ NO useState - Eliminado completamente de todos los componentes"
+### 1. Uso de `useState` (PROHIBIDO)
 
 **Archivos que usan useState (TODOS deben migrar a useReducer):**
 - [ ] `AuthForm.jsx`
@@ -31,139 +63,93 @@ Se revisaron los 4 archivos de documentación:
 - [ ] `ComentariosTicketEmbedded.jsx`
 - [ ] `ImageUpload.jsx`
 - [ ] `Ticket.jsx`
-- [ ] `VerAdministrador.jsx`
-- [ ] `VerAnalista.jsx`
-- [ ] `VerAsignacion.jsx`
-- [ ] `VerCliente.jsx`
-- [ ] `VerComentarios.jsx`
-- [ ] `VerGestion.jsx`
-- [ ] `VerTicket.jsx`
-- [ ] `AdministradorPage.jsx`
-- [ ] `AnalistaPage.jsx`
-- [ ] `ClientePage.jsx`
-- [ ] `SupervisorPage.jsx`
-- [ ] Y más...
+- [ ] `VerAdministrador.jsx`, `VerAnalista.jsx`, `VerAsignacion.jsx`
+- [ ] `VerCliente.jsx`, `VerComentarios.jsx`, `VerGestion.jsx`, `VerTicket.jsx`
+- [ ] `AdministradorPage.jsx`, `AnalistaPage.jsx`, `ClientePage.jsx`, `SupervisorPage.jsx`
+- [ ] **Hooks creados también violan** (useClienteData, useSupervisorData, etc.)
 
-**Impacto:** ~25+ archivos violan esta regla
+**Impacto:** ~25+ archivos
 
 ---
 
-### 2. Uso de `useNavigate` (PROHIBIDO según arquitectura.md línea 45)
+### 2. Uso de `useNavigate` (PROHIBIDO)
 
-**Regla violada:** "❌ NO useNavigate - Reemplazado por Link declarativo"
-
-**Archivos que usan useNavigate (TODOS deben migrar a Link):**
-- [ ] `AuthForm.jsx`
-- [ ] `AnalistasManager.jsx`
-- [ ] `ClientesManager.jsx`
-- [ ] `ComentariosManager.jsx`
-- [ ] `ComentariosTicketEmbedded.jsx`
-- [ ] `Ticket.jsx`
-- [ ] `VerAdministrador.jsx`
-- [ ] `VerAnalista.jsx`
-- [ ] `VerAsignacion.jsx`
-- [ ] Y más...
-
-**Impacto:** ~20+ archivos violan esta regla
+**Archivos afectados:** ~20+ archivos deben migrar a Link declarativo
 
 ---
 
-### 3. Archivos que exceden 500 líneas (PROHIBIDO según modular.md)
+### 3. Archivos que exceden 500 líneas (PROHIBIDO)
 
-**Regla violada:** "Límite Mandatorio: Ningún archivo debe superar las 500 líneas"
-
-| Archivo | Líneas | Exceso | Hooks Creados |
-|---------|--------|--------|---------------|
-| `SupervisorPage.jsx` | 2,905 | +2,405 | ✅ 3 hooks |
-| `ClientePage.jsx` | 2,710 | +2,210 | ✅ 4 hooks |
-| `AnalistaPage.jsx` | 1,658 | +1,158 | ✅ 2 hooks |
-| `ComentariosTicket.jsx` | 741 | +241 | ✅ Hook compartido |
-| `ComentariosTicketEmbedded.jsx` | 675 | +175 | ✅ Reutiliza hook |
-| `HeatmapComponent.jsx` | 646 | +146 | ✅ Hook compartido |
-| `verTicketHDsupervisor.jsx` | 554 | +54 | ⏳ Pendiente |
-
-> **Nota:** Ya se crearon hooks para extraer lógica, pero los componentes originales AÚN NO los usan.
+| Archivo | Líneas | Exceso | Estado |
+|---------|--------|--------|--------|
+| `ClientePage.jsx` | **2,934** | +2,434 | 🔴 Crítico |
+| `SupervisorPage.jsx` | ~2,900 | +2,400 | 🔴 Crítico |
+| `AnalistaPage.jsx` | ~1,600 | +1,100 | 🔴 Crítico |
+| `verTicketHDsupervisor.jsx` | ~700 | +200 | 🟡 Medio |
+| `verTicketHDanalista.jsx` | ~600 | +100 | 🟡 Medio |
+| `verTicketHDcliente.jsx` | ~500 | ~0 | 🟢 Límite |
 
 ---
 
-## 🟡 OBSERVACIONES IMPORTANTES
+## ✅ CUMPLIMIENTO CORRECTO
 
-### ✅ Cumplimiento Correcto
-
-1. **CSS Modularizado** - `index.css` tiene solo 38 líneas (imports)
-2. **Store Modularizado** - `store.js` reducido, lógica en módulos
-3. **Backend Modularizado** - `routes/` con 15 módulos separados
-4. **Hooks creados** - Lógica extraída para reutilización
-
-### ⚠️ Deuda Técnica Significativa
-
-La arquitectura tiback-hello especifica:
-- **NO useState** → Usar `useReducer + Context API`
-- **NO useNavigate** → Usar `Link` declarativo
-- **Formularios no controlados** → Usar `FormData` + `defaultValue`
-
-**El proyecto actualmente NO cumple estas reglas fundamentales.**
+| Área | Estado | Detalle |
+|------|--------|---------|
+| CSS Modular | ✅ | `index.css` solo imports, `styles/` organizado |
+| Store Modular | ✅ | `store.js` reducido, `store/` con slices |
+| Backend Modular | ✅ | `routes/` con 15+ módulos separados |
+| Hooks creados | ⚠️ | Existen pero no integrados y violan arquitectura |
 
 ---
 
-## 📝 PLAN DE ACCIÓN RECOMENDADO
+## 📝 PLAN DE ACCIÓN
 
-### FASE 1: Prioridad ALTA - Componentes Grandes (Estimado: 4-6 horas)
+### FASE 1: Infraestructura Store [✅ COMPLETADO]
 
-1. **Integrar hooks existentes** en componentes de rol:
-   - [ ] `ClientePage.jsx` → usar `useClienteData`, `useClienteUI`, etc.
-   - [ ] `SupervisorPage.jsx` → usar `useSupervisorData`, etc.
-   - [ ] `AnalistaPage.jsx` → usar `useAnalistaData`, etc.
-   - [ ] `AdministradorPage.jsx` → usar `useAdminData`
+**Archivos creados para arquitectura tiback-hello:**
 
-2. **Reducir archivos grandes** a <500 líneas
-
----
-
-### FASE 2: Prioridad MEDIA - Migración de useState (Estimado: 8-12 horas)
-
-La migración completa de useState a useReducer es una tarea **MASIVA** que afecta:
-- ~25+ componentes
-- Toda la lógica de estado local
-- Formularios controlados
-
-**Recomendación:** Esta migración requiere una sesión dedicada y planificación detallada.
+1. ✅ `store/slices/clienteSlice.js` - Estado y 60 reducers para ClientePage
+2. ✅ `store/actions/clienteActions.js` - 20 acciones centralizadas (crudActions)
+3. ✅ `store/slices/initialStore.js` - Actualizado con clientePage state
+4. ✅ `store/index.js` - Integrado y exportando clienteReducer + clienteActions
 
 ---
 
-### FASE 3: Prioridad BAJA - Migración de useNavigate (Estimado: 2-3 horas)
+### FASE 1.5: Refactorizar Pages [⏳ PENDIENTE]
 
-Reemplazar `useNavigate` por `Link` es más sencillo:
-- Identificar cada `navigate('/ruta')`
-- Convertir a `<Link to="/ruta">`
+**Objetivo:** Reducir Pages a <500 líneas usando el nuevo store
 
----
-
-## ❓ DECISIÓN REQUERIDA
-
-Antes de proceder, necesito tu decisión:
-
-1. **¿Ejecutar FASE 1?** - Integrar hooks existentes (bajo riesgo)
-2. **¿Ejecutar FASE 2?** - Migrar useState (alto impacto, requiere tiempo)
-3. **¿Ejecutar FASE 3?** - Migrar useNavigate (impacto medio)
-4. **¿Priorizar algo diferente?**
-
-> **Nota:** La migración completa a arquitectura tiback-hello pura es un esfuerzo significativo que podría impactar funcionalidad existente.
+1. [ ] `ClientePage.jsx` (2934 líneas) → Usar store.clientePage + clienteActions
+2. [ ] `SupervisorPage.jsx` (~2900 líneas) → Crear supervisorSlice + supervisorActions
+3. [ ] `AnalistaPage.jsx` (~1600 líneas) → Crear analistaSlice + analistaActions
+4. [ ] `AdministradorPage.jsx` → Crear adminSlice + adminActions
 
 ---
 
-## 📊 MÉTRICAS ACTUALES
+### FASE 2: Migración useState → useReducer [PENDIENTE]
+
+**Nota:** La infraestructura creada permite migrar gradualmente
+
+---
+
+### FASE 3: Migración useNavigate → Link [PENDIENTE]
+
+Reemplazar `navigate()` por `<Link to="/ruta">`
+
+---
+
+## 📊 MÉTRICAS
 
 | Métrica | Estado |
 |---------|--------|
-| Regla 500 líneas | 🟡 Parcial (hooks creados, no integrados) |
-| Uso de useState | 🔴 Violación masiva (~25 archivos) |
-| Uso de useNavigate | 🔴 Violación masiva (~20 archivos) |
+| Regla 500 líneas | � 7 archivos exceden |
+| Uso de useState | 🔴 ~25 archivos violan |
+| Uso de useNavigate | 🔴 ~20 archivos violan |
 | CSS Modular | ✅ Cumple |
 | Store Modular | ✅ Cumple |
 | Backend Modular | ✅ Cumple |
 
 ---
 
-*Auditoría realizada: 16/12/2024*  
-*Arquitectura esperada: tiback-hello*
+*Auditoría actualizada: 17/12/2024*  
+*Arquitectura: tiback-hello ⚡*
