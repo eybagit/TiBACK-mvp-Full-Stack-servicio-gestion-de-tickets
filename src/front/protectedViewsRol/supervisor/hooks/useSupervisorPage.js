@@ -23,10 +23,14 @@ export function useSupervisorPage() {
     const [sidebarHidden, setSidebarHidden] = useState(false);
     const [activeView, setActiveView] = useState('dashboard');
     const [showUserDropdown, setShowUserDropdown] = useState(false);
+    const [showInfoForm, setShowInfoForm] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showSearchResults, setShowSearchResults] = useState(false);
+    const [updatingInfo, setUpdatingInfo] = useState(false);
+    const [selectedTicketImages, setSelectedTicketImages] = useState([]);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
     // Hook de datos
     const dataHook = useSupervisorData({ store, dispatch });
@@ -109,6 +113,62 @@ export function useSupervisorPage() {
         setInfoData(prev => ({ ...prev, [name]: value }));
     };
 
+    // Actualizar información del perfil
+    const updateInfo = async () => {
+        try {
+            setUpdatingInfo(true);
+            const token = store.auth.token;
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/supervisores/perfil`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(infoData)
+            });
+            if (response.ok) {
+                const data = await response.json();
+                dispatch({ type: 'SET_USER', payload: data });
+                alert('Información actualizada correctamente');
+            }
+        } catch (err) {
+            console.error('Error actualizando perfil:', err);
+        } finally {
+            setUpdatingInfo(false);
+        }
+    };
+
+    // Actualizar información (modal)
+    const actualizarInformacion = async (e) => {
+        e.preventDefault();
+        await updateInfo();
+        setShowInfoForm(false);
+    };
+
+    // Escalar ticket
+    const escalarTicket = async (ticketId) => {
+        try {
+            const token = store.auth.token;
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/escalar`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (response.ok) {
+                actualizarTodasLasTablas();
+            }
+        } catch (err) {
+            console.error('Error escalando ticket:', err);
+        }
+    };
+
+    // Agregar comentario
+    const agregarComentario = (ticketId) => {
+        setActiveView(`comentarios-${ticketId}`);
+    };
+
     // Retornar todo lo necesario para el componente
     return {
         // Navegación
@@ -117,20 +177,24 @@ export function useSupervisorPage() {
         // Estados UI
         sidebarHidden, activeView, setActiveView,
         showUserDropdown, setShowUserDropdown,
+        showInfoForm, setShowInfoForm,
         isDarkMode, searchQuery, setSearchQuery,
         searchResults, setSearchResults,
         showSearchResults, setShowSearchResults,
+        selectedTicketImages, setSelectedTicketImages,
+        selectedImageIndex, setSelectedImageIndex,
         
         // Estados de datos
         tickets, ticketsCerrados, analistas,
         analistasCombinados, ticketsCerradosCombinados,
         loading, loadingCerrados, error,
         showCerrados, setShowCerrados,
-        userData, infoData,
+        userData, infoData, setInfoData,
         ticketsConRecomendaciones, expandedTickets,
         filterEstado, setFilterEstado,
         filterAsignado, setFilterAsignado,
         filterPrioridad, setFilterPrioridad,
+        updatingInfo,
         
         // Funciones UI
         toggleSidebar, changeView, toggleTheme,
@@ -144,9 +208,11 @@ export function useSupervisorPage() {
         
         // Funciones de operaciones
         asignarTicket, cerrarTicket, reabrirTicket,
+        escalarTicket, agregarComentario,
         generarRecomendacion, getAvailableActions,
         getSemaforoColor, tieneSolicitudReapertura,
         fueEscaladoPorAnalista, getEstadoColor, getPrioridadColor,
+        updateInfo, actualizarInformacion,
         
         // Computados
         filteredTickets: getFilteredTickets(),
