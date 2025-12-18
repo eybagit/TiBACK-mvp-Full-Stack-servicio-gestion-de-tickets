@@ -16,7 +16,7 @@
 | **Frontend Protected Views** | 0 | 3 | ✅ Completado |
 | **Frontend Store** | 0 | 2 | 🟡 Monitorear |
 | **Backend Routes** | 0 | 3 | 🟡 Monitorear |
-| **Backend Services** | 0 | 0 | ✅ Cumple |
+| **Backend Services** | N/A | N/A | 🔴 No existe |
 
 ---
 
@@ -30,45 +30,45 @@
 
 ## ✅ ARCHIVOS MODULARIZADOS (18/12/2024)
 
-### 1. ClientePage.jsx ✅ COMPLETADO
-| Métrica | Antes | Después | Reducción |
-|---------|-------|---------|-----------|
-| **Líneas** | 2934 | 250 | **-91%** |
+### 1. ClientePage.jsx ✅
+| Antes | Después | Reducción |
+|-------|---------|-----------|
+| 2934 | 250 | **-91%** |
 
-### 2. AnalistaPage.jsx ✅ COMPLETADO
-| Métrica | Antes | Después | Reducción |
-|---------|-------|---------|-----------|
-| **Líneas** | 1770 | 232 | **-87%** |
+### 2. AnalistaPage.jsx ✅
+| Antes | Después | Reducción |
+|-------|---------|-----------|
+| 1770 | 232 | **-87%** |
 
-### 3. SupervisorPage.jsx ✅ COMPLETADO
-| Métrica | Antes | Después | Reducción |
-|---------|-------|---------|-----------|
-| **Líneas** | 3156 | 278 | **-91%** |
+### 3. SupervisorPage.jsx ✅
+| Antes | Después | Reducción |
+|-------|---------|-----------|
+| 3156 | 278 | **-91%** |
 
-### 4. ComentariosTicket.jsx ✅ COMPLETADO
-| Métrica | Antes | Después | Reducción |
-|---------|-------|---------|-----------|
-| **Líneas** | 741 | 210 | **-72%** |
+### 4. ComentariosTicket.jsx ✅
+| Antes | Después | Reducción |
+|-------|---------|-----------|
+| 741 | 210 | **-72%** |
 
-### 5. HeatmapComponent.jsx ✅ COMPLETADO
-| Métrica | Antes | Después | Reducción |
-|---------|-------|---------|-----------|
-| **Líneas** | 646 | 235 | **-64%** |
+### 5. HeatmapComponent.jsx ✅
+| Antes | Después | Reducción |
+|-------|---------|-----------|
+| 646 | 235 | **-64%** |
 
-### 6. DashboardCalidad.jsx ✅ COMPLETADO
-| Métrica | Antes | Después | Reducción |
-|---------|-------|---------|-----------|
-| **Líneas** | 627 | 121 | **-81%** |
+### 6. DashboardCalidad.jsx ✅
+| Antes | Después | Reducción |
+|-------|---------|-----------|
+| 627 | 121 | **-81%** |
 
 ---
 
 ## 🟡 ARCHIVOS EN ZONA DE RIESGO (400-500 LÍNEAS)
 
 ### Frontend - Store (⚠️ CRÍTICO)
-| Archivo | Líneas | Margen | Riesgo |
-|---------|--------|--------|--------|
-| `store/slices/clienteSlice.js` | 498 | 2 | ⚠️ CRÍTICO |
-| `store/actions/clienteActions.js` | 421 | 79 | 🟡 Medio |
+| Archivo | Líneas | Margen |
+|---------|--------|--------|
+| `store/slices/clienteSlice.js` | 498 | 2 ⚠️ |
+| `store/actions/clienteActions.js` | 421 | 79 |
 
 ### Frontend - Pages
 | Archivo | Líneas | Margen |
@@ -109,79 +109,48 @@
 |---------|---------------|-------|------|
 | Archivos >500 líneas | 6 | **1** | 0 |
 | Archivos 400-500 líneas | 14 | 15 | <10 |
-| % Cumplimiento | ~85% | **~97%** | 100% |
+| % Cumplimiento modular.md | ~85% | **~97%** | 100% |
 
 ---
 
-## 🎯 PRÓXIMOS PASOS
+## 🎯 PRÓXIMO PASO INMEDIATO
 
-### FASE INMEDIATA: ARCHIVO QUE EXCEDE (OBLIGATORIO)
-1. [ ] `components/ImageUpload.jsx` (578 líneas → <500)
-   - Extraer lógica de procesamiento de imagen a hook
-   - Separar componentes de preview y upload
-   - Mover validaciones a utilidades
-
-### FASE PREVENTIVA: ZONA CRÍTICA
-1. [ ] `clienteSlice.js` (498 líneas) - A 2 líneas de exceder
-2. [ ] `ticket_routes.py` (487 líneas) - Cerca del límite
-
-### FASE MONITOREO: ZONA DE RIESGO
-- Chat components (482 líneas cada uno)
-- Footer.jsx (477 líneas)
-- AdministradorPage.jsx (474 líneas)
+### Modularizar ImageUpload.jsx (578 → <500)
+```
+components/
+├── ImageUpload.jsx (reducido)
+├── imageUpload/
+│   ├── hooks/
+│   │   ├── useImageUpload.js
+│   │   └── useImagePreview.js
+│   └── components/
+│       ├── ImagePreview.jsx
+│       └── ImageDropzone.jsx
+```
 
 ---
 
 ## 📋 CUMPLIMIENTO DE RESTRICCIONES (modular.md)
 
-### ✅ Restricciones Cumplidas
-- [x] Componentes Inteligentes (Pages) extraen UI a Componentes Tontos
-- [x] Hooks de estado solo en componentes padre (Pages)
-- [x] useGlobalReducer es el único hook de gestión de estado
-- [x] Lógica de negocio en servicios, no en rutas
-
-### ⚠️ Restricciones Parcialmente Cumplidas
-- [ ] **Ningún archivo >500 líneas** - 1 archivo excede (ImageUpload.jsx)
-- [ ] Slices divididos por dominio - clienteSlice.js muy grande
-
-### 📍 Ubicación de Archivos (Verificado)
-| Tipo | Ubicación Correcta | Estado |
-|------|-------------------|--------|
-| Componentes UI | `features/[feature]/components/` | ✅ |
-| Lógica Frontend | `store/slices/` | ✅ |
-| Lógica Backend | `api/services/` | ✅ |
-| Endpoints | `api/routes/` | ✅ |
+| Restricción | Estado |
+|-------------|--------|
+| Ningún archivo >500 líneas | 🟡 1 pendiente |
+| Componentes UI extraídos | ✅ |
+| Lógica en hooks separados | ✅ |
+| Slices divididos por dominio | 🟡 clienteSlice grande |
+| Servicios backend | 🔴 No existe carpeta |
+| Rutas solo request/response | 🟡 Fat controllers |
 
 ---
 
-## 🗂️ BACKUPS DISPONIBLES
+## 🔗 DOCUMENTOS RELACIONADOS
 
-```
-proximosPasos/cirugia/backups/
-├── ClientePage_original_2934.jsx
-├── ClientePage_checkpoint[1-6]_*.jsx
-├── AnalistaPage_original_1770.jsx
-├── SupervisorPage_original_3156.jsx
-└── useClientePage_checkpoint7_250.js
-```
-
----
-
-## 📝 RESUMEN DE LA SESIÓN (18/12/2024)
-
-**Logros:**
-- ✅ ClientePage: 2934 → 250 líneas (-91%)
-- ✅ AnalistaPage: 1770 → 232 líneas (-87%)
-- ✅ SupervisorPage: 3156 → 278 líneas (-91%)
-- ✅ Componentes auxiliares modularizados
-- ✅ Reducción de 6 a 1 archivo que excede límite
-
-**Pendiente:**
-- 🔴 ImageUpload.jsx (578 líneas) - Único archivo que excede
+- **Plan completo de ajustes:** `proximosPasos/ajustes.md`
+- **Arquitectura:** `documentacion/arquitectura.md`
+- **Restricciones modular:** `documentacion/modular.md`
 
 ---
 
 *Actualizado: 18/12/2024*  
 *Arquitectura: tiback-hello ⚡*  
-*Estándar: modular.md - 500 líneas máximo*  
 *Estado: 🟡 97% CUMPLIMIENTO (1 archivo pendiente)*

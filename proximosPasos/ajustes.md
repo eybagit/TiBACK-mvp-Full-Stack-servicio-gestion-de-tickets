@@ -1,141 +1,355 @@
-# 📋 PLAN DE AJUSTES - AUDITORÍA DEL PROYECTO TiBACK
+# 🎯 PLAN DE AJUSTES - TiBACK
+## Cumplimiento 100% de Restricciones Arquitectónicas
 
-> **Fecha actualización:** 18 de Diciembre, 2024  
-> **Rama:** `checkpointsIncrementales`  
-> **Estado:** ✅ MODULARIZACIÓN COMPLETADA - LISTO PARA BUENAS PRÁCTICAS
-
----
-
-## 🚀 ESTADO ACTUAL
-
-### ✅ COMPLETADO: ClientePage.jsx
-
-| Métrica | Antes | Después |
-|---------|-------|---------|
-| **Líneas** | 2934 | **269** |
-| **Archivos** | 1 | **16** |
-| **Reducción** | - | **-91%** |
-
-Ver detalles en: `proximosPasos/cirugia/clientePageModular.md`
+> **Fecha:** 18 de Diciembre, 2024  
+> **Documentos de referencia:**
+> - `documentacion/arquitectura.md`
+> - `documentacion/modular.md`
+> - `documentacion/corazon.md`
+> - `documentacion/ATAQUE.md`
 
 ---
 
-### ✅ COMPLETADO: SupervisorPage.jsx
+## 📊 RESUMEN DE AUDITORÍA
 
-| Métrica | Antes | Después |
-|---------|-------|---------|
-| **Líneas** | 3156 | **~580** |
-| **Archivos** | 1 | **10** |
-| **Reducción** | - | **-81.6%** |
-
-Ver detalles en: `proximosPasos/cirugia/supervisorPageModular.md`
-
----
-
-### ✅ COMPLETADO: AnalistaPage.jsx
-
-| Métrica | Antes | Después |
-|---------|-------|---------|
-| **Líneas** | 1770 | **232** |
-| **Archivos** | 1 | **11** |
-| **Reducción** | - | **-87%** |
-
-Ver detalles en: `proximosPasos/cirugia/analistaPageModular.md`
+| Restricción | Estado | Archivos Afectados |
+|-------------|--------|-------------------|
+| **Límite 500 líneas** | 🟡 97% | 1 archivo excede |
+| **NO useState** | 🔴 0% | ~80+ archivos |
+| **NO useNavigate** | 🔴 0% | 55 archivos |
+| **CSS Modular** | ✅ 100% | Cumple |
+| **Rutas separadas** | ✅ 100% | Cumple |
+| **useGlobalReducer único** | ✅ 100% | Cumple |
+| **Servicios backend** | 🔴 0% | No existe carpeta |
+| **Fat Controllers** | 🟡 50% | 3 rutas grandes |
 
 ---
 
-### ✅ COMPLETADO: verTicketHDsupervisor.jsx
+## 🔴 VIOLACIONES CRÍTICAS
 
-| Métrica | Antes | Después |
-|---------|-------|---------|
-| **Líneas** | 554 | **389** |
-| **Archivos** | 1 | **2** |
-| **Reducción** | - | **-30%** |
+### 1. USO DE useState (PROHIBIDO)
+**Restricción:** "NO useState - Eliminado completamente de todos los componentes"
 
-**Archivos creados:**
-- `hooks/useTicketHDActions.js` (124 líneas) - Funciones de utilidad y acciones
+**Estado actual:** ~80+ archivos usan useState
+
+**Archivos más críticos (por cantidad de useState):**
+| Archivo | Usos de useState |
+|---------|-----------------|
+| `useHeatmap.js` | 9 |
+| `ChatSupervisorAnalista.jsx` | 9 |
+| `ChatAnalistaCliente.jsx` | 9 |
+| `useComentariosData.js` | 8 |
+| `useClienteTickets.js` | 8 |
+| `RecomendacionesSimilares.jsx` | 8 |
+| `IdentificarImagenEmbedded.jsx` | 8 |
+| `useAnalistaPage.js` | 7 |
+| `useAdminData.js` | 7 |
+| `ChatSupervisorAnalistaEmbedded.jsx` | 7 |
+| `ChatAnalistaClienteEmbedded.jsx` | 7 |
+
+**Solución según arquitectura.md:**
+- Migrar TODOS los useState a useReducer + Context API
+- Centralizar estados en store global
+- Usar crudActions para lógica de negocio
 
 ---
 
-## ✅ ARCHIVOS VERIFICADOS (YA CUMPLEN)
+### 2. USO DE useNavigate (PROHIBIDO)
+**Restricción:** "NO useNavigate - Reemplazado por Link declarativo"
 
-| Archivo | Líneas | Estado |
+**Estado actual:** 55 archivos usan useNavigate
+
+**Archivos afectados:**
+```
+AuthForm.jsx, FeatureAppsPage.jsx, FeatureDesignPage.jsx,
+LandNavbar.jsx, AnalistasManager.jsx, ClientesManager.jsx,
+ComentariosManager.jsx, ManagerAdministrador.jsx, 
+ManagerAsignacion.jsx, RecomendacionVista.jsx, SemaforoTickets.jsx,
+ActualizarAdministrador.jsx, ActualizarAnalista.jsx, 
+ActualizarAsignacion.jsx, ActualizarCliente.jsx, 
+ActualizarComentarios.jsx, ActualizarGestion.jsx,
+ActualizarSupervisor.jsx, ActualizarTicket.jsx, Administrador.jsx,
+AgregarAdministrador.jsx, AgregarAnalista.jsx, AgregarAsignacion.jsx,
+AgregarCliente.jsx, AgregarComentarios.jsx, AgregarGestion.jsx,
+AgregarSupervisor.jsx, AgregarTicket.jsx, Analistas.jsx,
+Asignacion.jsx, ChatAnalistaCliente.jsx, ChatSupervisorAnalista.jsx,
+Clientes.jsx, Comentarios.jsx, ComentariosTicket.jsx, Gestion.jsx,
+IdentificarImagen.jsx, RecomendacionesGuardadas.jsx,
+RecomendacionesSimilares.jsx, Supervisor.jsx, Ticket.jsx,
+VerAdministrador.jsx, VerAnalista.jsx, VerAsignacion.jsx,
+VerCliente.jsx, VerComentarios.jsx, VerGestion.jsx, VerTicket.jsx,
+AdministradorPage.jsx, useAnalistaPage.js, RankingAnalista.jsx,
+VerTicketAnalista.jsx, useClientePage.js, VerTicketCliente.jsx,
+useSupervisorPage.js
+```
+
+**Solución según arquitectura.md:**
+- Reemplazar `navigate('/ruta')` por `<Link to="/ruta">`
+- Para navegación programática, usar estado global + renderizado condicional
+
+---
+
+### 3. ARCHIVO QUE EXCEDE 500 LÍNEAS
+**Restricción:** "Ningún archivo de código fuente debe superar las 500 líneas"
+
+**Estado actual:** 1 archivo excede
+
+| Archivo | Líneas | Exceso |
 |---------|--------|--------|
-| verTicketHDanalista.jsx | 415 | ✅ Cumple (<500) |
-| AdministradorPage.jsx | 474 | ✅ Cumple (<500) |
+| `components/ImageUpload.jsx` | 578 | +78 |
+
+**Solución según modular.md:**
+- Extraer lógica a hooks: `useImageUpload.js`, `useImagePreview.js`
+- Separar componentes: `ImagePreview.jsx`, `ImageDropzone.jsx`
 
 ---
 
-## 📋 PLAN DE MODULARIZACIÓN - COMPLETADO
+### 4. NO EXISTE CAPA DE SERVICIOS BACKEND
+**Restricción:** "Lógica de negocio en servicios, no en rutas"
 
-### FASE 1: ClientePage ✅ COMPLETADO
-- [x] Extraer componentes JSX
-- [x] Extraer lógica a custom hooks
-- [x] Dividir hooks >500 líneas
-- [x] Verificar build
+**Estado actual:** No existe carpeta `src/api/services/`
 
-### FASE 2: SupervisorPage ✅ COMPLETADO
-- [x] Analizar estructura (~3156 líneas)
-- [x] Extraer componentes JSX (5 componentes)
-- [x] Extraer lógica a custom hooks (4 hooks)
-- [x] Verificar build
+**Rutas con lógica de negocio (Fat Controllers):**
+| Archivo | Líneas | Código Real |
+|---------|--------|-------------|
+| `ticket_routes.py` | 487 | 465 |
+| `ia_routes.py` | 424 | 375 |
+| `ticket_estado_routes.py` | 409 | 374 |
 
-### FASE 3: AnalistaPage ✅ COMPLETADO
-- [x] Analizar estructura (~1770 líneas)
-- [x] Extraer componentes JSX (4 componentes)
-- [x] Extraer lógica a custom hooks (5 hooks)
-- [x] Verificar build
-
-### FASE 4: Archivos Secundarios ✅ COMPLETADO
-- [x] verTicketHDsupervisor.jsx (554 → 389 líneas)
-- [x] verTicketHDanalista.jsx (415 líneas - ya cumple)
-- [x] AdministradorPage.jsx (474 líneas - ya cumple)
+**Solución según modular.md:**
+- Crear `src/api/services/`
+- Mover lógica de negocio a servicios:
+  - `ticket_service.py`
+  - `ia_service.py`
+  - `ticket_estado_service.py`
+- Las rutas solo deben recibir request y devolver response
 
 ---
 
-## 📊 MÉTRICA DE CUMPLIMIENTO - REGLA 500 LÍNEAS
+## 🟡 ARCHIVOS EN ZONA DE RIESGO (400-500 líneas)
 
-| Archivo | Líneas | Estado |
+### Frontend - Store (CRÍTICO)
+| Archivo | Líneas | Margen |
 |---------|--------|--------|
-| ClientePage.jsx | 269 | ✅ |
-| SupervisorPage.jsx | ~580 | ⚠️ Ligeramente sobre |
-| AnalistaPage.jsx | 232 | ✅ |
-| verTicketHDsupervisor.jsx | 389 | ✅ |
-| verTicketHDanalista.jsx | 415 | ✅ |
-| AdministradorPage.jsx | 474 | ✅ |
+| `store/slices/clienteSlice.js` | 498 | 2 ⚠️ |
+| `store/actions/clienteActions.js` | 421 | 79 |
+
+### Frontend - Pages
+| Archivo | Líneas | Margen |
+|---------|--------|--------|
+| `pages/ChatAnalistaCliente.jsx` | 482 | 18 |
+| `pages/ChatSupervisorAnalista.jsx` | 482 | 18 |
+| `pages/RecomendacionesSimilares.jsx` | 470 | 30 |
+| `pages/IdentificarImagen.jsx` | 460 | 40 |
+| `pages/RecomendacionesGuardadas.jsx` | 416 | 84 |
+
+### Frontend - Components
+| Archivo | Líneas | Margen |
+|---------|--------|--------|
+| `components/Footer.jsx` | 477 | 23 |
+| `components/ChatAnalistaClienteEmbedded.jsx` | 406 | 94 |
+| `components/ChatSupervisorAnalistaEmbedded.jsx` | 406 | 94 |
+| `components/IdentificarImagenEmbedded.jsx` | 403 | 97 |
+
+### Frontend - Protected Views
+| Archivo | Líneas | Margen |
+|---------|--------|--------|
+| `administrador/AdministradorPage.jsx` | 474 | 26 |
+| `cliente/components/TicketRow.jsx` | 431 | 69 |
+| `analista/verTicketHDanalista.jsx` | 415 | 85 |
+
+### Backend - Routes
+| Archivo | Líneas | Margen |
+|---------|--------|--------|
+| `routes/ticket_routes.py` | 487 | 13 |
+| `routes/ia_routes.py` | 424 | 76 |
+| `routes/ticket_estado_routes.py` | 409 | 91 |
 
 ---
 
-## 📈 RESUMEN DE PROGRESO - MODULARIZACIÓN
+## ✅ RESTRICCIONES CUMPLIDAS
 
-| Página | Original | Actual | Reducción | Estado |
-|--------|----------|--------|-----------|--------|
-| ClientePage | 2934 | 269 | -91% | ✅ |
-| SupervisorPage | 3156 | ~580 | -82% | ✅ |
-| AnalistaPage | 1770 | 232 | -87% | ✅ |
-| verTicketHDsupervisor | 554 | 389 | -30% | ✅ |
-| **TOTAL** | **8414** | **~1470** | **-83%** | ✅ |
+### 1. CSS Modular ✅
+**Restricción:** "CSS debe ser completamente modularizado en carpeta styles"
+
+**Estado actual:** CUMPLE
+```
+src/front/styles/
+├── base/variables.css (57 líneas)
+├── components/
+│   ├── buttons.css (128 líneas)
+│   ├── cards.css (80 líneas)
+│   ├── status-dots.css (177 líneas)
+│   └── timeline.css (65 líneas)
+├── layout/hyper-layout.css (199 líneas)
+├── themes/dark-theme.css (190 líneas)
+└── utilities/helpers.css (68 líneas)
+
+index.css: Solo imports (~40 líneas) ✅
+```
+
+### 2. Rutas Backend Separadas ✅
+**Restricción:** "Un archivo de ruta por entidad"
+
+**Estado actual:** CUMPLE
+```
+src/api/routes/
+├── auth_routes.py
+├── ticket_routes.py
+├── cliente_routes.py
+├── supervisor_routes.py
+├── analista_routes.py
+├── administrador_routes.py
+├── comentario_routes.py
+├── asignacion_routes.py
+├── gestion_routes.py
+├── ia_routes.py
+├── chat_routes.py
+├── dashboard_routes.py
+├── ticket_estado_routes.py
+└── utils_routes.py
+```
+
+### 3. useGlobalReducer Único ✅
+**Restricción:** "useGlobalReducer es el ÚNICO hook de gestión de estado permitido"
+
+**Estado actual:** CUMPLE
+- `src/front/hooks/useGlobalReducer.jsx` (70 líneas)
+- Es el único hook de gestión de estado global
+
+### 4. Modelos de BD ✅
+**Restricción:** "No modificar modelos de base de datos"
+
+**Estado actual:** CUMPLE
+- `src/api/models.py` (234 líneas) - Dentro del límite
 
 ---
 
-## 🔜 FASE 5: BUENAS PRÁCTICAS - PENDIENTE
+## 🎯 PLAN DE ACCIÓN POR PRIORIDAD
 
-### Objetivos según arquitectura.md:
-- [ ] Eliminar useState → usar useReducer + Context API
-- [ ] Eliminar useNavigate → usar Link declarativo
-- [ ] Centralizar llamadas API en crudActions
-- [ ] Eliminar formularios controlados → usar FormData + defaultValue
+### FASE 1: CRÍTICO (Inmediato)
+**Objetivo:** Eliminar violaciones absolutas
 
-### Archivos a revisar:
-1. Todos los hooks creados (usan useState internamente)
-2. Componentes que usan useNavigate
-3. Llamadas fetch directas en componentes
+#### 1.1 Modularizar ImageUpload.jsx
+- [ ] Crear `hooks/useImageUpload.js`
+- [ ] Crear `hooks/useImagePreview.js`
+- [ ] Crear `components/ImagePreview.jsx`
+- [ ] Crear `components/ImageDropzone.jsx`
+- [ ] Reducir ImageUpload.jsx a <500 líneas
 
-### Nota importante:
-> Según arquitectura.md, los hooks de estado local están permitidos dentro de custom hooks que encapsulan lógica. La restricción de "NO useState" aplica principalmente a componentes CRUD directos, no a hooks de utilidad.
+#### 1.2 Crear Capa de Servicios Backend
+- [ ] Crear carpeta `src/api/services/`
+- [ ] Crear `ticket_service.py` (extraer de ticket_routes.py)
+- [ ] Crear `ia_service.py` (extraer de ia_routes.py)
+- [ ] Crear `ticket_estado_service.py` (extraer de ticket_estado_routes.py)
+- [ ] Refactorizar rutas para usar servicios
+
+### FASE 2: ALTA PRIORIDAD (1-2 semanas)
+**Objetivo:** Migrar useState a useReducer
+
+#### 2.1 Migrar Hooks Principales
+- [ ] `useAnalistaPage.js` - Migrar 7 useState
+- [ ] `useClientePage.js` - Migrar useState
+- [ ] `useSupervisorPage.js` - Migrar useState
+- [ ] `useAdminData.js` - Migrar 7 useState
+
+#### 2.2 Migrar Componentes de Chat
+- [ ] `ChatAnalistaCliente.jsx` - Migrar 9 useState
+- [ ] `ChatSupervisorAnalista.jsx` - Migrar 9 useState
+- [ ] `ChatAnalistaClienteEmbedded.jsx` - Migrar 7 useState
+- [ ] `ChatSupervisorAnalistaEmbedded.jsx` - Migrar 7 useState
+
+### FASE 3: MEDIA PRIORIDAD (2-4 semanas)
+**Objetivo:** Eliminar useNavigate
+
+#### 3.1 Reemplazar useNavigate por Link
+- [ ] Componentes de autenticación (AuthForm, etc.)
+- [ ] Componentes de gestión (Managers)
+- [ ] Componentes de actualización (Actualizar*)
+- [ ] Componentes de agregar (Agregar*)
+- [ ] Componentes de visualización (Ver*)
+
+#### 3.2 Implementar Navegación Declarativa
+- [ ] Crear sistema de navegación basado en estado
+- [ ] Usar renderizado condicional para vistas
+
+### FASE 4: PREVENTIVA (Continuo)
+**Objetivo:** Mantener archivos bajo 500 líneas
+
+#### 4.1 Monitorear Zona de Riesgo
+- [ ] `clienteSlice.js` (498 líneas) - Dividir si crece
+- [ ] `ticket_routes.py` (487 líneas) - Mover a servicio
+- [ ] Chat components (482 líneas) - Extraer lógica
 
 ---
 
-*Actualizado: 18/12/2024*  
+## 📋 CHECKLIST DE CUMPLIMIENTO
+
+### Restricciones de arquitectura.md
+- [ ] NO useState en componentes CRUD
+- [ ] NO useNavigate - Solo Link declarativo
+- [ ] NO llamadas API directas en componentes
+- [ ] NO estados locales - Solo useReducer + Context
+- [ ] NO formularios controlados - Solo FormData
+- [ ] NO monolitos CSS
+- [x] useReducer + Context API exclusivamente
+- [x] Link de react-router-dom para navegación
+- [x] crudActions centralizadas
+- [x] Bootstrap responsive
+- [x] FormData en formularios
+- [x] defaultValue para pre-carga
+- [x] Modularidad Integral
+
+### Restricciones de modular.md
+- [ ] Ningún archivo >500 líneas (1 pendiente)
+- [x] Componentes UI en features/[feature]/components/
+- [x] Lógica Frontend en store/slices/
+- [ ] Lógica Backend en api/services/ (no existe)
+- [x] Endpoints en api/routes/
+- [x] Modelos en api/models.py
+
+### Restricciones de ATAQUE.md
+- [x] Modelo de BD sin cambios
+- [x] Store centralizado con useReducer
+- [ ] NO useState (violado)
+- [ ] NO useNavigate (violado)
+- [x] CSS Modular
+
+---
+
+## 📊 MÉTRICAS DE PROGRESO
+
+| Métrica | Actual | Meta | % Cumplimiento |
+|---------|--------|------|----------------|
+| Archivos >500 líneas | 1 | 0 | 97% |
+| Archivos con useState | ~80 | 0 | 0% |
+| Archivos con useNavigate | 55 | 0 | 0% |
+| Servicios backend | 0 | 3+ | 0% |
+| CSS modular | ✅ | ✅ | 100% |
+| Rutas separadas | ✅ | ✅ | 100% |
+
+---
+
+## ⚠️ NOTAS IMPORTANTES
+
+### Sobre useState
+La arquitectura tiback-hello prohíbe useState, pero el proyecto actual lo usa extensivamente. La migración completa requiere:
+1. Definir nuevos slices en el store para cada dominio
+2. Crear reducers para cada tipo de estado
+3. Migrar componente por componente
+
+### Sobre useNavigate
+La navegación programática con useNavigate debe reemplazarse por:
+1. Componentes `<Link>` para navegación declarativa
+2. Estado global + renderizado condicional para navegación dinámica
+
+### Sobre Servicios Backend
+Las rutas actuales contienen lógica de negocio (Fat Controllers). Según modular.md:
+- Las rutas solo deben recibir request y devolver response
+- La lógica debe estar en servicios especializados
+
+---
+
+*Plan generado: 18/12/2024*  
 *Arquitectura: tiback-hello ⚡*  
-*Estado: ✅ MODULARIZACIÓN COMPLETADA*
+*Estado: PLAN DE ACCIÓN DEFINIDO*
