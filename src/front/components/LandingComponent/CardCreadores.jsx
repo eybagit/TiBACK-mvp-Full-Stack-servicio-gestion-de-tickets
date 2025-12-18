@@ -24,8 +24,7 @@ export const CardCreadores = () => {
             {store.imagegentle.map((creator) => (
                 <div
                     key={creator.id}
-                    className="card p-0 shadow-lg bg-body-territory align-items-center"
-                    style={{ width: "18rem" }}
+                    className="card p-0 shadow-lg bg-body-territory align-items-center card-creator"
                 >
                     {/* Imagen del creador */}
                     <img src={creator.src} className={creator.stl} alt={creator.name} />
@@ -60,8 +59,7 @@ export const CardCreadores = () => {
                             <img
                                 src={selectedUser.src}
                                 alt={selectedUser.name}
-                                className="img-fluid rounded mb-2"
-                                style={{ maxHeight: "250px", objectFit: "cover" }}
+                                className="img-fluid rounded mb-2 img-creator-avatar"
                             />
                             <h5 className="mb-2">{selectedUser.subtit}</h5>
                             <p>{selectedUser.prrfo}</p>

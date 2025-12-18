@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useParams, Navigate } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const VerAnalista = () => {
     const { store, dispatch } = useGlobalReducer();
-    const navigate = useNavigate();
     const { id } = useParams();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
-    const [analista, setAnalista] = useState(null);
+    // Estado del store para navegación después de eliminar
+    const shouldRedirect = store.crud?.formSuccess;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -19,17 +19,17 @@ export const VerAnalista = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
     const cargarAnalista = () => {
@@ -37,7 +37,7 @@ export const VerAnalista = () => {
         fetchJson(`${API}/analistas/${id}`)
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data.message);
-                setAnalista(data);
+                dispatch({ type: "analista_set_detail", payload: data });
             }).catch(setError).finally(() => setLoading(false));
     };
 
@@ -49,23 +49,26 @@ export const VerAnalista = () => {
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data.message);
                 dispatch({ type: "analistas_remove", payload: parseInt(id) });
-                navigate('/analistas');
+                dispatch({ type: 'CRUD_SET_FORM_SUCCESS', payload: true });
             }).catch(setError).finally(() => setLoading(false));
-    };
-
-    const volver = () => {
-        navigate('/analistas');
-    };
-
-    const editar = () => {
-        navigate(`/actualizar-analista/${id}`);
     };
 
     useEffect(() => {
         if (id) {
             cargarAnalista();
         }
+        // Limpiar estado al desmontar
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
     }, [id]);
+
+    // Navegación declarativa después de eliminar
+    if (shouldRedirect) {
+        return <Navigate to="/analistas" replace />;
+    }
+
+    const analista = store.analistaDetail;
 
     if (!analista && !store.api.loading) {
         return (
@@ -75,9 +78,9 @@ export const VerAnalista = () => {
                         <div className="card">
                             <div className="card-body text-center">
                                 <h5>Analista no encontrado</h5>
-                                <button className="btn btn-primary" onClick={volver}>
+                                <Link to="/analistas" className="btn btn-primary">
                                     Volver al inicio
-                                </button>
+                                </Link>
                             </div>
                         </div>
                     </div>
@@ -127,24 +130,22 @@ export const VerAnalista = () => {
                             )}
 
                             <div className="d-flex gap-2 mt-4 justify-content-between">
-                                <button
+                                <Link
+                                    to="/analistas"
                                     className="btn btn-secondary"
-                                    onClick={volver}
-                                    disabled={store.api.loading}
                                 >
                                     <i className="fas fa-arrow-left me-1"></i>
                                     Volver
-                                </button>
+                                </Link>
 
                                 <div className="d-flex gap-2">
-                                    <button
+                                    <Link
+                                        to={`/actualizar-analista/${id}`}
                                         className="btn btn-warning"
-                                        onClick={editar}
-                                        disabled={store.api.loading}
                                     >
                                         <i className="fas fa-edit me-1"></i>
                                         Editar
-                                    </button>
+                                    </Link>
                                     <button
                                         className="btn btn-danger"
                                         onClick={eliminarAnalista}

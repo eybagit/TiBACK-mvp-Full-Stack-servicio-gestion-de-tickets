@@ -1,24 +1,32 @@
 /**
  * useAnalistaTickets - Operaciones sobre tickets del analista
+ * 
+ * REFACTORIZADO: Arquitectura tiback-hello
+ * - Usa analistaActions para operaciones
+ * - dispatch para actualizar estado
  */
-export function useAnalistaTickets({ store, setError, actualizarTickets, emitCriticalTicketAction }) {
+
+import { analistaActions } from '../../../store';
+
+export function useAnalistaTickets({ store, dispatch, setError, actualizarTickets, emitCriticalTicketAction }) {
     
     // Iniciar trabajo en un ticket
     const iniciarTrabajo = async (ticketId) => {
         try {
-            const resp = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${store.auth.token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ estado: 'en_proceso' })
-            });
-            if (!resp.ok) throw new Error('Error iniciar trabajo');
+            const result = await analistaActions.startWork(
+                dispatch,
+                store.auth.token,
+                ticketId,
+                store.websocket.socket,
+                emitCriticalTicketAction,
+                store.auth.user
+            );
             
-            if (store.websocket.socket) {
-                emitCriticalTicketAction && emitCriticalTicketAction(store.websocket.socket, ticketId, 'ticket_iniciado', store.auth.user);
-                store.websocket.socket.emit('ticket_iniciado', { ticket_id: ticketId, analista_id: store.auth.user.id });
-                store.websocket.socket.emit('global_ticket_update', { type: 'estado_changed', ticket_id: ticketId, estado: 'en_proceso' });
+            if (!result.success) {
+                setError(result.error);
+            } else {
+                await actualizarTickets();
             }
-            await actualizarTickets();
         } catch (e) {
             setError(e.message);
         }
@@ -27,20 +35,20 @@ export function useAnalistaTickets({ store, setError, actualizarTickets, emitCri
     // Marcar ticket como resuelto
     const marcarComoResuelto = async (ticketId) => {
         try {
-            const resp = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${store.auth.token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ estado: 'solucionado' })
-            });
-            if (!resp.ok) throw new Error('Error marcar resuelto');
+            const result = await analistaActions.markAsSolved(
+                dispatch,
+                store.auth.token,
+                ticketId,
+                store.websocket.socket,
+                emitCriticalTicketAction,
+                store.auth.user
+            );
             
-            if (store.websocket.socket) {
-                emitCriticalTicketAction && emitCriticalTicketAction(store.websocket.socket, ticketId, 'ticket_solucionado', store.auth.user);
-                store.websocket.socket.emit('ticket_solucionado', { ticket_id: ticketId, analista_id: store.auth.user.id });
-                store.websocket.socket.emit('global_ticket_update', { type: 'estado_changed', ticket_id: ticketId, estado: 'solucionado' });
-                store.websocket.socket.emit('ticket_estado_changed', { ticket_id: ticketId, estado: 'solucionado' });
+            if (!result.success) {
+                setError(result.error);
+            } else {
+                await actualizarTickets();
             }
-            await actualizarTickets();
         } catch (e) {
             setError(e.message);
         }
@@ -49,20 +57,20 @@ export function useAnalistaTickets({ store, setError, actualizarTickets, emitCri
     // Escalar ticket
     const escalarTicket = async (ticketId) => {
         try {
-            const resp = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${store.auth.token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ estado: 'en_espera' })
-            });
-            if (!resp.ok) throw new Error('Error escalar');
+            const result = await analistaActions.escalateTicket(
+                dispatch,
+                store.auth.token,
+                ticketId,
+                store.websocket.socket,
+                emitCriticalTicketAction,
+                store.auth.user
+            );
             
-            if (store.websocket.socket) {
-                emitCriticalTicketAction && emitCriticalTicketAction(store.websocket.socket, ticketId, 'ticket_escalado', store.auth.user);
-                store.websocket.socket.emit('ticket_escalado', { ticket_id: ticketId, analista_id: store.auth.user.id, motivo: 'Escalado por analista' });
-                store.websocket.socket.emit('global_ticket_update', { type: 'estado_changed', ticket_id: ticketId, estado: 'en_espera' });
-                store.websocket.socket.emit('ticket_estado_changed', { ticket_id: ticketId, estado: 'en_espera', was_escalated: true });
+            if (!result.success) {
+                setError(result.error);
+            } else {
+                await actualizarTickets();
             }
-            await actualizarTickets();
         } catch (e) {
             setError(e.message);
         }
@@ -70,13 +78,7 @@ export function useAnalistaTickets({ store, setError, actualizarTickets, emitCri
 
     // Obtener color según estado
     const getEstadoColor = (estado) => {
-        switch ((estado || '').toLowerCase()) {
-            case 'en_espera': return 'badge bg-warning';
-            case 'en_proceso': return 'badge bg-primary';
-            case 'solucionado': return 'badge bg-success';
-            case 'cerrado': return 'badge bg-dark';
-            default: return 'badge bg-secondary';
-        }
+        return analistaActions.getEstadoColor(estado);
     };
 
     return {

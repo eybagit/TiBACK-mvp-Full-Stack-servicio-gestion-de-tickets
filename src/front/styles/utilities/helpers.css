@@ -450,3 +450,190 @@ html body .modal-backdrop-custom { background-color: rgba(0,0,0,0.5); }
   width: 100%;
   border-radius: 8px;
 }
+
+/* ============================================
+   CLASES PARA NAVBAR - Sesión 4 (18/12/2025)
+   ============================================ */
+
+/* Navbar principal con gradiente */
+.navbar-gradient {
+  background: linear-gradient(135deg, var(--ct-primary) 0%, var(--ct-indigo) 25%, var(--ct-purple) 50%, var(--ct-pink) 75%, var(--ct-red) 100%);
+  border-bottom: 3px solid var(--ct-gray-800);
+}
+
+/* Logo del navbar */
+.navbar-logo {
+  height: 40px;
+  width: auto;
+}
+
+/* Toggler border color */
+.navbar-toggler-yellow {
+  border-color: var(--ct-yellow) !important;
+}
+
+/* Botones dropdown de admin */
+.btn-admin-teal {
+  background-color: var(--ct-teal);
+  border-color: var(--ct-teal);
+  color: var(--ct-white);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.btn-admin-teal:hover {
+  background-color: #1a9e8e;
+  border-color: #1a9e8e;
+  color: var(--ct-white);
+}
+
+.btn-admin-cyan {
+  background-color: var(--ct-cyan);
+  border-color: var(--ct-cyan);
+  color: var(--ct-white);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.btn-admin-cyan:hover {
+  background-color: #0aa7c7;
+  border-color: #0aa7c7;
+  color: var(--ct-white);
+}
+
+/* Dropdown headers */
+.dropdown-header-styled {
+  background-color: var(--ct-gray-100);
+  color: var(--ct-gray-800);
+}
+
+/* Badge de sincronización */
+.badge-sync {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.badge-sync-connected {
+  background-color: var(--ct-green);
+  color: var(--ct-white);
+}
+
+.badge-sync-polling {
+  background-color: var(--ct-yellow);
+  color: var(--ct-white);
+}
+
+.badge-sync-disconnected {
+  background-color: var(--ct-red);
+  color: var(--ct-white);
+}
+
+/* Texto de sincronización */
+.sync-text {
+  color: var(--ct-white);
+  opacity: 0.9;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Iconos con colores CT */
+.icon-ct-blue { color: var(--ct-blue); }
+.icon-ct-orange { color: var(--ct-orange); }
+.icon-ct-green { color: var(--ct-green); }
+.icon-ct-red { color: var(--ct-red); }
+.icon-ct-purple { color: var(--ct-purple); }
+.icon-ct-cyan { color: var(--ct-cyan); }
+.icon-ct-teal { color: var(--ct-teal); }
+
+/* ============================================
+   CLASES PARA LANDING COMPONENTS
+   ============================================ */
+
+/* Cards de precios */
+.card-pricing {
+  width: 26rem;
+  max-width: 100%;
+}
+
+/* Imágenes de features */
+.img-feature {
+  cursor: pointer;
+  max-height: 420px;
+  object-fit: cover;
+}
+
+.img-feature-apps {
+  max-height: 450px;
+  object-fit: cover;
+}
+
+/* Cards de creadores */
+.card-creator {
+  width: 18rem;
+}
+
+.img-creator-avatar {
+  max-height: 250px;
+  object-fit: cover;
+}
+
+/* ============================================
+   CLASES PARA AUTHFORM
+   ============================================ */
+
+/* Logo de autenticación */
+.auth-logo {
+  max-width: 170px;
+  height: auto;
+}
+
+/* Contenedor de formulario */
+.auth-form-container {
+  max-width: 320px;
+}
+
+/* Fondo del auth */
+.auth-bg {
+  background-size: cover;
+  background-position: center;
+  opacity: 0.5;
+}
+
+/* ============================================
+   CLASES PARA HEATMAP Y MAPAS DINÁMICOS
+   ============================================ */
+
+/* Contenedor de mapa con posición relativa */
+.map-container-relative {
+  height: 500px;
+  width: 100%;
+  position: relative;
+}
+
+/* Mensaje de carga del mapa */
+.map-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 10;
+}
+
+/* Contenedor de Google Maps */
+.map-google-container {
+  height: 100%;
+  width: 100%;
+  border-radius: 8px;
+}
+
+/* ============================================
+   CLASES PARA IMAGEPREVIEW
+   ============================================ */
+
+.img-preview-thumb {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+}

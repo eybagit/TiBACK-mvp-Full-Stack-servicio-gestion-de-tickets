@@ -1,119 +1,103 @@
 /**
  * useSupervisorUI - Hook para gestión de estado de UI del supervisor
+ * 
+ * REFACTORIZADO: Arquitectura tiback-hello
+ * - Eliminados todos los useState
+ * - Usa store.supervisor como fuente de verdad
+ * - dispatch para modificar estado
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { supervisorActions } from '../../../store';
 
-export function useSupervisorUI() {
-  // Estados para el diseño Hyper
-  const [sidebarHidden, setSidebarHidden] = useState(false);
-  const [activeView, setActiveView] = useState('dashboard');
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [selectedTicketId, setSelectedTicketId] = useState(null);
-  
-  // Estados de búsqueda
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
-  
-  // Estados de tema y filtros
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const [filterEstado, setFilterEstado] = useState('');
-  const [filterAnalista, setFilterAnalista] = useState('');
-  const [filterPrioridad, setFilterPrioridad] = useState('');
-  
-  // Estados para tickets expandidos
-  const [expandedTickets, setExpandedTickets] = useState(new Set());
+/**
+ * useSupervisorUI - Hook de UI del supervisor
+ * Lee del store global y usa dispatch para cambios
+ */
+export function useSupervisorUI({ store, dispatch }) {
+  // ==============================
+  // LEER DEL STORE (en lugar de useState)
+  // ==============================
+  const {
+    sidebarHidden,
+    activeView,
+    showUserDropdown,
+    selectedTicketId,
+    searchQuery,
+    searchResults,
+    showSearchResults,
+    isDarkMode,
+    showFilterDropdown,
+    filterEstado,
+    filterAnalista,
+    filterPrioridad,
+    expandedTickets
+  } = store.supervisor;
+
+  // ==============================
+  // FUNCIONES DE DISPATCH (en lugar de setters)
+  // ==============================
 
   // Función para alternar sidebar
-  const toggleSidebar = () => setSidebarHidden(!sidebarHidden);
+  const toggleSidebar = () => dispatch({ type: 'SUPERVISOR_TOGGLE_SIDEBAR' });
 
   // Función para cambiar vista
   const changeView = (view) => {
-    setActiveView(view);
-    if (view.startsWith('ticket-') || view.startsWith('comentarios-') || view.startsWith('chat-')) {
-      const ticketId = view.replace(/^(ticket-|comentarios-|chat-)/, '');
-      setSelectedTicketId(parseInt(ticketId));
-    } else {
-      setSelectedTicketId(null);
-    }
+    dispatch({ type: 'SUPERVISOR_SET_ACTIVE_VIEW', payload: view });
   };
+
+  // Setters directos
+  const setShowUserDropdown = (value) => dispatch({ type: 'SUPERVISOR_SET_SHOW_USER_DROPDOWN', payload: value });
+  const setShowFilterDropdown = (value) => dispatch({ type: 'SUPERVISOR_SET_SHOW_FILTER_DROPDOWN', payload: value });
+  const setFilterEstado = (value) => dispatch({ type: 'SUPERVISOR_SET_FILTER_ESTADO', payload: value });
+  const setFilterAnalista = (value) => dispatch({ type: 'SUPERVISOR_SET_FILTER_ANALISTA', payload: value });
+  const setFilterPrioridad = (value) => dispatch({ type: 'SUPERVISOR_SET_FILTER_PRIORIDAD', payload: value });
 
   // Función para buscar tickets
   const handleSearch = (query, tickets) => {
-    setSearchQuery(query);
-    if (query.trim().length === 0) {
-      setSearchResults([]);
-      setShowSearchResults(false);
-      return;
-    }
-
-    const filteredTickets = tickets.filter(ticket =>
-      ticket.titulo?.toLowerCase().includes(query.toLowerCase().trim()) ||
-      ticket.id?.toString().includes(query)
-    );
-
-    setSearchResults(filteredTickets.slice(0, 5));
-    setShowSearchResults(filteredTickets.length > 0);
+    supervisorActions.handleSearch(dispatch, query, tickets);
   };
 
   // Función para seleccionar ticket de búsqueda
   const selectTicketFromSearch = (ticket) => {
-    setSearchQuery('');
-    setSearchResults([]);
-    setShowSearchResults(false);
-    changeView(`ticket-${ticket.id}`);
+    supervisorActions.selectTicketFromSearch(dispatch, ticket);
   };
 
   // Función para alternar tema
   const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    document.body.classList.toggle('dark-theme');
+    dispatch({ type: 'SUPERVISOR_TOGGLE_DARK_MODE' });
   };
 
   // Función para expandir/colapsar tickets
   const toggleTicketExpansion = (ticketId) => {
-    setExpandedTickets(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(ticketId)) {
-        newSet.delete(ticketId);
-      } else {
-        newSet.add(ticketId);
-      }
-      return newSet;
-    });
+    dispatch({ type: 'SUPERVISOR_TOGGLE_EXPANDED_TICKET', payload: ticketId });
   };
 
   // Obtener tickets filtrados
   const getFilteredTickets = (tickets, analistas) => {
-    return tickets.filter(ticket => {
-      if (filterEstado && ticket.estado !== filterEstado) return false;
-      if (filterPrioridad && ticket.prioridad !== filterPrioridad) return false;
-      if (filterAnalista) {
-        const tieneAnalista = ticket.asignaciones?.some(a => a.analista_id === parseInt(filterAnalista));
-        if (!tieneAnalista) return false;
-      }
-      return true;
-    });
+    return supervisorActions.getFilteredTickets(store.supervisor);
   };
+
+  // ==============================
+  // EFFECTS
+  // ==============================
 
   // Cerrar dropdowns al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showUserDropdown && !event.target.closest('.dropdown')) {
-        setShowUserDropdown(false);
+        dispatch({ type: 'SUPERVISOR_SET_SHOW_USER_DROPDOWN', payload: false });
       }
       if (showSearchResults && !event.target.closest('.hyper-search')) {
-        setShowSearchResults(false);
+        dispatch({ type: 'SUPERVISOR_SET_SHOW_SEARCH_RESULTS', payload: false });
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showUserDropdown, showSearchResults]);
+  }, [showUserDropdown, showSearchResults, dispatch]);
 
-  // Aplicar tema
+  // Aplicar tema (el reducer ya lo hace, pero mantenemos por compatibilidad)
   useEffect(() => {
     if (isDarkMode) {
       document.body.classList.add('dark-theme');
@@ -122,20 +106,23 @@ export function useSupervisorUI() {
     }
   }, [isDarkMode]);
 
+  // ==============================
+  // RETORNO (misma interfaz que antes)
+  // ==============================
   return {
-    // Estados UI
+    // Estados UI (del store)
     sidebarHidden,
     activeView,
     showUserDropdown,
     setShowUserDropdown,
     selectedTicketId,
     
-    // Estados búsqueda
+    // Estados búsqueda (del store)
     searchQuery,
     searchResults,
     showSearchResults,
     
-    // Estados tema y filtros
+    // Estados tema y filtros (del store)
     isDarkMode,
     showFilterDropdown,
     setShowFilterDropdown,
@@ -146,7 +133,7 @@ export function useSupervisorUI() {
     filterPrioridad,
     setFilterPrioridad,
     
-    // Estados tickets
+    // Estados tickets (del store)
     expandedTickets,
     
     // Funciones
@@ -159,3 +146,5 @@ export function useSupervisorUI() {
     getFilteredTickets
   };
 }
+
+export default useSupervisorUI;

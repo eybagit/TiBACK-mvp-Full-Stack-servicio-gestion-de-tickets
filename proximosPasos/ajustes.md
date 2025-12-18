@@ -1,148 +1,144 @@
 # 📋 AJUSTES PENDIENTES - TiBACK
 
-> **Última actualización:** 18 de Diciembre, 2025 (Sesión 3)  
-> **Referencia:** `documentacion/` (arquitectura.md, modular.md, corazon.md, ATAQUE.md)
+> **Última actualización:** 18 de Diciembre, 2025 - 18:15  
+> **Sesión:** FASE 2 - Sprint C completado parcialmente  
+> **Referencia:** `documentacion/` (arquitectura.md, modular.md, corazon.md, ATAQUE.md)  
+> **Enfoque:** ⚡ Ley de Parkinson - "El trabajo se expande hasta llenar el tiempo disponible"
 
 ---
 
-## ✅ COMPLETADO (18/12/2024)
+## 📊 RESUMEN EJECUTIVO DE CUMPLIMIENTO
 
-### Capa de Servicios Backend - 100% ✅
-| Servicio | Líneas | Responsabilidad |
-|----------|--------|-----------------|
-| `ticket_service.py` | ~200 | CRUD y asignación de tickets |
-| `image_service.py` | ~75 | Upload y gestión de imágenes |
-| `ia_service.py` | ~250 | Similitud semántica, OpenAI, Cloud Vision |
-| `ticket_estado_service.py` | ~200 | Transiciones de estado por rol |
-
-### Refactorización de Rutas - 100% ✅
-| Ruta | Antes | Después | Reducción |
-|------|-------|---------|-----------|
-| `ia_routes.py` | 424 | 166 | -61% |
-| `ticket_estado_routes.py` | 409 | 160 | -61% |
-| `ticket_routes.py` | 487 | 248 | -49% |
-| **TOTAL** | **1,320** | **574** | **-57%** |
-
-### Estilos Inline - Archivos Refactorizados (45+ archivos) ✅
-| Categoría | Archivos |
-|-----------|----------|
-| Cliente | TicketRow, ClienteImageModal, ClienteHeader, ClienteDashboard, VerTicketCliente, ClienteTicketsList, ClienteChat, ClientePage |
-| Supervisor | SupervisorHeader, SupervisorDashboard, VerTicketSupervisor, InfoFormModal, TicketRow |
-| Analista | AnalistaTicketsList, AnalistaHeader, AnalistaDashboard, VerTicketAnalista |
-| Pages | VerTicket, Ticket, Clientes, Comentarios, IdentificarImagen, RecomendacionesSimilares, RecomendacionesGuardadas, AgregarTicket, Administrador, DashboardCalidad |
-| Chat | ChatAnalistaCliente, ChatSupervisorAnalista, ChatAnalistaClienteEmbedded, ChatSupervisorAnalistaEmbedded |
-| Components | SideBarCentral, RecomendacionModal, ProtectedRoute, IdentificarImagenEmbedded, ComentariosList, ComentarioForm, SemaforoTickets, ComentariosManager, ManagerAdministrador, GoogleMapsLocation, HeatmapComponent, CalidadCharts |
+| Restricción | Estado | % Cumplimiento | Acción |
+|-------------|--------|----------------|--------|
+| Límite 500 líneas | ✅ | 100% | Mantener |
+| Servicios backend | ✅ | 100% | Completado |
+| CSS modular | ✅ | 100% | Completado |
+| NO estilos inline | ✅ | ~95% | Solo dinámicos restantes |
+| **NO useState** | 🟡 | **~30%** | **7 slices + 4 páginas migradas** |
+| **NO useNavigate** | 🟡 | **~8%** | **4 páginas usan Link declarativo** |
+| **FormData** | 🔴 | **15%** | **~20 formularios pendientes** |
+| **Estado global único** | ✅ | **~80%** | **7 slices de dominio creados** |
 
 ---
 
-## 🟡 EN PROGRESO - ESTILOS INLINE
+## ✅ LO ÚLTIMO QUE SE HIZO
 
-**Estado actual:** ~50 instancias restantes (antes ~140) - **~65% eliminado**
+### Sesión 18/12/2025 (17:30 - 18:15)
 
-### Clases CSS en `helpers.css` (~400 líneas)
-```css
-/* Status dots */
-.status-dot, .dot-ct-info
+#### 1. Slices Creados (7 en total)
+| Slice | Líneas | Reducers | Sprint |
+|-------|--------|----------|--------|
+| `supervisorSlice.js` | ~400 | 38 | Previo |
+| `analistaSlice.js` | ~320 | 30 | Previo |
+| `adminSlice.js` | ~160 | 15 | Previo |
+| `chatSlice.js` | ~170 | 17 | Sprint A |
+| `iaSlice.js` | ~190 | 20 | Sprint B |
+| `crudSlice.js` | ~240 | 25 | Sprint C |
 
-/* Imágenes */
-.img-thumb-xs/sm/md/lg, .img-preview-sm/md/lg
+#### 2. Actions Creados (5 en total)
+| Actions | Líneas | Funciones |
+|---------|--------|-----------|
+| `supervisorActions.js` | ~320 | 18 |
+| `analistaActions.js` | ~280 | 15 |
+| `adminActions.js` | ~170 | 8 |
+| `chatActions.js` | ~200 | 10 |
+| `iaActions.js` | ~210 | 7 |
 
-/* Botones */
-.btn-action-min, .btn-action-sm, .btn-sync, .btn-pill-hover, .btn-expand-toggle, .btn-send
+#### 3. Páginas Ver* Migradas (4 de 8)
+| Página | useState Antes | useNavigate Antes | Estado |
+|--------|----------------|-------------------|--------|
+| `VerTicket.jsx` | 2 | 1 | ✅ 0 useState, Link |
+| `VerCliente.jsx` | 1 | 1 | ✅ 0 useState, Link+Navigate |
+| `VerAnalista.jsx` | 1 | 1 | ✅ 0 useState, Link+Navigate |
+| `VerSupervisor.jsx` | 0 | 0 | ✅ Ya correcto |
 
-/* Chat */
-.chat-header-primary/warning, .chat-participant-icon, .chat-avatar
-.chat-body, .chat-message-container, .chat-message-bubble
-.chat-message-bubble-sent/received, .chat-message-text, .chat-message-meta
+#### 4. Hooks Migrados (7 hooks, ~70 useState eliminados)
+- `useSupervisorData.js`, `useSupervisorUI.js`, `useSupervisorPage.js`
+- `useAnalistaData.js`, `useAnalistaPage.js`, `useAnalistaTickets.js`
+- `useAdminData.js`
 
-/* Modales */
-.modal-show-transparent, .modal-backdrop-dark/light, .carousel-dot
+---
 
-/* Layout */
-.container-sm/md, .th-expand, .card-gradient-purple, .text-truncate-cell
+## 📋 LO QUE SIGUE
 
-/* Sidebar */
-.sidebar-user-avatar, .sidebar-user-name, .sidebar-user-role
+### Inmediato: Sprint C Restante (~80 min ⏱️)
+| Tarea | Archivos | Estado |
+|-------|----------|--------|
+| Migrar resto Pages Ver* | 4 | ⏳ |
+| Migrar Pages Agregar* | 8 | ⏳ |
+| Migrar Pages de listado | ~8 | ⏳ |
 
-/* Comentarios */
-.comentarios-scroll, .avatar-comment, .whitespace-pre-wrap
+### Después: FASE 3 - useNavigate (~60 min ⏱️)
+- Reemplazar `navigate()` por `<Link>` en ~50 archivos restantes
+- Usar `<Navigate>` para redirecciones condicionales
 
-/* Loading */
-.loading-full-height, .loading-half-height
+### Final: FASE 4 - FormData (~60 min ⏱️)
+- Migrar formularios Agregar* a FormData + defaultValue
+- Eliminar estados de formulario locales
 
-/* Maps */
-.map-container-md/lg, .map-inner
+---
 
-/* Charts */
-.chart-container-md, .chart-bar-column, .progress-thin
+## 🏗️ ESTADO ACTUAL DEL STORE
 
-/* Utilidades */
-.link-plain, .z-index-10/1000, .cursor-pointer, .select-min-width
+```
+src/front/store/
+├── slices/
+│   ├── clienteSlice.js      ✅ (~500 líneas) - existía
+│   ├── supervisorSlice.js   ✅ (~400 líneas, 38 reducers)
+│   ├── analistaSlice.js     ✅ (~320 líneas, 30 reducers)
+│   ├── adminSlice.js        ✅ (~160 líneas, 15 reducers)
+│   ├── chatSlice.js         ✅ (~170 líneas, 17 reducers)
+│   ├── iaSlice.js           ✅ (~190 líneas, 20 reducers)
+│   └── crudSlice.js         ✅ (~240 líneas, 25 reducers)
+├── actions/
+│   ├── supervisorActions.js ✅ (~320 líneas)
+│   ├── analistaActions.js   ✅ (~280 líneas)
+│   ├── adminActions.js      ✅ (~170 líneas)
+│   ├── chatActions.js       ✅ (~200 líneas)
+│   └── iaActions.js         ✅ (~210 líneas)
+└── initialStore.js          ✅ (7 slices integrados)
 ```
 
-### Archivos Pendientes (~50 instancias)
-- Navbar.jsx (estilos de gradiente/colores)
-- LandingComponent/* (Price, FeatureDesignPage, FeatureAppsPage, CardCreadores)
-- Demo.jsx, HeatmapComponent, CalidadCharts (estilos dinámicos)
+---
+
+## 📈 MÉTRICAS DE PROGRESO
+
+| Métrica | Inicio Sesión | Fin Sesión | Cambio |
+|---------|---------------|------------|--------|
+| Slices creados | 1 | 7 | +6 |
+| Actions creados | 0 | 5 | +5 |
+| Hooks migrados | 0 | 7 | +7 |
+| Páginas migradas | 0 | 4 | +4 |
+| useState eliminados | 0 | ~76 | +76 |
+| useNavigate eliminados | 0 | 3 | +3 |
+| Build status | ✅ | ✅ | Sin errores |
 
 ---
 
-## 🔴 PENDIENTE - PRIORIDAD ALTA
+## 🎯 META FINAL: 100% tiback-hello
 
-### 1. Eliminar useState (~80 archivos)
-### 2. Eliminar useNavigate (55 archivos)
-### 3. Migrar Formularios a FormData (3 de ~20)
+### Criterios de Éxito
+- [x] 7 slices de dominio creados ✅
+- [x] 5 archivos de actions creados ✅
+- [x] 7 hooks de rol migrados ✅
+- [x] 4 páginas Ver* migradas ✅
+- [ ] Resto de páginas Ver* (4)
+- [ ] Páginas Agregar* (8)
+- [ ] 0 archivos con `useNavigate`
+- [ ] 100% formularios con `FormData`
+- [x] Build exitoso ✅
 
----
-
-## 📊 RESUMEN DE CUMPLIMIENTO
-
-| Restricción | Estado | Progreso |
-|-------------|--------|----------|
-| Límite 500 líneas | ✅ | 100% |
-| Servicios backend | ✅ | 100% |
-| CSS modular | ✅ | 100% |
-| NO estilos inline | 🟡 | ~65% (45+ archivos, ~50 restantes) |
-| NO useState | 🔴 | 0% |
-| NO useNavigate | 🔴 | 0% |
-| FormData | 🔴 | 15% |
-
----
-
----
-
-## 📈 RESUMEN SESIÓN 2 (18/12/2025)
-
-### Archivos Refactorizados Hoy
-- ClienteChat, ClientePage, DashboardCalidad
-- CalidadCharts, ComentarioForm, SemaforoTickets
-- ComentariosManager, ManagerAdministrador
-- GoogleMapsLocation, HeatmapComponent
-
-### Clases CSS Nuevas
-- `.map-container-md/lg`, `.map-inner`
-- `.chart-container-md`, `.chart-bar-column`
-- `.progress-thin`, `.select-min-width`
+### Estimación Restante
+| Fase | Tiempo | Estado |
+|------|--------|--------|
+| Sprint C restante | ~80 min | ⏳ |
+| FASE 3 (useNavigate) | ~60 min | ⏳ |
+| FASE 4 (FormData) | ~60 min | ⏳ |
+| **TOTAL** | **~3.3h** | - |
 
 ---
 
-## 📈 RESUMEN SESIÓN 3 (18/12/2025)
-
-### Estado Actual
-- **Estilos inline:** ~50 instancias restantes (~65% completado)
-- **Servicios backend:** 100% completado (4/4)
-- **Rutas refactorizadas:** 100% completado (3/3)
-
-### Próximos Pasos Inmediatos
-1. Refactorizar `Navbar.jsx` (múltiples estilos de gradiente/colores)
-2. Refactorizar `LandingComponent/*` (Price, FeatureDesignPage, FeatureAppsPage, CardCreadores)
-3. Completar estilos inline restantes
-
-### Próximas Fases
-- **FASE 2:** Migrar useState (~80 archivos) → useReducer + Context API
-- **FASE 3:** Eliminar useNavigate (55 archivos) → Link declarativo
-- **FASE 4:** Migrar formularios a FormData (~20 formularios)
-
----
-
-*Documento de seguimiento - TiBACK | 18/12/2025 (Sesión 3)*
+*Documento de seguimiento - TiBACK | 18/12/2025 18:15*  
+*Enfoque: Ley de Parkinson ⚡*  
+*Estado: 7 SLICES COMPLETADOS ✅*

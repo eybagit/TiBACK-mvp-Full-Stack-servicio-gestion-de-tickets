@@ -5,15 +5,15 @@ import { useNavigate } from "react-router-dom";
 export const FeatureAppsPage = () => {
   const navigate = useNavigate();
 
-   const goToDesign = () => {
-        navigate("/"); // vuelve a la raíz
-        setTimeout(() => {
-            const feature = document.getElementById("feature");
-            if (feature) {
-                feature.scrollIntoView({ behavior: "smooth" });
-            }
-        }, 300); // da tiempo a que la raíz cargue
-    };
+  const goToDesign = () => {
+    navigate("/"); // vuelve a la raíz
+    setTimeout(() => {
+      const feature = document.getElementById("feature");
+      if (feature) {
+        feature.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 300); // da tiempo a que la raíz cargue
+  };
 
   return (
     <div className="container py-5">
@@ -55,8 +55,7 @@ export const FeatureAppsPage = () => {
           <img
             src="https://res.cloudinary.com/mystoreimg/image/upload/v1759730939/vhtugercpvzl9leijvag.jpg"
             alt="Panel de control administrativo"
-            className="img-fluid rounded shadow-lg border border-light"
-            style={{ maxHeight: "450px", objectFit: "cover" }}
+            className="img-fluid rounded shadow-lg border border-light img-feature-apps"
           />
         </div>
       </div>
@@ -86,4 +85,3 @@ export const FeatureAppsPage = () => {
   );
 };
 
-            

@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useParams, Navigate } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const VerCliente = () => {
     const { store, dispatch } = useGlobalReducer();
-    const navigate = useNavigate();
     const { id } = useParams();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
-    const [cliente, setCliente] = useState(null);
+    // Estado del store para navegación después de eliminar
+    const shouldRedirect = store.crud?.formSuccess;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -19,17 +19,17 @@ export const VerCliente = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
     const cargarCliente = () => {
@@ -37,7 +37,7 @@ export const VerCliente = () => {
         fetchJson(`${API}/clientes/${id}`)
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data.message);
-                setCliente(data);
+                dispatch({ type: "cliente_set_detail", payload: data });
             }).catch(setError).finally(() => setLoading(false));
     };
 
@@ -49,23 +49,26 @@ export const VerCliente = () => {
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data.message);
                 dispatch({ type: "clientes_remove", payload: parseInt(id) });
-                navigate('/clientes'); // Volver al home después de eliminar
+                dispatch({ type: 'CRUD_SET_FORM_SUCCESS', payload: true });
             }).catch(setError).finally(() => setLoading(false));
-    };
-
-    const volver = () => {
-        navigate('/clientes');
-    };
-
-    const editar = () => {
-        navigate(`/actualizar-cliente/${id}`);
     };
 
     useEffect(() => {
         if (id) {
             cargarCliente();
         }
+        // Limpiar estado al desmontar
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
     }, [id]);
+
+    // Navegación declarativa después de eliminar
+    if (shouldRedirect) {
+        return <Navigate to="/clientes" replace />;
+    }
+
+    const cliente = store.clienteDetail;
 
     if (!cliente && !store.api.loading) {
         return (
@@ -75,9 +78,9 @@ export const VerCliente = () => {
                         <div className="card">
                             <div className="card-body text-center">
                                 <h5>Cliente no encontrado</h5>
-                                <button className="btn btn-primary" onClick={volver}>
+                                <Link to="/clientes" className="btn btn-primary">
                                     Volver al inicio
-                                </button>
+                                </Link>
                             </div>
                         </div>
                     </div>
@@ -114,15 +117,13 @@ export const VerCliente = () => {
                                     <div className="col-12">
                                         <label className="form-label fw-bold">Email:</label>
                                         <p className="form-control-plaintext">
-                                            
-                                                {cliente.email}
-                                             
+                                            {cliente.email}
                                         </p>
                                     </div>
                                     <div className="col-md-6">
                                         <label className="form-label fw-bold">Teléfono:</label>
-                                        <p className="form-control-plaintext">    
-                                                    {cliente.telefono}
+                                        <p className="form-control-plaintext">
+                                            {cliente.telefono}
                                         </p>
                                     </div>
                                     <div className="col-md-6">
@@ -135,24 +136,22 @@ export const VerCliente = () => {
                             )}
 
                             <div className="d-flex gap-2 mt-4 justify-content-between">
-                                <button
+                                <Link
+                                    to="/clientes"
                                     className="btn btn-secondary"
-                                    onClick={volver}
-                                    disabled={store.api.loading}
                                 >
                                     <i className="fas fa-arrow-left me-1"></i>
                                     Volver
-                                </button>
+                                </Link>
 
                                 <div className="d-flex gap-2">
-                                    <button
+                                    <Link
+                                        to={`/actualizar-cliente/${id}`}
                                         className="btn btn-warning"
-                                        onClick={editar}
-                                        disabled={store.api.loading}
                                     >
                                         <i className="fas fa-edit me-1"></i>
                                         Editar
-                                    </button>
+                                    </Link>
                                     <button
                                         className="btn btn-danger"
                                         onClick={eliminarCliente}

@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const VerTicket = () => {
     const { store, dispatch, joinTicketRoom, leaveTicketRoom } = useGlobalReducer();
     const { id } = useParams();
-    const navigate = useNavigate();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
+
+    // Leer estados del store (en lugar de useState)
+    const { showModal, selectedImageIndex } = store.crud;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -60,6 +62,13 @@ export const VerTicket = () => {
         }
     }, [id, store.websocket.socket, store.websocket.connected, joinTicketRoom, leaveTicketRoom]);
 
+    // Limpiar estado CRUD al desmontar
+    useEffect(() => {
+        return () => {
+            dispatch({ type: 'CRUD_CLOSE_MODAL' });
+        };
+    }, []);
+
     const getEstadoClase = (estado) => {
         switch (estado?.toLowerCase()) {
             case "creado":
@@ -94,10 +103,24 @@ export const VerTicket = () => {
         }
     };
 
-    const ticket = store.ticketDetail;
-    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-    const [showModal, setShowModal] = useState(false);
+    // Funciones de modal usando dispatch en lugar de setState
+    const openImageModal = (index) => {
+        dispatch({ type: 'CRUD_OPEN_IMAGE_MODAL', payload: index });
+    };
 
+    const closeModal = () => {
+        dispatch({ type: 'CRUD_CLOSE_MODAL' });
+    };
+
+    const nextImage = (total) => {
+        dispatch({ type: 'CRUD_SET_SELECTED_IMAGE_INDEX', payload: (selectedImageIndex + 1) % total });
+    };
+
+    const prevImage = (total) => {
+        dispatch({ type: 'CRUD_SET_SELECTED_IMAGE_INDEX', payload: (selectedImageIndex - 1 + total) % total });
+    };
+
+    const ticket = store.ticketDetail;
 
     if (store.api.error) return <div className="alert alert-danger">{store.api.error}</div>;
     if (!ticket) return <div className="alert alert-warning">Ticket no encontrado.</div>;
@@ -147,7 +170,7 @@ export const VerTicket = () => {
                                 src={url}
                                 alt={`thumb-${idx}`}
                                 className="img-thumb-md cursor-pointer"
-                                onClick={() => { setSelectedImageIndex(idx); setShowModal(true); }}
+                                onClick={() => openImageModal(idx)}
                             />
                         ))}
                     </div>
@@ -161,7 +184,7 @@ export const VerTicket = () => {
                         <div className="modal-content">
                             <div className="modal-header">
                                 <h5 className="modal-title">Imagen {selectedImageIndex + 1} de {ticket.img_urls.length}</h5>
-                                <button type="button" className="btn-close" aria-label="Close" onClick={() => setShowModal(false)}></button>
+                                <button type="button" className="btn-close" aria-label="Close" onClick={closeModal}></button>
                             </div>
                             <div className="modal-body d-flex flex-column align-items-center">
                                 <img
@@ -171,8 +194,8 @@ export const VerTicket = () => {
                                 />
                                 {ticket.img_urls.length > 1 && (
                                     <div className="mt-3">
-                                        <button className="btn btn-secondary btn-sm me-2" onClick={() => setSelectedImageIndex((selectedImageIndex - 1 + ticket.img_urls.length) % ticket.img_urls.length)}>&lt;</button>
-                                        <button className="btn btn-secondary btn-sm" onClick={() => setSelectedImageIndex((selectedImageIndex + 1) % ticket.img_urls.length)}>&gt;</button>
+                                        <button className="btn btn-secondary btn-sm me-2" onClick={() => prevImage(ticket.img_urls.length)}>&lt;</button>
+                                        <button className="btn btn-secondary btn-sm" onClick={() => nextImage(ticket.img_urls.length)}>&gt;</button>
                                     </div>
                                 )}
                             </div>
@@ -182,12 +205,12 @@ export const VerTicket = () => {
             )}
 
             <div className="mt-3">
-                <button className="btn btn-secondary me-2" onClick={() => navigate("/tickets")}>
+                <Link to="/tickets" className="btn btn-secondary me-2">
                     <i className="fas fa-arrow-left"></i> Volver
-                </button>
-                <button className="btn btn-warning" onClick={() => navigate(`/actualizar-ticket/${ticket.id}`)}>
+                </Link>
+                <Link to={`/actualizar-ticket/${ticket.id}`} className="btn btn-warning">
                     <i className="fas fa-edit"></i> Editar
-                </button>
+                </Link>
             </div>
         </div>
     );

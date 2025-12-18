@@ -1,33 +1,100 @@
-import { useState, useEffect } from 'react';
-import { tokenUtils } from '../../../store';
-
 /**
  * useSupervisorData - Carga de datos y gestión de estado
+ * 
+ * REFACTORIZADO: Arquitectura tiback-hello
+ * - Eliminados todos los useState
+ * - Usa store.supervisor como fuente de verdad
+ * - dispatch para modificar estado
+ */
+
+import { useEffect } from 'react';
+import { supervisorActions } from '../../../store';
+
+/**
+ * useSupervisorData - Hook de datos del supervisor
+ * Lee del store global y usa dispatch para cambios
  */
 export function useSupervisorData({ store, dispatch }) {
-    const [tickets, setTickets] = useState([]);
-    const [ticketsCerrados, setTicketsCerrados] = useState([]);
-    const [analistas, setAnalistas] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [loadingCerrados, setLoadingCerrados] = useState(false);
-    const [error, setError] = useState('');
-    const [showCerrados, setShowCerrados] = useState(false);
-    const [userData, setUserData] = useState(null);
-    const [infoData, setInfoData] = useState({
-        nombre: '', apellido: '', email: '',
-        area_responsable: '', password: '', confirmPassword: ''
-    });
-    const [ticketsConRecomendaciones, setTicketsConRecomendaciones] = useState(new Set());
-    const [expandedTickets, setExpandedTickets] = useState(new Set());
+    // ==============================
+    // LEER DEL STORE (en lugar de useState)
+    // ==============================
+    const {
+        tickets,
+        ticketsCerrados,
+        analistas,
+        loading,
+        loadingCerrados,
+        error,
+        showCerrados,
+        userData,
+        infoData,
+        ticketsConRecomendaciones,
+        expandedTickets,
+        filterEstado,
+        filterAsignado,
+        filterPrioridad
+    } = store.supervisor;
 
     // Combinar con datos del store global
     const analistasCombinados = store.analistas?.length > 0 ? store.analistas : analistas;
     const ticketsCerradosCombinados = store.ticketsCerrados?.length > 0 ? store.ticketsCerrados : ticketsCerrados;
 
-    // Filtros
-    const [filterEstado, setFilterEstado] = useState('');
-    const [filterAsignado, setFilterAsignado] = useState('');
-    const [filterPrioridad, setFilterPrioridad] = useState('');
+    // ==============================
+    // FUNCIONES DE DISPATCH (en lugar de setters)
+    // ==============================
+    
+    // Funciones para filtros
+    const setFilterEstado = (value) => dispatch({ type: 'SUPERVISOR_SET_FILTER_ESTADO', payload: value });
+    const setFilterAsignado = (value) => dispatch({ type: 'SUPERVISOR_SET_FILTER_ASIGNADO', payload: value });
+    const setFilterPrioridad = (value) => dispatch({ type: 'SUPERVISOR_SET_FILTER_PRIORIDAD', payload: value });
+    const setShowCerrados = (value) => dispatch({ type: 'SUPERVISOR_SET_SHOW_CERRADOS', payload: value });
+    const setError = (value) => dispatch({ type: 'SUPERVISOR_SET_ERROR', payload: value });
+    const setInfoData = (value) => dispatch({ type: 'SUPERVISOR_SET_INFO_DATA', payload: value });
+
+    // Toggle expansión de ticket
+    const toggleTicketExpansion = (ticketId) => {
+        dispatch({ type: 'SUPERVISOR_TOGGLE_EXPANDED_TICKET', payload: ticketId });
+    };
+
+    // ==============================
+    // FUNCIONES ASYNC (usan supervisorActions)
+    // ==============================
+
+    // Actualizar tickets
+    const actualizarTickets = async () => {
+        await supervisorActions.loadTickets(dispatch, store.auth.token);
+    };
+
+    // Actualizar analistas
+    const actualizarAnalistas = async () => {
+        await supervisorActions.loadAnalistas(dispatch, store.auth.token);
+    };
+
+    // Cargar tickets cerrados
+    const cargarTicketsCerrados = async () => {
+        await supervisorActions.loadClosedTickets(dispatch, store.auth.token);
+    };
+
+    // Actualizar todas las tablas
+    const actualizarTodasLasTablas = async () => {
+        await actualizarTickets();
+        await actualizarAnalistas();
+        if (showCerrados) {
+            await cargarTicketsCerrados();
+        }
+    };
+
+    // ==============================
+    // SELECTORES (funciones puras)
+    // ==============================
+
+    // Filtrar tickets
+    const getFilteredTickets = () => {
+        return supervisorActions.getFilteredTickets(store.supervisor);
+    };
+
+    // Estadísticas
+    const getStats = () => supervisorActions.getStats(tickets);
 
     // Backend request helper
     const backendRequest = async (path, options = {}) => {
@@ -47,149 +114,72 @@ export function useSupervisorData({ store, dispatch }) {
         throw new Error('Network request failed');
     };
 
-    // Actualizar tickets
-    const actualizarTickets = async () => {
-        try {
-            const token = store.auth.token;
-            const resp = await backendRequest('/api/tickets/supervisor', {
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-            });
-            const ticketsData = await resp.json();
-            setTickets(ticketsData);
-        } catch (err) {
-            setError('No se pudieron cargar tickets');
-        }
-    };
-
-    // Actualizar analistas
-    const actualizarAnalistas = async () => {
-        try {
-            const token = store.auth.token;
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/analistas`, {
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setAnalistas(data);
-                dispatch({ type: "analistas_set_list", payload: data });
-            }
-        } catch (err) {}
-    };
-
-    // Cargar tickets cerrados
-    const cargarTicketsCerrados = async () => {
-        try {
-            setLoadingCerrados(true);
-            const token = store.auth.token;
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/supervisor/cerrados`, {
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setTicketsCerrados(data);
-                dispatch({ type: "tickets_cerrados_set_list", payload: data });
-            }
-        } catch (err) {}
-        finally { setLoadingCerrados(false); }
-    };
-
-    // Actualizar todas las tablas
-    const actualizarTodasLasTablas = async () => {
-        await actualizarTickets();
-        await actualizarAnalistas();
-        if (showCerrados) await cargarTicketsCerrados();
-    };
-
-    // Filtrar tickets
-    const getFilteredTickets = () => {
-        let filtered = tickets;
-        if (filterEstado) filtered = filtered.filter(t => t.estado === filterEstado);
-        if (filterAsignado === 'asignados') {
-            filtered = filtered.filter(t => t.asignacion_actual?.analista);
-        } else if (filterAsignado === 'no-asignados') {
-            filtered = filtered.filter(t => !t.asignacion_actual?.analista);
-        }
-        if (filterPrioridad) filtered = filtered.filter(t => t.prioridad === filterPrioridad);
-        return filtered;
-    };
-
-    // Estadísticas
-    const getStats = () => ({
-        total: tickets.length,
-        activos: tickets.filter(t => t.estado === 'activo').length,
-        resueltos: tickets.filter(t => t.estado === 'resuelto').length,
-        escalados: tickets.filter(t => t.estado === 'escalado').length
-    });
-
-    // Toggle expansión de ticket
-    const toggleTicketExpansion = (ticketId) => {
-        setExpandedTickets(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(ticketId)) newSet.delete(ticketId);
-            else newSet.add(ticketId);
-            return newSet;
-        });
-    };
+    // ==============================
+    // EFFECTS (cargar datos)
+    // ==============================
 
     // Cargar datos del usuario
     useEffect(() => {
-        const cargarDatosUsuario = async () => {
-            try {
-                const token = store.auth.token;
-                const userId = tokenUtils.getUserId(token);
-                if (userId) {
-                    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/supervisores/${userId}`, {
-                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-                    });
-                    if (response.ok) {
-                        const data = await response.json();
-                        setUserData(data);
-                        setInfoData({
-                            nombre: data.nombre === 'Pendiente' ? '' : data.nombre || '',
-                            apellido: data.apellido === 'Pendiente' ? '' : data.apellido || '',
-                            email: data.email || '',
-                            area_responsable: data.area_responsable || '',
-                            password: '', confirmPassword: ''
-                        });
-                        dispatch({ type: 'SET_USER', payload: data });
-                    }
-                }
-            } catch (err) {}
-        };
         if (store.auth.isAuthenticated && store.auth.token && !store.auth.user) {
-            cargarDatosUsuario();
+            supervisorActions.loadUserData(dispatch, store.auth.token);
         }
-    }, [store.auth.isAuthenticated, store.auth.token, store.auth.user]);
+    }, [store.auth.isAuthenticated, store.auth.token, store.auth.user, dispatch]);
 
     // Cargar datos iniciales
     useEffect(() => {
         const cargarDatos = async () => {
+            dispatch({ type: 'SUPERVISOR_SET_LOADING', payload: true });
             try {
-                setLoading(true);
                 await actualizarTickets();
                 await actualizarAnalistas();
             } catch (err) {
-                setError(err.message);
+                dispatch({ type: 'SUPERVISOR_SET_ERROR', payload: err.message });
             } finally {
-                setLoading(false);
+                dispatch({ type: 'SUPERVISOR_SET_LOADING', payload: false });
             }
         };
-        cargarDatos();
+        
+        if (store.auth.token) {
+            cargarDatos();
+        }
     }, [store.auth.token]);
 
+    // ==============================
+    // RETORNO (misma interfaz que antes)
+    // ==============================
     return {
-        tickets, setTickets,
-        ticketsCerrados, setTicketsCerrados,
-        analistas, analistasCombinados, ticketsCerradosCombinados,
-        loading, loadingCerrados, error, setError,
-        showCerrados, setShowCerrados,
-        userData, infoData, setInfoData,
-        ticketsConRecomendaciones, expandedTickets,
-        filterEstado, setFilterEstado,
-        filterAsignado, setFilterAsignado,
-        filterPrioridad, setFilterPrioridad,
-        actualizarTodasLasTablas, cargarTicketsCerrados,
-        getFilteredTickets, getStats, toggleTicketExpansion,
+        // Datos (del store)
+        tickets,
+        ticketsCerrados,
+        analistas,
+        analistasCombinados,
+        ticketsCerradosCombinados,
+        loading,
+        loadingCerrados,
+        error,
+        showCerrados,
+        userData,
+        infoData,
+        ticketsConRecomendaciones,
+        expandedTickets,
+        filterEstado,
+        filterAsignado,
+        filterPrioridad,
+        
+        // Setters (dispatch wrappers)
+        setFilterEstado,
+        setFilterAsignado,
+        setFilterPrioridad,
+        setShowCerrados,
+        setError,
+        setInfoData,
+        
+        // Funciones
+        actualizarTodasLasTablas,
+        cargarTicketsCerrados,
+        getFilteredTickets,
+        getStats,
+        toggleTicketExpansion,
         backendRequest
     };
 }

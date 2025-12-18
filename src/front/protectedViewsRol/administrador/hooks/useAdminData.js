@@ -1,187 +1,107 @@
 /**
  * useAdminData - Hook para gestión de datos del administrador
+ * 
+ * REFACTORIZADO: Arquitectura tiback-hello
+ * - Eliminados todos los useState
+ * - Usa store.admin como fuente de verdad
+ * - dispatch para modificar estado
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import useGlobalReducer from '../../../hooks/useGlobalReducer';
-import { tokenUtils } from '../../../store';
+import { adminActions } from '../../../store';
 
 export function useAdminData() {
   const { store, dispatch } = useGlobalReducer();
   
-  // Estados principales
-  const [tickets, setTickets] = useState([]);
-  const [clientes, setClientes] = useState([]);
-  const [analistas, setAnalistas] = useState([]);
-  const [supervisores, setSupervisores] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [userData, setUserData] = useState(null);
+  // ==============================
+  // LEER DEL STORE (en lugar de useState)
+  // ==============================
+  const {
+    tickets,
+    clientes,
+    analistas,
+    supervisores,
+    loading,
+    error,
+    userData
+  } = store.admin;
+
+  // ==============================
+  // FUNCIONES DE DISPATCH (en lugar de setters)
+  // ==============================
+  const setTickets = (value) => dispatch({ type: 'ADMIN_SET_TICKETS', payload: value });
+  const setClientes = (value) => dispatch({ type: 'ADMIN_SET_CLIENTES', payload: value });
+  const setAnalistas = (value) => dispatch({ type: 'ADMIN_SET_ANALISTAS', payload: value });
+  const setSupervisores = (value) => dispatch({ type: 'ADMIN_SET_SUPERVISORES', payload: value });
+  const setError = (value) => dispatch({ type: 'ADMIN_SET_ERROR', payload: value });
+
+  // ==============================
+  // FUNCIONES ASYNC (usan adminActions)
+  // ==============================
 
   // Función para actualizar tickets
   const actualizarTickets = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets`,
-        {
-          headers: {
-            'Authorization': `Bearer ${store.auth.token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        setTickets(data);
-      }
-    } catch (err) {
-      console.error('Error al actualizar tickets:', err);
-    }
+    await adminActions.loadTickets(dispatch, store.auth.token);
   };
 
   // Función para actualizar clientes
   const actualizarClientes = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/clientes`,
-        {
-          headers: {
-            'Authorization': `Bearer ${store.auth.token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        setClientes(data);
-      }
-    } catch (err) {
-      console.error('Error al actualizar clientes:', err);
-    }
+    await adminActions.loadClientes(dispatch, store.auth.token);
   };
 
   // Función para actualizar analistas
   const actualizarAnalistas = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/analistas`,
-        {
-          headers: {
-            'Authorization': `Bearer ${store.auth.token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        setAnalistas(data);
-      }
-    } catch (err) {
-      console.error('Error al actualizar analistas:', err);
-    }
+    await adminActions.loadAnalistas(dispatch, store.auth.token);
   };
 
   // Función para actualizar supervisores
   const actualizarSupervisores = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/supervisores`,
-        {
-          headers: {
-            'Authorization': `Bearer ${store.auth.token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSupervisores(data);
-      }
-    } catch (err) {
-      console.error('Error al actualizar supervisores:', err);
-    }
+    await adminActions.loadSupervisores(dispatch, store.auth.token);
   };
 
   // Actualizar todos los datos
   const actualizarTodo = async () => {
-    await Promise.all([
-      actualizarTickets(),
-      actualizarClientes(),
-      actualizarAnalistas(),
-      actualizarSupervisores()
-    ]);
+    await adminActions.loadAllStats(dispatch, store.auth.token);
   };
+
+  // ==============================
+  // EFFECTS
+  // ==============================
 
   // Cargar datos iniciales
   useEffect(() => {
-    const cargarDatos = async () => {
-      try {
-        setLoading(true);
-        const userId = tokenUtils.getUserId(store.auth.token);
-        
-        // Cargar datos del admin
-        const userResponse = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/administradores/${userId}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${store.auth.token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          setUserData(userData);
-          dispatch({ type: 'SET_USER', payload: userData });
-        }
-
-        await actualizarTodo();
-      } catch (err) {
-        console.error('Error al cargar datos:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (store.auth.token) {
-      cargarDatos();
+      adminActions.loadAllStats(dispatch, store.auth.token);
     }
-  }, [store.auth.token]);
+  }, [store.auth.token, dispatch]);
+
+  // ==============================
+  // SELECTORES
+  // ==============================
 
   // Estadísticas globales
-  const getStats = () => {
-    return {
-      totalTickets: tickets.length,
-      totalClientes: clientes.length,
-      totalAnalistas: analistas.length,
-      totalSupervisores: supervisores.length,
-      ticketsAbiertos: tickets.filter(t => t.estado === 'abierto').length,
-      ticketsEnProgreso: tickets.filter(t => t.estado === 'en_progreso').length,
-      ticketsSolucionados: tickets.filter(t => t.estado === 'solucionado').length,
-      ticketsCerrados: tickets.filter(t => t.estado === 'cerrado').length
-    };
-  };
+  const getStats = () => adminActions.getStats(store.admin);
 
+  // ==============================
+  // RETORNO (misma interfaz que antes)
+  // ==============================
   return {
-    // Estados
+    // Estados (del store)
     tickets,
-    setTickets,
     clientes,
-    setClientes,
     analistas,
-    setAnalistas,
     supervisores,
-    setSupervisores,
     loading,
     error,
-    setError,
     userData,
+    
+    // Setters (dispatch wrappers)
+    setTickets,
+    setClientes,
+    setAnalistas,
+    setSupervisores,
+    setError,
     
     // Funciones
     actualizarTickets,
@@ -191,8 +111,10 @@ export function useAdminData() {
     actualizarTodo,
     getStats,
     
-    // Store
+    // Store y dispatch
     store,
     dispatch
   };
 }
+
+export default useAdminData;

@@ -21,6 +21,11 @@ export {
   clearAllTokens,
   initialStore,
   clienteActions,
+  supervisorActions,
+  analistaActions,
+  adminActions,
+  chatActions,
+  iaActions,
 } from './store/index.js';
 
 // Importar acciones base

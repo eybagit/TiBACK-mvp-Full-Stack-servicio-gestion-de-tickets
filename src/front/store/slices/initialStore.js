@@ -3,6 +3,12 @@
  */
 
 import { clienteInitialState } from './clienteSlice.js';
+import { supervisorInitialState } from './supervisorSlice.js';
+import { analistaInitialState } from './analistaSlice.js';
+import { adminInitialState } from './adminSlice.js';
+import { chatInitialState } from './chatSlice.js';
+import { iaInitialState } from './iaSlice.js';
+import { crudInitialState } from './crudSlice.js';
 
 export const initialStore = () => {
   return {
@@ -12,6 +18,23 @@ export const initialStore = () => {
     // Estado de página Cliente (arquitectura tiback-hello)
     clientePage: { ...clienteInitialState },
 
+    // Estado de página Supervisor (arquitectura tiback-hello)
+    supervisor: { ...supervisorInitialState },
+
+    // Estado de página Analista (arquitectura tiback-hello)
+    analista: { ...analistaInitialState },
+
+    // Estado de página Administrador (arquitectura tiback-hello)
+    admin: { ...adminInitialState },
+
+    // Estado de Chat (arquitectura tiback-hello)
+    chat: { ...chatInitialState },
+
+    // Estado de IA (arquitectura tiback-hello)
+    ia: { ...iaInitialState },
+
+    // Estado de CRUD genérico (arquitectura tiback-hello)
+    crud: { ...crudInitialState },
 
     // Estado de autenticación - SOLO TOKEN COMO FUENTE DE VERDAD
     auth: {

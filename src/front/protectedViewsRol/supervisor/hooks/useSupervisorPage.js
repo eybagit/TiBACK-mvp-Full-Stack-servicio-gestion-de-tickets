@@ -1,16 +1,25 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+/**
+ * useSupervisorPage - Hook principal que orquesta los otros hooks
+ * 
+ * REFACTORIZADO: Arquitectura tiback-hello
+ * - Eliminados todos los useState
+ * - Eliminado useNavigate (usar Link declarativo)
+ * - Usa store.supervisor como fuente de verdad
+ * - dispatch para modificar estado
+ */
+
+import { useEffect } from 'react';
 import useGlobalReducer from '../../../hooks/useGlobalReducer';
 import { useSupervisorData } from './useSupervisorData';
 import { useTicketOperations } from './useTicketOperations';
 import { useWebSocketSync } from './useWebSocketSync';
+import { supervisorActions } from '../../../store';
 
 /**
- * useSupervisorPage - Hook principal que orquesta los otros hooks
- * Dividido en: useSupervisorData, useTicketOperations, useWebSocketSync
+ * useSupervisorPage - Hook principal del supervisor
+ * Orquesta los hooks de datos, operaciones y WebSocket
  */
 export function useSupervisorPage() {
-    const navigate = useNavigate();
     const { 
         store, logout, dispatch, 
         connectWebSocket, disconnectWebSocket, 
@@ -19,44 +28,70 @@ export function useSupervisorPage() {
         joinCriticalRooms, joinAllCriticalRooms 
     } = useGlobalReducer();
 
-    // Estados para UI
-    const [sidebarHidden, setSidebarHidden] = useState(false);
-    const [activeView, setActiveView] = useState('dashboard');
-    const [showUserDropdown, setShowUserDropdown] = useState(false);
-    const [showInfoForm, setShowInfoForm] = useState(false);
-    const [isDarkMode, setIsDarkMode] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [showSearchResults, setShowSearchResults] = useState(false);
-    const [updatingInfo, setUpdatingInfo] = useState(false);
-    const [selectedTicketImages, setSelectedTicketImages] = useState([]);
-    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    // ==============================
+    // LEER DEL STORE (en lugar de useState)
+    // ==============================
+    const {
+        sidebarHidden,
+        activeView,
+        showUserDropdown,
+        showInfoForm,
+        isDarkMode,
+        searchQuery,
+        searchResults,
+        showSearchResults,
+        updatingInfo,
+        selectedTicketImages,
+        selectedImageIndex
+    } = store.supervisor;
+
+    // ==============================
+    // HOOKS COMPUESTOS
+    // ==============================
 
     // Hook de datos
     const dataHook = useSupervisorData({ store, dispatch });
     
     // Extraer funciones y estados de dataHook
     const {
-        tickets, setTickets,
-        ticketsCerrados, setTicketsCerrados,
-        analistas, analistasCombinados, ticketsCerradosCombinados,
-        loading, loadingCerrados, error, setError,
-        showCerrados, setShowCerrados,
-        userData, infoData, setInfoData,
-        ticketsConRecomendaciones, expandedTickets,
-        filterEstado, setFilterEstado,
-        filterAsignado, setFilterAsignado,
-        filterPrioridad, setFilterPrioridad,
-        actualizarTodasLasTablas, cargarTicketsCerrados,
-        getFilteredTickets, getStats, toggleTicketExpansion
+        tickets,
+        ticketsCerrados,
+        analistas,
+        analistasCombinados,
+        ticketsCerradosCombinados,
+        loading,
+        loadingCerrados,
+        error,
+        showCerrados,
+        setShowCerrados,
+        userData,
+        infoData,
+        setInfoData,
+        ticketsConRecomendaciones,
+        expandedTickets,
+        filterEstado,
+        setFilterEstado,
+        filterAsignado,
+        setFilterAsignado,
+        filterPrioridad,
+        setFilterPrioridad,
+        actualizarTodasLasTablas,
+        cargarTicketsCerrados,
+        getFilteredTickets,
+        getStats,
+        toggleTicketExpansion
     } = dataHook;
 
     // Hook de operaciones de tickets
     const operationsHook = useTicketOperations({
-        store, dispatch, tickets, setTickets,
-        ticketsCerrados, setTicketsCerrados,
-        setError, setActiveView, actualizarTodasLasTablas,
-        emitCriticalTicketAction, navigate
+        store, dispatch, tickets,
+        setTickets: (data) => dispatch({ type: 'SUPERVISOR_SET_TICKETS', payload: data }),
+        ticketsCerrados,
+        setTicketsCerrados: (data) => dispatch({ type: 'SUPERVISOR_SET_TICKETS_CERRADOS', payload: data }),
+        setError: (msg) => dispatch({ type: 'SUPERVISOR_SET_ERROR', payload: msg }),
+        setActiveView: (view) => dispatch({ type: 'SUPERVISOR_SET_ACTIVE_VIEW', payload: view }),
+        actualizarTodasLasTablas,
+        emitCriticalTicketAction
     });
 
     const {
@@ -71,148 +106,154 @@ export function useSupervisorPage() {
         store, connectWebSocket, disconnectWebSocket,
         joinRoom, joinTicketRoom, startRealtimeSync,
         joinCriticalRooms, joinAllCriticalRooms,
-        tickets, setTickets, ticketsCerrados, setTicketsCerrados,
+        tickets,
+        setTickets: (data) => dispatch({ type: 'SUPERVISOR_SET_TICKETS', payload: data }),
+        ticketsCerrados,
+        setTicketsCerrados: (data) => dispatch({ type: 'SUPERVISOR_SET_TICKETS_CERRADOS', payload: data }),
         actualizarTodasLasTablas
     });
 
-    // Funciones UI
-    const toggleSidebar = () => setSidebarHidden(!sidebarHidden);
-    const changeView = (view) => setActiveView(view);
-    const toggleTheme = () => {
-        setIsDarkMode(!isDarkMode);
-        document.body.classList.toggle('dark-theme');
-    };
+    // ==============================
+    // FUNCIONES UI (dispatch)
+    // ==============================
+
+    const toggleSidebar = () => dispatch({ type: 'SUPERVISOR_TOGGLE_SIDEBAR' });
+    const changeView = (view) => dispatch({ type: 'SUPERVISOR_SET_ACTIVE_VIEW', payload: view });
+    const toggleTheme = () => dispatch({ type: 'SUPERVISOR_TOGGLE_DARK_MODE' });
+    const setShowUserDropdown = (value) => dispatch({ type: 'SUPERVISOR_SET_SHOW_USER_DROPDOWN', payload: value });
+    const setShowInfoForm = (value) => dispatch({ type: 'SUPERVISOR_SET_SHOW_INFO_FORM', payload: value });
+    const setSearchQuery = (value) => dispatch({ type: 'SUPERVISOR_SET_SEARCH_QUERY', payload: value });
+    const setSearchResults = (value) => dispatch({ type: 'SUPERVISOR_SET_SEARCH_RESULTS', payload: value });
+    const setShowSearchResults = (value) => dispatch({ type: 'SUPERVISOR_SET_SHOW_SEARCH_RESULTS', payload: value });
+    const setSelectedTicketImages = (value) => dispatch({ type: 'SUPERVISOR_SET_SELECTED_TICKET_IMAGES', payload: value });
+    const setSelectedImageIndex = (value) => dispatch({ type: 'SUPERVISOR_SET_SELECTED_IMAGE_INDEX', payload: value });
 
     const handleSearch = (query) => {
-        setSearchQuery(query);
-        if (query.trim()) {
-            const results = tickets.filter(ticket =>
-                ticket.titulo.toLowerCase().includes(query.toLowerCase())
-            );
-            setSearchResults(results);
-            setShowSearchResults(true);
-        } else {
-            setSearchResults([]);
-            setShowSearchResults(false);
-        }
+        supervisorActions.handleSearch(dispatch, query, tickets);
     };
 
     const closeSearchResults = () => {
-        setShowSearchResults(false);
-        setSearchQuery('');
-        setSearchResults([]);
+        dispatch({ type: 'SUPERVISOR_CLEAR_SEARCH' });
     };
 
     const selectTicketFromSearch = (ticket) => {
-        setActiveView(`ticket-${ticket.id}`);
-        closeSearchResults();
+        supervisorActions.selectTicketFromSearch(dispatch, ticket);
     };
 
     const handleInfoChange = (e) => {
-        const { name, value } = e.target;
-        setInfoData(prev => ({ ...prev, [name]: value }));
+        supervisorActions.handleInfoChange(dispatch, e);
     };
 
     // Actualizar información del perfil
     const updateInfo = async () => {
-        try {
-            setUpdatingInfo(true);
-            const token = store.auth.token;
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/supervisores/perfil`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(infoData)
-            });
-            if (response.ok) {
-                const data = await response.json();
-                dispatch({ type: 'SET_USER', payload: data });
-                alert('Información actualizada correctamente');
-            }
-        } catch (err) {
-            console.error('Error actualizando perfil:', err);
-        } finally {
-            setUpdatingInfo(false);
+        const result = await supervisorActions.updateProfile(dispatch, store.auth.token, infoData);
+        if (result.success) {
+            alert('Información actualizada correctamente');
         }
+        return result;
     };
 
     // Actualizar información (modal)
     const actualizarInformacion = async (e) => {
         e.preventDefault();
         await updateInfo();
-        setShowInfoForm(false);
     };
 
     // Escalar ticket
     const escalarTicket = async (ticketId) => {
-        try {
-            const token = store.auth.token;
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/escalar`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            if (response.ok) {
-                actualizarTodasLasTablas();
-            }
-        } catch (err) {
-            console.error('Error escalando ticket:', err);
+        const result = await supervisorActions.escalateTicket(dispatch, store.auth.token, ticketId);
+        if (result.success) {
+            await actualizarTodasLasTablas();
         }
     };
 
     // Agregar comentario
     const agregarComentario = (ticketId) => {
-        setActiveView(`comentarios-${ticketId}`);
+        dispatch({ type: 'SUPERVISOR_SET_ACTIVE_VIEW', payload: `comentarios-${ticketId}` });
     };
 
-    // Retornar todo lo necesario para el componente
+    // ==============================
+    // RETORNO (misma interfaz que antes)
+    // ==============================
     return {
-        // Navegación
-        navigate, logout,
+        // Logout (NO navigate - usar Link declarativo)
+        logout,
         
-        // Estados UI
-        sidebarHidden, activeView, setActiveView,
-        showUserDropdown, setShowUserDropdown,
-        showInfoForm, setShowInfoForm,
-        isDarkMode, searchQuery, setSearchQuery,
-        searchResults, setSearchResults,
-        showSearchResults, setShowSearchResults,
-        selectedTicketImages, setSelectedTicketImages,
-        selectedImageIndex, setSelectedImageIndex,
+        // Estados UI (del store)
+        sidebarHidden,
+        activeView,
+        setActiveView: changeView,
+        showUserDropdown,
+        setShowUserDropdown,
+        showInfoForm,
+        setShowInfoForm,
+        isDarkMode,
+        searchQuery,
+        setSearchQuery,
+        searchResults,
+        setSearchResults,
+        showSearchResults,
+        setShowSearchResults,
+        selectedTicketImages,
+        setSelectedTicketImages,
+        selectedImageIndex,
+        setSelectedImageIndex,
         
-        // Estados de datos
-        tickets, ticketsCerrados, analistas,
-        analistasCombinados, ticketsCerradosCombinados,
-        loading, loadingCerrados, error,
-        showCerrados, setShowCerrados,
-        userData, infoData, setInfoData,
-        ticketsConRecomendaciones, expandedTickets,
-        filterEstado, setFilterEstado,
-        filterAsignado, setFilterAsignado,
-        filterPrioridad, setFilterPrioridad,
+        // Estados de datos (del store via dataHook)
+        tickets,
+        ticketsCerrados,
+        analistas,
+        analistasCombinados,
+        ticketsCerradosCombinados,
+        loading,
+        loadingCerrados,
+        error,
+        showCerrados,
+        setShowCerrados,
+        userData,
+        infoData,
+        setInfoData,
+        ticketsConRecomendaciones,
+        expandedTickets,
+        filterEstado,
+        setFilterEstado,
+        filterAsignado,
+        setFilterAsignado,
+        filterPrioridad,
+        setFilterPrioridad,
         updatingInfo,
         
         // Funciones UI
-        toggleSidebar, changeView, toggleTheme,
-        handleSearch, selectTicketFromSearch,
-        closeSearchResults, toggleTicketExpansion,
+        toggleSidebar,
+        changeView,
+        toggleTheme,
+        handleSearch,
+        selectTicketFromSearch,
+        closeSearchResults,
+        toggleTicketExpansion,
         handleInfoChange,
         
         // Funciones de datos
-        cargarTicketsCerrados, actualizarTodasLasTablas,
-        getFilteredTickets, getStats,
+        cargarTicketsCerrados,
+        actualizarTodasLasTablas,
+        getFilteredTickets,
+        getStats,
         
         // Funciones de operaciones
-        asignarTicket, cerrarTicket, reabrirTicket,
-        escalarTicket, agregarComentario,
-        generarRecomendacion, getAvailableActions,
-        getSemaforoColor, tieneSolicitudReapertura,
-        fueEscaladoPorAnalista, getEstadoColor, getPrioridadColor,
-        updateInfo, actualizarInformacion,
+        asignarTicket,
+        cerrarTicket,
+        reabrirTicket,
+        escalarTicket,
+        agregarComentario,
+        generarRecomendacion,
+        getAvailableActions,
+        getSemaforoColor,
+        tieneSolicitudReapertura,
+        fueEscaladoPorAnalista,
+        getEstadoColor,
+        getPrioridadColor,
+        updateInfo,
+        actualizarInformacion,
         
         // Computados
         filteredTickets: getFilteredTickets(),
