@@ -54,12 +54,11 @@ function ClienteChat({
                                                     <img
                                                         src={ticket.url_imagen}
                                                         alt="Imagen del ticket"
-                                                        className="img-thumbnail"
-                                                        style={{ width: '30px', height: '30px', objectFit: 'cover' }}
+                                                        className="img-thumbnail thumbnail-small"
                                                     />
                                                 ) : (
                                                     <span className="text-muted">
-                                                        <i className="fas fa-image" style={{ fontSize: '12px' }}></i>
+                                                        <i className="fas fa-image icon-tiny"></i>
                                                     </span>
                                                 )}
                                             </div>

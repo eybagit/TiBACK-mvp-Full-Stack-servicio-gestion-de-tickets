@@ -202,15 +202,14 @@ export const Ticket = () => {
                                                 <div className="d-flex align-items-center">
                                                     <span className="me-2">#{ticket.id}</span>
                                                     {ticket.url_imagen ? (
-                                                        <img 
-                                                            src={ticket.url_imagen} 
-                                                            alt="Imagen del ticket" 
-                                                            className="img-thumbnail"
-                                                            style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+                                                        <img
+                                                            src={ticket.url_imagen}
+                                                            alt="Imagen del ticket"
+                                                            className="img-thumbnail img-thumb-xs"
                                                         />
                                                     ) : (
                                                         <span className="text-muted">
-                                                            <i className="fas fa-image" style={{ fontSize: '12px' }}></i>
+                                                            <i className="fas fa-image icon-tiny"></i>
                                                         </span>
                                                     )}
                                                 </div>
@@ -223,7 +222,7 @@ export const Ticket = () => {
                                                     <img
                                                         src={ticket.img_urls[0]}
                                                         alt={`ticket-${ticket.id}-img`}
-                                                        style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid #ccc', cursor: 'pointer' }}
+                                                        className="img-thumb-sm cursor-pointer"
                                                         onClick={() => {
                                                             setModalImages(ticket.img_urls);
                                                             setSelectedImageIndex(0);
@@ -237,12 +236,7 @@ export const Ticket = () => {
                                             <td>
                                                 <span className={getEstadoBadgeClass(ticket.estado)}>{ticket.estado}</span>
                                             </td>
-                                            <td style={{
-                                                maxWidth: '200px',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap'
-                                            }}>
+                                            <td className="text-truncate-cell">
                                                 {ticket.titulo}
                                             </td>
                                             <td>
@@ -280,7 +274,7 @@ export const Ticket = () => {
 
             {/* Modal de imágenes con carrusel */}
             {showModal && Array.isArray(modalImages) && modalImages.length > 0 && (
-                <div className="modal fade show" style={{ display: 'block', background: 'rgba(0,0,0,0.7)' }} tabIndex="-1" role="dialog">
+                <div className="modal fade show modal-backdrop-dark" tabIndex="-1" role="dialog">
                     <div className="modal-dialog modal-dialog-centered" role="document">
                         <div className="modal-content">
                             <div className="modal-header">
@@ -291,7 +285,7 @@ export const Ticket = () => {
                                 <img
                                     src={modalImages[selectedImageIndex]}
                                     alt={`ticket-img-${selectedImageIndex}`}
-                                    style={{ maxWidth: 500, maxHeight: 400, borderRadius: 8, border: '1px solid #ccc' }}
+                                    className="img-preview-md rounded border"
                                 />
                                 {modalImages.length > 1 && (
                                     <div className="mt-3">

@@ -219,14 +219,7 @@ function ClienteDashboard({ tickets, changeView }) {
                                                     </td>
                                                     <td className="text-center">
                                                         <span className="d-flex align-items-center justify-content-center gap-2">
-                                                            <span
-                                                                className="rounded-circle d-inline-block"
-                                                                style={{
-                                                                    width: '8px',
-                                                                    height: '8px',
-                                                                    backgroundColor: 'var(--ct-info)'
-                                                                }}
-                                                            ></span>
+                                                            <span className="rounded-circle d-inline-block status-dot dot-ct-info"></span>
                                                             <span className="text-dark dark-theme:text-white">
                                                                 {new Date(ticket.fecha_creacion).toLocaleDateString('es-ES', {
                                                                     year: 'numeric',
@@ -274,22 +267,8 @@ function ClienteDashboard({ tickets, changeView }) {
                                 </p>
                             </div>
                             <button
-                                className="btn btn-light btn-lg px-5 py-3 fw-bold shadow-sm"
+                                className="btn btn-light btn-lg px-5 py-3 fw-bold shadow-sm btn-pill-hover"
                                 onClick={() => changeView('tickets')}
-                                style={{
-                                    borderRadius: '50px',
-                                    fontSize: '1.1rem',
-                                    transition: 'all 0.3s ease',
-                                    border: 'none'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.target.style.transform = 'translateY(-2px)';
-                                    e.target.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.transform = 'translateY(0)';
-                                    e.target.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
-                                }}
                             >
                                 <i className="fas fa-list me-2"></i>
                                 Ver Todos los Tickets

@@ -49,7 +49,7 @@ function AnalistaTicketsList({
                                         <th className="text-center px-3">Cliente</th>
                                         <th className="text-center px-3">Fecha</th>
                                         <th className="text-center px-4">Acciones</th>
-                                        <th className="text-center px-2" style={{ width: '50px' }}>Expandir</th>
+                                        <th className="text-center px-2 th-expand">Expandir</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -79,14 +79,7 @@ function AnalistaTicketsList({
                                                     </td>
                                                     <td className="px-4">
                                                         <div className="d-flex align-items-start gap-2">
-                                                            <span
-                                                                className="rounded-circle d-inline-block mt-1"
-                                                                style={{
-                                                                    width: '8px',
-                                                                    height: '8px',
-                                                                    backgroundColor: '#6f42c1'
-                                                                }}
-                                                            ></span>
+                                                            <span className="rounded-circle d-inline-block mt-1 status-dot bg-purple"></span>
                                                             <div>
                                                                 <div className="fw-semibold mb-1 text-dark">{ticket.titulo}</div>
                                                                 <small className="text-muted">
@@ -135,14 +128,7 @@ function AnalistaTicketsList({
                                                     </td>
                                                     <td className="text-center px-3">
                                                         <span className="d-flex align-items-center justify-content-center gap-2">
-                                                            <span
-                                                                className="rounded-circle d-inline-block"
-                                                                style={{
-                                                                    width: '8px',
-                                                                    height: '8px',
-                                                                    backgroundColor: '#17a2b8'
-                                                                }}
-                                                            ></span>
+                                                            <span className="rounded-circle d-inline-block status-dot dot-ct-info"></span>
                                                             <span className="text-dark">
                                                                 {ticket.cliente?.nombre || 'Sin cliente'}
                                                             </span>
@@ -150,14 +136,7 @@ function AnalistaTicketsList({
                                                     </td>
                                                     <td className="text-center px-3">
                                                         <span className="d-flex align-items-center justify-content-center gap-2">
-                                                            <span
-                                                                className="rounded-circle d-inline-block"
-                                                                style={{
-                                                                    width: '8px',
-                                                                    height: '8px',
-                                                                    backgroundColor: '#17a2b8'
-                                                                }}
-                                                            ></span>
+                                                            <span className="rounded-circle d-inline-block status-dot dot-ct-info"></span>
                                                             <small className="text-dark">
                                                                 {new Date(ticket.fecha_creacion).toLocaleDateString('es-ES', {
                                                                     year: 'numeric',
@@ -243,14 +222,7 @@ function AnalistaTicketsList({
                                                     </td>
                                                     <td className="text-center px-2">
                                                         <button
-                                                            className="btn btn-link p-0"
-                                                            style={{
-                                                                width: '30px',
-                                                                height: '30px',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center'
-                                                            }}
+                                                            className="btn btn-link p-0 btn-expand-toggle"
                                                             onClick={() => toggleTicketExpansion(ticket.id)}
                                                             title={isExpanded ? "Colapsar acciones" : "Expandir acciones"}
                                                         >
@@ -267,8 +239,7 @@ function AnalistaTicketsList({
                                                                 <div className="px-4 py-3">
                                                                     <div className="d-flex gap-2 flex-wrap justify-content-center">
                                                                         <button
-                                                                            className="btn btn-sidebar-teal flex-fill"
-                                                                            style={{ minWidth: '120px' }}
+                                                                            className="btn btn-sidebar-teal flex-fill btn-action-min"
                                                                             title="Ver detalles del ticket"
                                                                             onClick={() => openVerHD(ticket.id)}
                                                                         >
@@ -276,8 +247,7 @@ function AnalistaTicketsList({
                                                                             Ver Detalles
                                                                         </button>
                                                                         <button
-                                                                            className="btn btn-sidebar-accent flex-fill"
-                                                                            style={{ minWidth: '120px' }}
+                                                                            className="btn btn-sidebar-accent flex-fill btn-action-min"
                                                                             title="Ver y agregar comentarios"
                                                                             onClick={() => openComments(ticket.id)}
                                                                         >
@@ -285,8 +255,7 @@ function AnalistaTicketsList({
                                                                             Comentarios
                                                                         </button>
                                                                         <button
-                                                                            className="btn btn-sidebar-secondary flex-fill"
-                                                                            style={{ minWidth: '120px' }}
+                                                                            className="btn btn-sidebar-secondary flex-fill btn-action-min"
                                                                             title="Chat con cliente"
                                                                             onClick={() => openChat(ticket.id)}
                                                                         >
@@ -295,8 +264,7 @@ function AnalistaTicketsList({
                                                                         </button>
                                                                         <div className="btn-group flex-fill" role="group">
                                                                             <button
-                                                                                className="btn btn-sidebar-primary dropdown-toggle"
-                                                                                style={{ minWidth: '120px' }}
+                                                                                className="btn btn-sidebar-primary dropdown-toggle btn-action-min"
                                                                                 type="button"
                                                                                 data-bs-toggle="dropdown"
                                                                                 aria-expanded="false"
@@ -341,8 +309,7 @@ function AnalistaTicketsList({
                                                                             <>
                                                                                 {ticket.estado === 'en_espera' && (
                                                                                     <button
-                                                                                        className="btn btn-success flex-fill"
-                                                                                        style={{ minWidth: '120px' }}
+                                                                                        className="btn btn-success flex-fill btn-action-min"
                                                                                         onClick={() => iniciarTrabajo(ticket.id)}
                                                                                     >
                                                                                         <i className="fas fa-play me-2"></i>
@@ -352,8 +319,7 @@ function AnalistaTicketsList({
 
                                                                                 {ticket.estado === 'en_proceso' && (
                                                                                     <button
-                                                                                        className="btn btn-outline-success flex-fill"
-                                                                                        style={{ minWidth: '120px' }}
+                                                                                        className="btn btn-outline-success flex-fill btn-action-min"
                                                                                         onClick={() => marcarComoResuelto(ticket.id)}
                                                                                     >
                                                                                         <i className="fas fa-check me-2"></i>
@@ -362,8 +328,7 @@ function AnalistaTicketsList({
                                                                                 )}
 
                                                                                 <button
-                                                                                    className="btn btn-outline-warning flex-fill"
-                                                                                    style={{ minWidth: '120px' }}
+                                                                                    className="btn btn-outline-warning flex-fill btn-action-min"
                                                                                     onClick={() => escalarTicket(ticket.id)}
                                                                                 >
                                                                                     <i className="fas fa-arrow-up me-2"></i>

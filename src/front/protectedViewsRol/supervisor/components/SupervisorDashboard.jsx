@@ -197,14 +197,7 @@ function SupervisorDashboard({
                                                     </td>
                                                     <td className="text-center">
                                                         <span className="d-flex align-items-center justify-content-center gap-2">
-                                                            <span
-                                                                className="rounded-circle d-inline-block"
-                                                                style={{
-                                                                    width: '8px',
-                                                                    height: '8px',
-                                                                    backgroundColor: 'var(--ct-info)'
-                                                                }}
-                                                            ></span>
+                                                            <span className="rounded-circle d-inline-block status-dot dot-ct-info"></span>
                                                             <span className="text-dark dark-theme:text-white">
                                                                 {new Date(ticket.fecha_creacion).toLocaleDateString('es-ES', {
                                                                     year: 'numeric',

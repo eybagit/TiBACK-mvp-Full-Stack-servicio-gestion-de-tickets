@@ -40,8 +40,7 @@ function TicketRow({
     return (
         <React.Fragment>
             <tr
-                className={getSemaforoColor ? getSemaforoColor(ticket, []) : ''}
-                style={{ cursor: 'pointer' }}
+                className={`cursor-pointer ${getSemaforoColor ? getSemaforoColor(ticket, []) : ''}`}
             >
                 <td onClick={() => toggleTicketExpansion(ticket.id)}>
                     <div className="d-flex align-items-center gap-2">
@@ -63,22 +62,22 @@ function TicketRow({
                 </td>
                 <td>
                     <span className={`badge bg-${ticket.estado === 'activo' ? 'warning' :
-                            ticket.estado === 'en_progreso' ? 'info' :
-                                ticket.estado === 'resuelto' ? 'success' :
-                                    ticket.estado === 'escalado' ? 'danger' :
-                                        ticket.estado === 'solucionado' ? 'success' :
-                                            ticket.estado === 'solicitud_reapertura' ? 'warning' :
-                                                ticket.estado === 'reabierto' ? 'info' :
-                                                    'secondary'
+                        ticket.estado === 'en_progreso' ? 'info' :
+                            ticket.estado === 'resuelto' ? 'success' :
+                                ticket.estado === 'escalado' ? 'danger' :
+                                    ticket.estado === 'solucionado' ? 'success' :
+                                        ticket.estado === 'solicitud_reapertura' ? 'warning' :
+                                            ticket.estado === 'reabierto' ? 'info' :
+                                                'secondary'
                         }`}>
                         {ticket.estado}
                     </span>
                 </td>
                 <td>
                     <span className={`badge bg-${ticket.prioridad === 'baja' ? 'success' :
-                            ticket.prioridad === 'media' ? 'warning' :
-                                ticket.prioridad === 'alta' ? 'danger' :
-                                    ticket.prioridad === 'critica' ? 'dark' : 'secondary'
+                        ticket.prioridad === 'media' ? 'warning' :
+                            ticket.prioridad === 'alta' ? 'danger' :
+                                ticket.prioridad === 'critica' ? 'dark' : 'secondary'
                         }`}>
                         {ticket.prioridad}
                     </span>

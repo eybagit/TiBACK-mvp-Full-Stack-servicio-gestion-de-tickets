@@ -103,7 +103,7 @@ function ClienteTicketsList({
                                         <th className="text-center px-3">Fecha</th>
                                         <th className="text-center px-3">Calificación</th>
                                         <th className="text-center px-4">Acciones</th>
-                                        <th className="text-center px-2" style={{ width: '50px' }}>Expandir</th>
+                                        <th className="text-center px-2 th-expand">Expandir</th>
                                     </tr>
                                 </thead>
                                 <tbody>

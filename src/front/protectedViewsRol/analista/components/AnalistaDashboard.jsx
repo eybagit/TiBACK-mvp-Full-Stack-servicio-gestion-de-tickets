@@ -216,31 +216,18 @@ function AnalistaDashboard({ tickets, setActiveView }) {
             {/* Sección de acción profesional */}
             <div className="row g-4 mt-4">
                 <div className="col-12">
-                    <div className="hyper-widget card border-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                    <div className="hyper-widget card border-0 shadow-sm card-gradient-purple">
                         <div className="card-body text-center text-white py-5">
                             <div className="mb-4">
-                                <i className="fas fa-ticket-alt fa-4x mb-3" style={{ opacity: 0.8 }}></i>
+                                <i className="fas fa-ticket-alt fa-4x mb-3 opacity-75"></i>
                                 <h3 className="mb-3 fw-bold">Gestiona todos tus tickets</h3>
-                                <p className="mb-4 fs-5" style={{ opacity: 0.9 }}>
+                                <p className="mb-4 fs-5 opacity-75">
                                     Accede a la vista completa de tickets para gestionar, resolver y escalar tus tareas asignadas
                                 </p>
                             </div>
                             <button
-                                className="btn btn-light btn-lg px-5 py-3 fw-semibold"
+                                className="btn btn-light btn-lg px-5 py-3 fw-semibold btn-pill-hover"
                                 onClick={() => setActiveView('tickets')}
-                                style={{
-                                    borderRadius: '50px',
-                                    boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-                                    transition: 'all 0.3s ease'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.target.style.transform = 'translateY(-2px)';
-                                    e.target.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.transform = 'translateY(0)';
-                                    e.target.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
-                                }}
                             >
                                 <i className="fas fa-arrow-right me-2"></i>
                                 Ir a Todos los Tickets

@@ -109,7 +109,7 @@ function ClienteHeader({
                 <div className="d-flex align-items-center gap-3">
                     {/* Botón de sincronizar */}
                     <button
-                        className="btn btn-outline-primary d-flex align-items-center gap-2"
+                        className="btn btn-outline-primary btn-sync d-flex align-items-center gap-2"
                         onClick={async () => {
                             try {
                                 console.log('🔄 Iniciando sincronización desde ClienteHeader...');
@@ -120,23 +120,6 @@ function ClienteHeader({
                             }
                         }}
                         title="Sincronizar datos"
-                        style={{
-                            borderColor: 'var(--ct-primary)',
-                            color: 'var(--ct-primary)',
-                            fontSize: '0.9rem',
-                            fontWeight: '500',
-                            padding: '0.5rem 1rem',
-                            borderRadius: '0.5rem',
-                            transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.target.style.backgroundColor = 'var(--ct-primary)';
-                            e.target.style.color = 'white';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.target.style.backgroundColor = 'transparent';
-                            e.target.style.color = 'var(--ct-primary)';
-                        }}
                     >
                         <i className="fas fa-sync-alt"></i>
                         <span>Sincronizar</span>
@@ -168,7 +151,7 @@ function ClienteHeader({
                         </button>
 
                         {showUserDropdown && (
-                            <div className="position-absolute end-0 mt-2 bg-white border rounded shadow-lg dropdown-menu-min-width" style={{ zIndex: 9999, minWidth: '200px' }}>
+                            <div className="position-absolute end-0 mt-2 bg-white border rounded shadow-lg dropdown-menu-min-width z-index-1000">
                                 <div className="p-3 border-bottom">
                                     <div className="fw-semibold">
                                         {userData?.nombre === 'Pendiente' ? 'Cliente' : userData?.nombre}
@@ -177,10 +160,7 @@ function ClienteHeader({
                                 </div>
                                 <div className="p-2">
                                     <button
-                                        className="btn btn-link w-100 text-start d-flex align-items-center gap-2"
-                                        style={{ textDecoration: 'none' }}
-                                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                                        className="btn btn-link link-plain w-100 text-start d-flex align-items-center gap-2"
                                         onClick={() => {
                                             changeView('profile');
                                             setShowUserDropdown(false);
@@ -190,10 +170,7 @@ function ClienteHeader({
                                         Mi Perfil
                                     </button>
                                     <button
-                                        className="btn btn-link w-100 text-start d-flex align-items-center gap-2"
-                                        style={{ textDecoration: 'none' }}
-                                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                                        className="btn btn-link link-plain w-100 text-start d-flex align-items-center gap-2"
                                         onClick={() => {
                                             navigate('/');
                                             setShowUserDropdown(false);

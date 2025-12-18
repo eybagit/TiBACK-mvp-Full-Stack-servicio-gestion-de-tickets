@@ -69,7 +69,7 @@ export default function VerTicketCliente() {
                             <strong>Imágenes:</strong>
                             <div className="d-flex flex-wrap gap-2 mt-1">
                                 {ticket.img_urls.map((url, idx) => (
-                                    <img key={idx} src={url} alt={`ticket-img-${idx}`} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6, border: '1px solid #ccc' }} />
+                                    <img key={idx} src={url} alt={`ticket-img-${idx}`} className="img-thumb-md" />
                                 ))}
                             </div>
                         </div>

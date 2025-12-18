@@ -103,26 +103,9 @@ function AnalistaHeader({
                 <div className="d-flex align-items-center gap-3">
                     {/* Botón de sincronizar */}
                     <button
-                        className="btn btn-outline-primary d-flex align-items-center gap-2"
+                        className="btn btn-outline-primary btn-sync d-flex align-items-center gap-2"
                         onClick={actualizarTickets}
                         title="Sincronizar datos"
-                        style={{
-                            borderColor: 'var(--ct-primary)',
-                            color: 'var(--ct-primary)',
-                            fontSize: '0.9rem',
-                            fontWeight: '500',
-                            padding: '0.5rem 1rem',
-                            borderRadius: '0.5rem',
-                            transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.target.style.backgroundColor = 'var(--ct-primary)';
-                            e.target.style.color = 'white';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.target.style.backgroundColor = 'transparent';
-                            e.target.style.color = 'var(--ct-primary)';
-                        }}
                     >
                         <i className="fas fa-sync-alt"></i>
                         <span>Sincronizar</span>
@@ -161,8 +144,7 @@ function AnalistaHeader({
                                 </div>
                                 <div className="p-2">
                                     <button
-                                        className="btn btn-link w-100 text-start d-flex align-items-center gap-2"
-                                        style={{ textDecoration: 'none' }}
+                                        className="btn btn-link link-plain w-100 text-start d-flex align-items-center gap-2"
                                         onClick={() => {
                                             setActiveView('profile');
                                             setShowUserDropdown(false);
@@ -172,8 +154,7 @@ function AnalistaHeader({
                                         <span>Mi Perfil</span>
                                     </button>
                                     <button
-                                        className="btn btn-link w-100 text-start d-flex align-items-center gap-2"
-                                        style={{ textDecoration: 'none' }}
+                                        className="btn btn-link link-plain w-100 text-start d-flex align-items-center gap-2"
                                         onClick={() => {
                                             setShowUserDropdown(false);
                                             navigate('/');
@@ -195,8 +176,7 @@ function AnalistaHeader({
                                     </div>
                                     <hr className="my-2" />
                                     <button
-                                        className="btn btn-link w-100 text-start d-flex align-items-center gap-2 text-danger"
-                                        style={{ textDecoration: 'none' }}
+                                        className="btn btn-link link-plain w-100 text-start d-flex align-items-center gap-2 text-danger"
                                         onClick={() => {
                                             setShowUserDropdown(false);
                                             logout();

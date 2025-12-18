@@ -78,3 +78,286 @@ html body .modal-backdrop-custom { background-color: rgba(0,0,0,0.5); }
 .hyper-activity-icon.product { background-color: var(--bs-info); }
 .hyper-activity-icon.message { background-color: var(--bs-warning); }
 .hyper-activity-icon.upload { background-color: var(--sidebar-active); }
+
+/* ============================================
+   CLASES PARA REEMPLAZAR ESTILOS INLINE
+   Según documentacion/arquitectura.md
+   ============================================ */
+
+/* Indicadores de estado (puntos de colores) */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  border-radius: 50%;
+}
+
+.status-dot-lg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Thumbnails de imágenes */
+.img-thumb-xs {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+}
+
+.img-thumb-sm {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.img-thumb-md {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.img-thumb-lg {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+}
+
+/* Imágenes de modal/preview */
+.img-preview-md {
+  max-width: 500px;
+  max-height: 400px;
+  object-fit: contain;
+}
+
+.img-preview-lg {
+  max-height: 400px;
+  object-fit: contain;
+}
+
+/* Modal backdrop */
+.modal-backdrop-dark {
+  display: block;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.modal-backdrop-light {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Avatares de chat */
+.chat-avatar-sm {
+  width: 25px;
+  height: 25px;
+  flex-shrink: 0;
+}
+
+.chat-avatar-md {
+  width: 35px;
+  height: 35px;
+  flex-shrink: 0;
+}
+
+/* Contenedores de chat */
+.chat-body {
+  position: relative;
+  height: 400px;
+  overflow-y: auto;
+}
+
+.chat-message-container {
+  max-width: 70%;
+}
+
+/* Bordes de cards */
+.card-header-accent {
+  border-top: 4px solid #0d6efd;
+}
+
+.card-header-success {
+  border-top: 4px solid var(--bs-success);
+}
+
+/* Texto y fuentes */
+.text-xs {
+  font-size: 11px;
+}
+
+.text-sm {
+  font-size: 12px;
+}
+
+.text-md {
+  font-size: 14px;
+}
+
+/* Botones de acción */
+.btn-action-min {
+  min-width: 120px;
+}
+
+.btn-action-full {
+  height: 100%;
+  min-height: 60px;
+}
+
+/* Contenedores con max-width */
+.container-sm {
+  max-width: 600px;
+}
+
+.container-md {
+  max-width: 800px;
+}
+
+/* Texto truncado */
+.text-truncate-cell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Links sin decoración */
+.link-plain {
+  text-decoration: none;
+}
+
+.link-plain:hover {
+  text-decoration: underline;
+}
+
+/* Estrellas de calificación */
+.star-rating {
+  font-size: 0.8rem;
+}
+
+/* Sync button */
+.btn-sync {
+  border-color: var(--ct-primary);
+  color: var(--ct-primary);
+}
+
+.btn-sync:hover {
+  background-color: var(--ct-primary);
+  color: white;
+}
+
+/* Colores adicionales para status-dot */
+.bg-purple {
+  background-color: #6f42c1;
+}
+
+/* Modal show sin fondo */
+.modal-show-transparent {
+  display: block;
+  background-color: transparent;
+}
+
+/* Botones de navegación carrusel */
+.btn-carousel-nav {
+  z-index: 2;
+}
+
+/* Indicadores de carrusel (dots) */
+.carousel-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  cursor: pointer;
+}
+
+/* Modal backdrop con z-index bajo */
+.modal-backdrop-behind {
+  z-index: 0;
+}
+
+/* Botón pill con hover effect */
+.btn-pill-hover {
+  border-radius: 50px;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.btn-pill-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Status dots con colores CT */
+.dot-ct-info {
+  background-color: var(--ct-info);
+}
+
+/* Columna expandir en tablas */
+.th-expand {
+  width: 50px;
+}
+
+/* Botón de expandir/colapsar */
+.btn-expand-toggle {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Card con gradiente púrpura */
+.card-gradient-purple {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Chat styles */
+.chat-header-primary {
+  border-top: 4px solid #0d6efd;
+}
+
+.chat-header-warning {
+  border-top: 4px solid #ffa900;
+}
+
+.chat-participant-icon {
+  width: 25px;
+  height: 25px;
+}
+
+.chat-avatar {
+  width: 35px;
+  height: 35px;
+  flex-shrink: 0;
+}
+
+.chat-message-bubble {
+  word-wrap: break-word;
+  max-width: 100%;
+}
+
+.chat-message-bubble-sent {
+  border-radius: 18px 18px 4px 18px;
+}
+
+.chat-message-bubble-received {
+  border-radius: 18px 18px 18px 4px;
+}
+
+.chat-message-text {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.chat-message-meta {
+  font-size: 11px;
+}
+
+.chat-message-container {
+  max-width: 70%;
+}
+
+.btn-send {
+  padding-top: 0.55rem;
+}

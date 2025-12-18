@@ -43,14 +43,7 @@ function TicketRow({
                 </td>
                 <td className="px-4">
                     <div className="d-flex align-items-start gap-2">
-                        <span
-                            className="rounded-circle d-inline-block mt-1"
-                            style={{
-                                width: '8px',
-                                height: '8px',
-                                backgroundColor: '#6f42c1'
-                            }}
-                        ></span>
+                        <span className="status-dot mt-1 bg-purple"></span>
                         <div>
                             <div className="fw-semibold mb-1 text-dark dark-theme:text-white">{ticket.titulo}</div>
                             <small className="text-muted dark-theme:text-white">
@@ -100,28 +93,14 @@ function TicketRow({
                 <td className="text-center px-3">
                     {tieneAnalistaAsignado(ticket) ? (
                         <span className="d-flex align-items-center justify-content-center gap-2">
-                            <span
-                                className="rounded-circle d-inline-block"
-                                style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    backgroundColor: '#28a745'
-                                }}
-                            ></span>
+                            <span className="status-dot bg-success"></span>
                             <span className="text-dark dark-theme:text-white">
                                 {getAnalistaAsignado(ticket)}
                             </span>
                         </span>
                     ) : (
                         <span className="d-flex align-items-center justify-content-center gap-2">
-                            <span
-                                className="rounded-circle d-inline-block"
-                                style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    backgroundColor: '#6c757d'
-                                }}
-                            ></span>
+                            <span className="status-dot bg-secondary"></span>
                             <span className="text-dark dark-theme:text-white">
                                 Sin asignar
                             </span>
@@ -130,14 +109,7 @@ function TicketRow({
                 </td>
                 <td className="text-center px-3">
                     <span className="d-flex align-items-center justify-content-center gap-2">
-                        <span
-                            className="rounded-circle d-inline-block"
-                            style={{
-                                width: '8px',
-                                height: '8px',
-                                backgroundColor: '#17a2b8'
-                            }}
-                        ></span>
+                        <span className="status-dot bg-info"></span>
                         <small className="text-dark dark-theme:text-white">
                             {new Date(ticket.fecha_creacion).toLocaleDateString('es-ES', {
                                 year: 'numeric',
@@ -153,20 +125,12 @@ function TicketRow({
                 <td className="text-center px-3">
                     {ticket.calificacion ? (
                         <span className="d-flex align-items-center justify-content-center gap-2">
-                            <span
-                                className="rounded-circle d-inline-block"
-                                style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    backgroundColor: '#ffc107'
-                                }}
-                            ></span>
+                            <span className="status-dot bg-warning"></span>
                             <div className="d-flex align-items-center">
                                 {[...Array(5)].map((_, i) => (
                                     <i
                                         key={i}
-                                        className={`fas fa-star ${i < ticket.calificacion ? 'text-warning' : 'text-muted'}`}
-                                        style={{ fontSize: '0.8rem' }}
+                                        className={`fas fa-star star-rating ${i < ticket.calificacion ? 'text-warning' : 'text-muted'}`}
                                     ></i>
                                 ))}
                                 <small className="ms-1 text-dark dark-theme:text-white">({ticket.calificacion}/5)</small>
@@ -174,14 +138,7 @@ function TicketRow({
                         </span>
                     ) : (
                         <span className="d-flex align-items-center justify-content-center gap-2">
-                            <span
-                                className="rounded-circle d-inline-block"
-                                style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    backgroundColor: '#6c757d'
-                                }}
-                            ></span>
+                            <span className="status-dot bg-secondary"></span>
                             <span className="text-dark dark-theme:text-white">Sin calificar</span>
                         </span>
                     )}
@@ -289,15 +246,7 @@ function TicketRow({
                 </td>
                 <td className="text-center px-2">
                     <button
-                        className="btn btn-outline-secondary btn-sm"
-                        style={{
-                            height: '100%',
-                            minHeight: '60px',
-                            width: '40px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
+                        className="btn btn-outline-secondary btn-sm btn-action-full d-flex align-items-center justify-content-center"
                         onClick={() => toggleTicketExpansion(ticket.id)}
                         title={isExpanded ? "Colapsar acciones" : "Expandir acciones"}
                     >
@@ -314,8 +263,7 @@ function TicketRow({
                             <div className="px-4 py-3">
                                 <div className="d-flex gap-2 flex-wrap justify-content-center">
                                     <button
-                                        className="btn btn-sidebar-teal flex-fill"
-                                        style={{ minWidth: '120px' }}
+                                        className="btn btn-sidebar-teal flex-fill btn-action-min"
                                         title="Ver detalles del ticket"
                                         onClick={() => changeView(`ticket-${ticket.id}`)}
                                     >
@@ -323,8 +271,7 @@ function TicketRow({
                                         Ver Detalles
                                     </button>
                                     <button
-                                        className="btn btn-sidebar-accent flex-fill"
-                                        style={{ minWidth: '120px' }}
+                                        className="btn btn-sidebar-accent flex-fill btn-action-min"
                                         title="Ver y agregar comentarios"
                                         onClick={() => {
                                             setSelectedTicketId(ticket.id);
@@ -335,8 +282,7 @@ function TicketRow({
                                         Comentarios
                                     </button>
                                     <button
-                                        className="btn btn-sidebar-secondary flex-fill"
-                                        style={{ minWidth: '120px' }}
+                                        className="btn btn-sidebar-secondary flex-fill btn-action-min"
                                         title={tieneAnalistaAsignado(ticket) ? `Chat con ${getAnalistaAsignado(ticket)}` : "Chat con analista"}
                                         onClick={() => {
                                             setSelectedTicketId(ticket.id);
@@ -346,7 +292,7 @@ function TicketRow({
                                         <i className={`fas ${tieneAnalistaAsignado(ticket) ? 'fa-signal' : 'fa-comments'} me-2`}></i>
                                         Chat
                                     </button>
-                                    <div className="btn-group flex-fill" role="group" style={{ minWidth: '120px' }}>
+                                    <div className="btn-group flex-fill btn-action-min" role="group">
                                         <button
                                             className="btn btn-sidebar-primary dropdown-toggle"
                                             type="button"
@@ -383,8 +329,7 @@ function TicketRow({
                                     </div>
                                     {ticketsConRecomendaciones.has(ticket.id) && (
                                         <button
-                                            className="btn btn-sidebar-teal flex-fill"
-                                            style={{ minWidth: '120px' }}
+                                            className="btn btn-sidebar-teal flex-fill btn-action-min"
                                             title="Ver sugerencias disponibles"
                                             onClick={() => navigate(`/ticket/${ticket.id}/recomendaciones-similares`)}
                                         >
@@ -397,8 +342,7 @@ function TicketRow({
                                     {['solucionado', 'asignado', 'en_progreso', 'escalado'].includes(ticket.estado.toLowerCase()) && !solicitudesReapertura.has(ticket.id) && (
                                         <>
                                             <button
-                                                className="btn btn-outline-success flex-fill"
-                                                style={{ minWidth: '120px' }}
+                                                className="btn btn-outline-success flex-fill btn-action-min"
                                                 title="Cerrar ticket y calificar servicio"
                                                 onClick={() => cerrarTicket(ticket.id)}
                                             >
@@ -406,8 +350,7 @@ function TicketRow({
                                                 Cerrar
                                             </button>
                                             <button
-                                                className="btn btn-outline-warning flex-fill"
-                                                style={{ minWidth: '120px' }}
+                                                className="btn btn-outline-warning flex-fill btn-action-min"
                                                 title="Reabrir ticket si la solución no fue satisfactoria"
                                                 onClick={() => solicitarReapertura(ticket.id)}
                                             >
@@ -419,7 +362,7 @@ function TicketRow({
 
                                     {/* Mensaje de solicitud de reapertura pendiente */}
                                     {['solucionado', 'asignado', 'en_progreso', 'escalado'].includes(ticket.estado.toLowerCase()) && solicitudesReapertura.has(ticket.id) && (
-                                        <div className="alert alert-warning py-3 px-4 mb-0 flex-fill text-center" role="alert" style={{ minWidth: '250px' }}>
+                                        <div className="alert alert-warning py-3 px-4 mb-0 flex-fill text-center" role="alert">
                                             <i className="fas fa-clock me-2"></i>
                                             <strong>Solicitud de reapertura enviada</strong>
                                             <p className="mb-0 mt-1 small">El supervisor revisará tu solicitud pronto</p>
