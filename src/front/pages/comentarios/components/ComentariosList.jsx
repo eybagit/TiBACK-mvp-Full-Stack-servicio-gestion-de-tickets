@@ -11,8 +11,7 @@ const HistorialItem = ({ movimiento }) => (
     <div className="timeline-item mb-4">
         <div className="d-flex">
             <div className="flex-shrink-0 me-3">
-                <div className="rounded-circle d-flex align-items-center justify-content-center bg-info text-white"
-                    style={{ width: '40px', height: '40px' }}>
+                <div className="rounded-circle d-flex align-items-center justify-content-center bg-info text-white avatar-comment">
                     <i className="fas fa-cog"></i>
                 </div>
             </div>
@@ -41,8 +40,7 @@ const ComentarioItem = ({ comentario, getRoleColor, getRoleIcon }) => (
     <div className="timeline-item mb-4">
         <div className="d-flex">
             <div className="flex-shrink-0 me-3">
-                <div className={`rounded-circle d-flex align-items-center justify-content-center ${getRoleColor(comentario.autor?.rol)}`}
-                    style={{ width: '40px', height: '40px', backgroundColor: '#f8f9fa' }}>
+                <div className={`rounded-circle d-flex align-items-center justify-content-center avatar-comment ${getRoleColor(comentario.autor?.rol)}`}>
                     <i className={getRoleIcon(comentario.autor?.rol)}></i>
                 </div>
             </div>

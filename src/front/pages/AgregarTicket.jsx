@@ -84,7 +84,7 @@ const AgregarTicket = () => {
             return;
         }
         const widget = window.cloudinary.createUploadWidget({
-            cloudName: 'dda53mpsn', 
+            cloudName: 'dda53mpsn',
             uploadPreset: 'Ticket-TiBACK',
             sources: ['local', 'url', 'camera'],
             multiple: true,
@@ -201,8 +201,8 @@ const AgregarTicket = () => {
                             <div className="d-flex gap-2 flex-wrap mt-2">
                                 {imagenes.map((url, idx) => (
                                     <div key={idx} className="position-relative">
-                                        <img src={url} alt={`preview-${idx}`} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6, border: '1px solid #ccc' }} />
-                                        <button type="button" className="btn btn-sm btn-danger position-absolute top-0 end-0" style={{ borderRadius: '50%' }} onClick={() => eliminarImagen(idx)}>&times;</button>
+                                        <img src={url} alt={`preview-${idx}`} className="img-thumb-md" />
+                                        <button type="button" className="btn btn-sm btn-danger position-absolute top-0 end-0 rounded-circle" onClick={() => eliminarImagen(idx)}>&times;</button>
                                     </div>
                                 ))}
                             </div>

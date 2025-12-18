@@ -13,26 +13,18 @@ const MonthlyChart = () => {
     return (
         <div className="mt-4">
             <h6 className="text-muted mb-3">Tendencia Mensual</h6>
-            <div className="d-flex align-items-end justify-content-between" style={{ height: '200px' }}>
+            <div className="d-flex align-items-end justify-content-between chart-container-md">
                 {meses.map((mes) => {
                     const altura = Math.random() * 100 + 20;
                     return (
-                        <div key={mes} className="d-flex flex-column align-items-center" style={{ width: '8%' }}>
+                        <div key={mes} className="d-flex flex-column align-items-center chart-bar-column">
                             <div
-                                className="bg-primary rounded-top"
-                                style={{
-                                    height: `${altura}px`,
-                                    width: '100%',
-                                    minHeight: '20px'
-                                }}
+                                className="bg-primary rounded-top w-100"
+                                style={{ height: `${altura}px`, minHeight: '20px' }}
                             ></div>
                             <div
-                                className="bg-success rounded-bottom"
-                                style={{
-                                    height: `${altura * 0.6}px`,
-                                    width: '100%',
-                                    minHeight: '10px'
-                                }}
+                                className="bg-success rounded-bottom w-100"
+                                style={{ height: `${altura * 0.6}px`, minHeight: '10px' }}
                             ></div>
                             <small className="text-muted mt-2">{mes}</small>
                         </div>

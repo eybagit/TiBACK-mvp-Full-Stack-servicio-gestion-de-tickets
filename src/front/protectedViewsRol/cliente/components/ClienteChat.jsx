@@ -84,8 +84,7 @@ function ClienteChat({
                                                             key={idx}
                                                             src={url}
                                                             alt={`ticket-${ticket.id}-img-${idx}`}
-                                                            className="img-thumbnail"
-                                                            style={{ width: '50px', height: '50px', objectFit: 'cover', cursor: 'pointer' }}
+                                                            className="img-thumbnail img-thumb-sm cursor-pointer"
                                                             onClick={() => { setSelectedTicketImages(ticket.img_urls); setSelectedImageIndex(idx); }}
                                                         />
                                                     ))}

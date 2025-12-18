@@ -127,6 +127,11 @@ html body .modal-backdrop-custom { background-color: rgba(0,0,0,0.5); }
 }
 
 /* Imágenes de modal/preview */
+.img-preview-sm {
+  max-height: 300px;
+  object-fit: contain;
+}
+
 .img-preview-md {
   max-width: 500px;
   max-height: 400px;
@@ -360,4 +365,88 @@ html body .modal-backdrop-custom { background-color: rgba(0,0,0,0.5); }
 
 .btn-send {
   padding-top: 0.55rem;
+}
+
+/* Sidebar user avatar */
+.sidebar-user-avatar {
+  width: 32px;
+  height: 32px;
+}
+
+.sidebar-user-name {
+  font-size: 0.92rem;
+}
+
+.sidebar-user-role {
+  font-size: 0.805rem;
+}
+
+/* Comentarios container */
+.comentarios-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Botón con min-width para acciones */
+.btn-action-sm {
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+/* Avatar circular para comentarios */
+.avatar-comment {
+  width: 40px;
+  height: 40px;
+  background-color: #f8f9fa;
+}
+
+/* Whitespace pre-wrap */
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
+}
+
+/* Select con min-width */
+.select-min-width {
+  min-width: 200px;
+}
+
+/* Progress bar thin */
+.progress-thin {
+  height: 2px;
+}
+
+/* Loading container full height */
+.loading-full-height {
+  min-height: 100vh;
+}
+
+.loading-half-height {
+  height: 50vh;
+}
+
+/* Chart container */
+.chart-container-md {
+  height: 200px;
+}
+
+/* Chart bar column */
+.chart-bar-column {
+  width: 8%;
+}
+
+/* Map containers */
+.map-container-md {
+  height: 400px;
+  width: 100%;
+}
+
+.map-container-lg {
+  height: 500px;
+  width: 100%;
+}
+
+.map-inner {
+  height: 100%;
+  width: 100%;
+  border-radius: 8px;
 }

@@ -13,7 +13,7 @@ export function RecomendacionModal({ isOpen, onClose, recomendacion, loading, er
     };
 
     return (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div className="modal show d-block modal-backdrop-light">
             <div className="modal-dialog modal-lg">
                 <div className="modal-content">
                     <div className="modal-header">

@@ -112,7 +112,7 @@ const HeatmapComponent = () => {
     // Estados de carga
     if (!isLoaded) {
         return (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: '500px' }}>
+            <div className="d-flex justify-content-center align-items-center map-container-lg">
                 <div className="text-center">
                     <div className="spinner-border text-primary mb-3" role="status">
                         <span className="visually-hidden">Cargando mapa...</span>
@@ -134,7 +134,7 @@ const HeatmapComponent = () => {
 
     if (loading) {
         return (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: '500px' }}>
+            <div className="d-flex justify-content-center align-items-center map-container-lg">
                 <div className="text-center">
                     <div className="spinner-border text-primary mb-3" role="status">
                         <span className="visually-hidden">Cargando datos...</span>

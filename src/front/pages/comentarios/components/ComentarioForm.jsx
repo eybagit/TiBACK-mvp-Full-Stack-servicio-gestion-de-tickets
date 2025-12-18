@@ -71,9 +71,8 @@ const ComentarioForm = ({
                                         <i className="fas fa-microphone me-1"></i>
                                         Transcribiendo: <em>"{interimTranscript}"</em>
                                     </small>
-                                    <div className="progress mt-1" style={{ height: '2px' }}>
-                                        <div className="progress-bar progress-bar-striped progress-bar-animated bg-info"
-                                            style={{ width: '100%' }}></div>
+                                    <div className="progress mt-1 progress-thin">
+                                        <div className="progress-bar progress-bar-striped progress-bar-animated bg-info w-100"></div>
                                     </div>
                                 </div>
                             )}

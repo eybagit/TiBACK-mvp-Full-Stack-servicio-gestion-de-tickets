@@ -441,7 +441,7 @@ const RecomendacionesSimilares = () => {
                                                                     aria-labelledby={`heading-${ticket.id}`}
                                                                 >
                                                                     <div className="accordion-body">
-                                                                        <div className="comentarios-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                                                        <div className="comentarios-container comentarios-scroll">
                                                                             {comentariosPorTicket[ticket.id]
                                                                                 .map((comentario, index) => {
                                                                                     return (
@@ -491,8 +491,7 @@ const RecomendacionesSimilares = () => {
 
                                                 <Link
                                                     to={`/ticket/${ticket.id}/recomendaciones-ia`}
-                                                    className="btn btn-warning btn-sm"
-                                                    style={{ minWidth: '140px', flexShrink: 0 }}
+                                                    className="btn btn-warning btn-sm btn-action-sm"
                                                     title="Ver recomendaciones guardadas de IA"
                                                 >
                                                     <i className="fas fa-robot me-1"></i>

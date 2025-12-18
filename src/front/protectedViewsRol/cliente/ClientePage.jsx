@@ -29,53 +29,53 @@ function ClientePage() {
         // Modal de imágenes
         selectedTicketImages, setSelectedTicketImages,
         selectedImageIndex, setSelectedImageIndex,
-        
+
         // Imágenes
         ticketImageUrl, setTicketImageUrl,
         clienteImageUrl,
         handleImageUpload, handleImageRemove,
         handleClienteImageUpload, handleClienteImageRemove,
-        
+
         // Navegación y store
         navigate, logout,
-        
+
         // Tickets
         tickets, loading, error,
         ticketsConRecomendaciones,
         solicitudesReapertura,
-        
+
         // Funciones de tickets
         actualizarTickets, crearTicket, cerrarTicket,
         solicitarReapertura,
         toggleTicketForm, showTicketForm,
         getFilteredTickets,
-        
+
         // Usuario
         userData,
         infoData,
         showInfoForm, setShowInfoForm,
         updatingInfo,
         updateInfo, handleInfoChange, handleLocationChange,
-        
+
         // Utilidades de estado
         getEstadoColor, getPrioridadColor,
         tieneAnalistaAsignado, getAnalistaAsignado, getFechaAsignacion,
-        
+
         // UI
         sidebarHidden,
         activeView,
         showUserDropdown, setShowUserDropdown,
         isDarkMode,
-        
+
         // Búsqueda
         searchQuery,
         searchResults,
         showSearchResults, setShowSearchResults,
-        
+
         // Funciones UI
         toggleSidebar, changeView, toggleTheme,
         handleSearch, selectTicketFromSearch, closeSearchResults,
-        
+
         // Ticket seleccionado
         selectedTicketId, setSelectedTicketId,
     } = useClientePage();
@@ -83,7 +83,7 @@ function ClientePage() {
     // Mostrar loading
     if (loading) {
         return (
-            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
+            <div className="d-flex justify-content-center align-items-center loading-full-height">
                 <div className="spinner-border text-primary" role="status">
                     <span className="visually-hidden">Cargando...</span>
                 </div>
@@ -102,7 +102,7 @@ function ClientePage() {
 
             {/* Contenido principal */}
             <div className={`hyper-main-content flex-grow-1 ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
-                <ClienteHeader 
+                <ClienteHeader
                     sidebarHidden={sidebarHidden}
                     toggleSidebar={toggleSidebar}
                     searchQuery={searchQuery}
@@ -178,7 +178,7 @@ function ClientePage() {
 
                     {/* Profile View */}
                     {activeView === 'profile' && (
-                        <ClienteProfile 
+                        <ClienteProfile
                             infoData={infoData}
                             handleInfoChange={handleInfoChange}
                             handleLocationChange={handleLocationChange}
@@ -194,7 +194,7 @@ function ClientePage() {
 
                     {/* Chat View */}
                     {activeView === 'chat' && (
-                        <ClienteChat 
+                        <ClienteChat
                             tickets={tickets}
                             changeView={changeView}
                             setSelectedTicketId={setSelectedTicketId}
@@ -254,7 +254,7 @@ function ClientePage() {
                     )}
 
                     {/* Modal de imágenes tipo carrusel */}
-                    <ClienteImageModal 
+                    <ClienteImageModal
                         selectedTicketImages={selectedTicketImages}
                         selectedImageIndex={selectedImageIndex}
                         setSelectedTicketImages={setSelectedTicketImages}

@@ -1,7 +1,7 @@
 # 🎯 MÓDULO DE AJUSTES - TiBACK
 ## Auditoría Completa vs Documentación
 
-> **Fecha:** 18 de Diciembre, 2024  
+> **Fecha:** 18 de Diciembre, 2025 (Actualizado - Sesión 3)  
 > **Documentos de referencia:**
 > - `documentacion/arquitectura.md`
 > - `documentacion/modular.md`
@@ -17,7 +17,7 @@
 | Límite 500 líneas | ✅ | 100% |
 | NO useState | 🔴 | 0% (~80 archivos) |
 | NO useNavigate | 🔴 | 0% (55 archivos) |
-| NO estilos inline | 🟡 | ~30% (24+ archivos, ~99 restantes) |
+| NO estilos inline | 🟡 | ~65% (45+ archivos, ~50 restantes) |
 | CSS Modular | ✅ | 100% |
 | Rutas separadas | ✅ | 100% |
 | Servicios backend | ✅ | 100% (4 de 4) |
@@ -76,24 +76,27 @@
 ### 3. ESTILOS INLINE (PROHIBIDO) - EN PROGRESO 🟡
 **Fuente:** `arquitectura.md` - "si existen cosas que son especificas de Css no hacemos estilos inline (prohibido)"
 
-**Estado actual:** ~99 instancias restantes (antes ~140) - **~30% eliminado**
+**Estado actual:** ~50 instancias restantes (antes ~140) - **~65% eliminado**
 
-**Archivos refactorizados (24+):**
+**Archivos refactorizados (45+):**
 
 | Categoría | Archivos Refactorizados |
 |-----------|------------------------|
-| Cliente | TicketRow, ClienteImageModal, ClienteHeader, ClienteDashboard, VerTicketCliente, ClienteTicketsList, ClienteChat |
+| Cliente | TicketRow, ClienteImageModal, ClienteHeader, ClienteDashboard, VerTicketCliente, ClienteTicketsList, ClienteChat, ClientePage |
 | Supervisor | SupervisorHeader, SupervisorDashboard, VerTicketSupervisor, InfoFormModal, TicketRow |
 | Analista | AnalistaTicketsList, AnalistaHeader, AnalistaDashboard, VerTicketAnalista |
-| Pages | VerTicket, Ticket, Clientes, Comentarios |
-| Chat | ChatAnalistaCliente, ChatSupervisorAnalista |
+| Pages | VerTicket, Ticket, Clientes, Comentarios, IdentificarImagen, RecomendacionesSimilares, RecomendacionesGuardadas, AgregarTicket, Administrador, DashboardCalidad |
+| Chat | ChatAnalistaCliente, ChatSupervisorAnalista, ChatAnalistaClienteEmbedded, ChatSupervisorAnalistaEmbedded |
+| Components | SideBarCentral, RecomendacionModal, ProtectedRoute, IdentificarImagenEmbedded, ComentariosList, ComentarioForm, SemaforoTickets, ComentariosManager, ManagerAdministrador, GoogleMapsLocation, HeatmapComponent, CalidadCharts |
 
-**Archivos pendientes:**
-- Componentes embedded de chat
-- Componentes de IA (IdentificarImagen, RecomendacionesSimilares)
-- Otros componentes menores (~99 instancias)
+**Archivos pendientes (~50 instancias):**
+- Navbar.jsx (múltiples estilos de gradiente/colores)
+- LandingComponent/* (Price, FeatureDesignPage, FeatureAppsPage, CardCreadores)
+- Demo.jsx (1 instancia dinámica)
+- HeatmapComponent (estilos dinámicos del mapa)
+- CalidadCharts (estilos dinámicos de altura)
 
-**Clases CSS disponibles en `helpers.css` (~310 líneas):**
+**Clases CSS disponibles en `helpers.css` (~380 líneas):**
 ```css
 /* Status dots */
 .status-dot / .status-dot-lg   /* Indicadores 8px/10px */
@@ -101,10 +104,11 @@
 
 /* Imágenes */
 .img-thumb-xs/sm/md/lg         /* Thumbnails 40-100px */
-.img-preview-md/lg             /* Previews modal */
+.img-preview-sm/md/lg          /* Previews modal */
 
 /* Botones */
 .btn-action-min                /* min-width: 120px */
+.btn-action-sm                 /* min-width: 140px */
 .btn-sync                      /* Botón sincronizar */
 .btn-pill-hover                /* Botón pill con hover */
 .btn-expand-toggle             /* Botón expandir */
@@ -131,6 +135,20 @@
 .th-expand                     /* Columna expandir */
 .card-gradient-purple          /* Gradiente púrpura */
 .text-truncate-cell            /* Texto truncado */
+
+/* Sidebar */
+.sidebar-user-avatar           /* Avatar usuario 32px */
+.sidebar-user-name             /* Nombre usuario */
+.sidebar-user-role             /* Rol usuario */
+
+/* Comentarios */
+.comentarios-scroll            /* max-height: 300px */
+.avatar-comment                /* Avatar 40px */
+.whitespace-pre-wrap           /* white-space: pre-wrap */
+
+/* Loading */
+.loading-full-height           /* min-height: 100vh */
+.loading-half-height           /* height: 50vh */
 
 /* Utilidades */
 .link-plain                    /* text-decoration: none */
@@ -270,7 +288,7 @@ src/front/styles/
 
 | # | Tarea | Archivos | Esfuerzo | Estado |
 |---|-------|----------|----------|--------|
-| 1.1 | Eliminar estilos inline | ~20 archivos | Medio | 🟡 ~60% (20+ archivos) |
+| 1.1 | Eliminar estilos inline | ~20 archivos | Medio | 🟡 ~65% (45+ archivos) |
 | 1.2 | Completar servicios backend | 4 servicios | Medio | ✅ Completado |
 | 1.3 | Refactorizar rutas grandes | 3 rutas | Alto | ✅ 3/3 (100%) |
 
@@ -309,7 +327,7 @@ src/front/styles/
 | Archivos >500 líneas | 0 | 0 | ✅ 100% |
 | Archivos con useState | ~80 | 0 | 🔴 0% |
 | Archivos con useNavigate | 55 | 0 | 🔴 0% |
-| Estilos inline | ~99 | 0 | 🟡 ~30% (24+ archivos refactorizados) |
+| Estilos inline | ~50 | 0 | 🟡 ~65% (45+ archivos refactorizados) |
 | Servicios backend | 4 | 4 | ✅ 100% |
 | Archivos con FormData | 3 | ~20 | 🔴 15% |
 | CSS modular | ✅ | ✅ | ✅ 100% |
@@ -355,7 +373,7 @@ Las rutas actuales contienen lógica de negocio (Fat Controllers). Según modula
 
 ---
 
-## 📈 PROGRESO DEL DÍA (18/12/2024)
+## 📈 PROGRESO DEL DÍA (18/12/2025)
 
 ### Servicios Backend Creados
 - ✅ `ia_service.py` (~250 líneas) - Similitud semántica, OpenAI, Cloud Vision
@@ -371,16 +389,89 @@ Las rutas actuales contienen lógica de negocio (Fat Controllers). Según modula
 - **Después:** 574 líneas en rutas
 - **Reducción:** 746 líneas (-57%)
 
-### Estilos Inline - ~30% Completado
-- ✅ Clases CSS en `helpers.css` (~310 líneas)
-- ✅ 24+ archivos refactorizados (Cliente, Supervisor, Analista, Pages, Chat)
-- 🔄 Pendiente: ~99 instancias en componentes embedded y de IA
+### Estilos Inline - ~65% Completado
+- ✅ Clases CSS en `helpers.css` (~400 líneas)
+- ✅ 45+ archivos refactorizados (Cliente, Supervisor, Analista, Pages, Chat, Components)
+- 🔄 Pendiente: ~50 instancias (Navbar, Landing, estilos dinámicos)
 
 ### Build Status
 - ✅ `npm run build` exitoso
 
 ---
 
-*Módulo de Ajustes generado: 18/12/2024*  
+---
+
+## 📈 PROGRESO SESIÓN 2 (18/12/2025)
+
+### Estilos Inline Eliminados - Sesión 2
+**Archivos refactorizados adicionales (10+):**
+- `ClienteChat.jsx` - img-thumb-sm, cursor-pointer
+- `ClientePage.jsx` - loading-full-height
+- `DashboardCalidad.jsx` - select-min-width
+- `CalidadCharts.jsx` - chart-container-md, chart-bar-column
+- `ComentarioForm.jsx` - progress-thin
+- `SemaforoTickets.jsx` - text-truncate-cell
+- `ComentariosManager.jsx` - text-truncate-cell
+- `ManagerAdministrador.jsx` - text-truncate-cell
+- `GoogleMapsLocation.jsx` - map-container-md, map-inner
+- `HeatmapComponent.jsx` - map-container-lg
+
+### Nuevas Clases CSS Agregadas
+```css
+/* Maps */
+.map-container-md { height: 400px; width: 100%; }
+.map-container-lg { height: 500px; width: 100%; }
+.map-inner { height: 100%; width: 100%; border-radius: 8px; }
+
+/* Charts */
+.chart-container-md { height: 200px; }
+.chart-bar-column { width: 8%; }
+.progress-thin { height: 2px; }
+
+/* Utilidades */
+.select-min-width { min-width: 200px; }
+```
+
+---
+
+## 📈 PROGRESO SESIÓN 3 (18/12/2025)
+
+### Estado Actual del Proyecto
+| Área | Estado | Progreso |
+|------|--------|----------|
+| Servicios Backend | ✅ Completado | 4/4 (100%) |
+| Rutas Refactorizadas | ✅ Completado | 3/3 (100%) |
+| Estilos Inline | 🟡 En progreso | ~65% (~50 restantes) |
+| useState | 🔴 Pendiente | 0% (~80 archivos) |
+| useNavigate | 🔴 Pendiente | 0% (55 archivos) |
+| FormData | 🔴 Pendiente | 15% (3 de ~20) |
+
+### Archivos Pendientes de Estilos Inline
+| Archivo | Instancias | Tipo de Estilos |
+|---------|------------|-----------------|
+| `Navbar.jsx` | ~15 | Gradientes, colores, tamaños |
+| `Price.jsx` | ~5 | Colores, fondos |
+| `FeatureDesignPage.jsx` | ~5 | Colores, fondos |
+| `FeatureAppsPage.jsx` | ~5 | Colores, fondos |
+| `CardCreadores.jsx` | ~5 | Colores, fondos |
+| `Demo.jsx` | ~1 | Dinámico |
+| Otros (dinámicos) | ~15 | Alturas calculadas |
+
+### Próximos Pasos Inmediatos
+1. ⏳ Refactorizar `Navbar.jsx` - Crear clases para gradientes y botones
+2. ⏳ Refactorizar `LandingComponent/*` - Crear clases para landing
+3. ⏳ Completar estilos inline restantes
+
+### Próximas Fases del Plan
+- **FASE 2 (Semana 3-4):** Migrar useState → useReducer + Context API
+- **FASE 3 (Semana 5-6):** Eliminar useNavigate → Link declarativo
+- **FASE 4 (Semana 7+):** Migrar formularios a FormData
+
+### Build Status
+- ✅ `npm run build` exitoso (todas las sesiones)
+
+---
+
+*Módulo de Ajustes generado: 18/12/2025*  
 *Arquitectura: tiback-hello ⚡*  
-*Estado: FASE 1 BACKEND COMPLETADA ✅ | ESTILOS INLINE EN PROGRESO 🟡*
+*Estado: FASE 1 BACKEND COMPLETADA ✅ | ESTILOS INLINE ~65% 🟡*

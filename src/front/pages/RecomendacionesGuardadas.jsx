@@ -277,8 +277,7 @@ const RecomendacionesGuardadas = () => {
                                                     <div className="card-header">
                                                         <div className="d-flex justify-content-between align-items-center">
                                                             <div className="d-flex align-items-center">
-                                                                <div className={`rounded-circle d-flex align-items-center justify-content-center ${getRoleColor(comentario.autor?.rol)}`}
-                                                                    style={{ width: '40px', height: '40px', backgroundColor: '#f8f9fa' }}>
+                                                                <div className={`rounded-circle d-flex align-items-center justify-content-center avatar-comment ${getRoleColor(comentario.autor?.rol)}`}>
                                                                     <i className={getRoleIcon(comentario.autor?.rol)}></i>
                                                                 </div>
                                                                 <div className="ms-3">
@@ -311,7 +310,7 @@ const RecomendacionesGuardadas = () => {
                                                                 </h6>
                                                                 <div className="card bg-warning bg-opacity-10 border-warning">
                                                                     <div className="card-body">
-                                                                        <div className="whitespace-pre-wrap" style={{ whiteSpace: 'pre-wrap' }}>
+                                                                        <div className="whitespace-pre-wrap">
                                                                             {recomendacion.contenido}
                                                                         </div>
                                                                     </div>

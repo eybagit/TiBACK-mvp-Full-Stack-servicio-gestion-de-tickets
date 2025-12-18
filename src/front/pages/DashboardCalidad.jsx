@@ -77,8 +77,7 @@ export function DashboardCalidad() {
                             <div className="d-flex align-items-center gap-2">
                                 <label className="form-label mb-0 fw-semibold">Analista:</label>
                                 <select
-                                    className="form-select form-select-sm"
-                                    style={{ minWidth: '200px' }}
+                                    className="form-select form-select-sm select-min-width"
                                     value={selectedAnalista || ''}
                                     onChange={(e) => setSelectedAnalista(e.target.value ? parseInt(e.target.value) : null)}
                                 >
