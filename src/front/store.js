@@ -20,6 +20,7 @@ export {
   findToken,
   clearAllTokens,
   initialStore,
+  clienteActions,
 } from './store/index.js';
 
 // Importar acciones base

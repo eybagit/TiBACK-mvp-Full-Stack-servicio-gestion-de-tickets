@@ -383,8 +383,7 @@ const IdentificarImagen = () => {
                                                 <img
                                                     src={imagePreview}
                                                     alt="Preview"
-                                                    className="img-fluid"
-                                                    style={{ maxHeight: '300px' }}
+                                                    className="img-fluid img-preview-sm"
                                                 />
                                             </div>
                                         )}

@@ -1,0 +1,144 @@
+    // Para modal de imágenes
+    const [selectedTicketImages, setSelectedTicketImages] = useState(null);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    // Estados para imágenes nuevas (ahora solo URLs)
+    const [newTicketImages, setNewTicketImages] = useState([]); // URLs de Cloudinary
+    const [uploading, setUploading] = useState(false);
+    // const cloudinaryWidgetRef = useRef(null);
+
+    // // Feedback visual para actualización de tickets
+    // const [feedback, setFeedback] = useState("");
+
+    // (Cloudinary widget code removed — use ImageUpload component instead)
+    const navigate = useNavigate();
+    const { store, logout, dispatch, connectWebSocket, disconnectWebSocket, joinRoom, joinTicketRoom, startRealtimeSync, emitCriticalTicketAction, joinCriticalRooms, joinAllCriticalRooms } = useGlobalReducer();
+    const [tickets, setTickets] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [showInfoForm, setShowInfoForm] = useState(false);
+    const [updatingInfo, setUpdatingInfo] = useState(false);
+    const [showTicketForm, setShowTicketForm] = useState(false);
+    const [userData, setUserData] = useState(null);
+    const [solicitudesReapertura, setSolicitudesReapertura] = useState(new Set());
+    const [infoData, setInfoData] = useState({
+        nombre: '',
+        apellido: '',
+        email: '',
+        telefono: '',
+        direccion: '',
+        lat: null,
+        lng: null,
+        password: '',
+        confirmPassword: ''
+    });
+    const [ticketImageUrl, setTicketImageUrl] = useState('');
+    const [ticketsConRecomendaciones, setTicketsConRecomendaciones] = useState(new Set());
+    const [expandedTickets, setExpandedTickets] = useState(new Set());
+    const [clienteImageUrl, setClienteImageUrl] = useState('');
+
+    // Funciones para manejar la imagen del ticket
+    const handleImageUpload = (imageUrl) => {
+        setTicketImageUrl(imageUrl);
+    };
+
+    const handleImageRemove = () => {
+        setTicketImageUrl('');
+    };
+
+    // Funciones para manejar la imagen del cliente
+    const handleClienteImageUpload = (imageUrl) => {
+        setClienteImageUrl(imageUrl);
+        // Actualizar inmediatamente userData para mostrar la imagen
+        setUserData(prev => ({
+            ...prev,
+            url_imagen: imageUrl
+        }));
+    };
+
+    const handleClienteImageRemove = () => {
+        setClienteImageUrl('');
+        // Actualizar userData para remover la imagen
+        setUserData(prev => ({
+            ...prev,
+            url_imagen: null
+        }));
+    };
+
+    const toggleTicketForm = () => {
+        setShowTicketForm(!showTicketForm);
+        if (showTicketForm) {
+            // Limpiar el formulario cuando se cierre
+            setTicketImageUrl('');
+        }
+    };
+
+    // FunciÃ³n helper para actualizar tickets sin recargar la pÃ¡gina
+    const actualizarTickets = async () => {
+        try {
+            const token = store.auth.token;
+            // Forzar petición fresca sin cache
+            const ticketsResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/cliente?t=${Date.now()}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (ticketsResponse.ok) {
+                const ticketsData = await ticketsResponse.json();
+                setTickets(ticketsData);
+                console.log(`📋 Cliente - Tickets cargados: ${ticketsData.length} tickets`);
+
+                // Limpiar solicitudes de reapertura para tickets que ya NO están en estado 'solucionado'
+                // NO restaurar automáticamente solicitudes - solo confiar en el flujo de agregar cuando el cliente hace clic
+                setSolicitudesReapertura(prev => {
+                    const newSet = new Set(prev);
+                    // Eliminar solicitudes de tickets que ya no están en 'solucionado'
+                    ticketsData.forEach(ticket => {
+                        if (ticket.estado && ticket.estado.toLowerCase() !== 'solucionado' && newSet.has(ticket.id)) {
+                            console.log(`🧹 Limpiando solicitud de reapertura para ticket ${ticket.id} (estado: ${ticket.estado})`);
+                            newSet.delete(ticket.id);
+                        }
+                    });
+                    // También eliminar solicitudes de tickets que ya no existen
+                    const ticketIds = new Set(ticketsData.map(t => t.id));
+                    Array.from(newSet).forEach(ticketId => {
+                        if (!ticketIds.has(ticketId)) {
+                            console.log(`🧹 Limpiando solicitud de reapertura para ticket inexistente ${ticketId}`);
+                            newSet.delete(ticketId);
+                        }
+                    });
+                    return newSet;
+                });
+            }
+        } catch (err) {
+            setError("Error al actualizar la lista");
+            setTimeout(() => setError(""), 2000);
+            console.error('Error al actualizar tickets:', err);
+        }
+    };
+
+    // Conectar WebSocket cuando el usuario estÃ© autenticado
+    useEffect(() => {
+        if (store.auth.isAuthenticated && store.auth.token && !store.websocket.connected) {
+            const socket = connectWebSocket(store.auth.token);
+            if (socket) {
+                const userId = tokenUtils.getUserId(store.auth.token);
+                const role = tokenUtils.getRole(store.auth.token);
+                joinRoom(socket, role, userId);
+
+                // Unirse EXPLÍCITAMENTE a la room específica del cliente para notificaciones directas
+                if (userId) {
+                    try {
+                        const clienteRoom = `cliente_${userId}`;
+                        console.log(`🔌 CLIENTE - Uniéndose a room específica: ${clienteRoom}`);
+                        socket.emit('join_room', clienteRoom);
+                        console.log(`✅ CLIENTE - Solicitud de unión enviada a: ${clienteRoom}`);
+                    } catch (e) {
+                        console.error('❌ CLIENTE - Error al unirse a room específica:', e);
+                    }
+                }
+            }
+        }
+
+        // Cleanup al desmontar

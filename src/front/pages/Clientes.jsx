@@ -34,17 +34,17 @@ export const Clientes = () => {
       'Content-Type': 'application/json',
       ...options.headers
     };
-    
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     return fetch(url, {
       ...options,
       headers
     })
-    .then(res => res.json().then(data => ({ ok: res.ok, data })))
-    .catch(err => ({ ok: false, data: { message: err.message } }));
+      .then(res => res.json().then(data => ({ ok: res.ok, data })))
+      .catch(err => ({ ok: false, data: { message: err.message } }));
   };
 
   const listarTodosLosClientes = () => {
@@ -91,7 +91,7 @@ export const Clientes = () => {
       {store.api.error && (
         <div className="alert alert-danger py-2">{String(store.api.error)}</div>
       )}
-      
+
 
       <div className="row">
         <div className="col-12">
@@ -122,17 +122,13 @@ export const Clientes = () => {
                         <tr key={cliente.id}>
                           <td>
                             {cliente.url_imagen ? (
-                              <img 
-                                src={cliente.url_imagen} 
-                                alt="Imagen del cliente" 
-                                className="img-thumbnail"
-                                style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+                              <img
+                                src={cliente.url_imagen}
+                                alt="Imagen del cliente"
+                                className="img-thumbnail img-thumb-xs"
                               />
                             ) : (
-                              <div 
-                                className="bg-light d-flex align-items-center justify-content-center"
-                                style={{ width: '40px', height: '40px', borderRadius: '4px' }}
-                              >
+                              <div className="bg-light d-flex align-items-center justify-content-center img-thumb-xs rounded">
                                 <i className="fas fa-user text-muted"></i>
                               </div>
                             )}

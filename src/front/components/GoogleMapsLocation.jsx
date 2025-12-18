@@ -145,7 +145,7 @@ const GoogleMapsLocation = ({
     // Mostrar estado de carga
     if (!isLoaded) {
         return (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: '400px' }}>
+            <div className="d-flex justify-content-center align-items-center map-container-md">
                 <div className="text-center">
                     <div className="spinner-border text-primary mb-3" role="status">
                         <span className="visually-hidden">Cargando mapa...</span>
@@ -211,10 +211,10 @@ const GoogleMapsLocation = ({
                 </div>
             </div>
 
-            <div className="map-container" style={{ height: '400px', width: '100%' }}>
+            <div className="map-container map-container-md">
                 <div
                     ref={mapRef}
-                    style={{ height: '100%', width: '100%', borderRadius: '8px' }}
+                    className="map-inner"
                 />
             </div>
 

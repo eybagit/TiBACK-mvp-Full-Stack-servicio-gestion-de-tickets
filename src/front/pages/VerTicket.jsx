@@ -128,8 +128,7 @@ export const VerTicket = () => {
                             <img
                                 src={ticket.url_imagen}
                                 alt="Imagen del ticket"
-                                className="img-fluid rounded shadow"
-                                style={{ maxWidth: '500px', maxHeight: '400px', objectFit: 'contain' }}
+                                className="img-fluid rounded shadow img-preview-md"
                             />
                         </div>
                     </div>
@@ -147,7 +146,7 @@ export const VerTicket = () => {
                                 key={idx}
                                 src={url}
                                 alt={`thumb-${idx}`}
-                                style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6, border: '1px solid #ccc', cursor: 'pointer' }}
+                                className="img-thumb-md cursor-pointer"
                                 onClick={() => { setSelectedImageIndex(idx); setShowModal(true); }}
                             />
                         ))}
@@ -157,7 +156,7 @@ export const VerTicket = () => {
 
             {/* Modal con carrusel */}
             {showModal && Array.isArray(ticket.img_urls) && ticket.img_urls.length > 0 && (
-                <div className="modal fade show" style={{ display: 'block', background: 'rgba(0,0,0,0.7)' }} tabIndex="-1" role="dialog">
+                <div className="modal fade show modal-backdrop-dark" tabIndex="-1" role="dialog">
                     <div className="modal-dialog modal-dialog-centered" role="document">
                         <div className="modal-content">
                             <div className="modal-header">
@@ -168,7 +167,7 @@ export const VerTicket = () => {
                                 <img
                                     src={ticket.img_urls[selectedImageIndex]}
                                     alt={`ticket-img-${selectedImageIndex}`}
-                                    style={{ maxWidth: 500, maxHeight: 400, borderRadius: 8, border: '1px solid #ccc' }}
+                                    className="img-preview-md rounded border"
                                 />
                                 {ticket.img_urls.length > 1 && (
                                     <div className="mt-3">

@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import * as storeUtils from '../../store';
 import useGlobalReducer from '../../hooks/useGlobalReducer';
+import {
+    tieneAnalistaAsignado,
+    getAnalistaAsignado,
+    getEstadoColor,
+    getPrioridadColor,
+    asignarAnalistaAction,
+    escalarTicketAction,
+    cerrarTicketAction,
+    reabrirTicketAction
+} from './hooks/useTicketHDActions';
 
 export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaciones, onBack, analistas, setActiveView }) => {
     const { store } = useGlobalReducer();
@@ -10,44 +19,16 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
     const [showAsignarModal, setShowAsignarModal] = useState(false);
     const [selectedAnalista, setSelectedAnalista] = useState('');
 
-    // Función para verificar si un ticket tiene analista asignado
-    const tieneAnalistaAsignado = (ticket) => {
-        return ticket.asignacion_actual && ticket.asignacion_actual.analista;
-    };
-
-    // Función para obtener el nombre del analista asignado
-    const getAnalistaAsignado = (ticket) => {
-        if (tieneAnalistaAsignado(ticket)) {
-            const analista = ticket.asignacion_actual.analista;
-            return `${analista.nombre} ${analista.apellido}`;
-        }
-        return null;
-    };
-
     useEffect(() => {
         const fetchTicket = async () => {
             try {
                 setLoading(true);
-                console.log('VerTicketHDSupervisor - Buscando ticket:', {
-                    ticketId,
-                    tickets: tickets,
-                    ticketsLength: tickets?.length
-                });
-
-                // Usar los tickets pasados como prop desde SupervisorPage
                 const ticketsArray = tickets || [];
-                console.log('VerTicketHDSupervisor - Tickets disponibles:', ticketsArray);
-
                 const foundTicket = ticketsArray.find(t => t.id === ticketId);
-                console.log('VerTicketHDSupervisor - Ticket encontrado:', foundTicket);
-                console.log('VerTicketHDSupervisor - ticketId buscado:', ticketId, 'tipo:', typeof ticketId);
 
                 if (foundTicket) {
-                    console.log('VerTicketHDSupervisor - Ticket encontrado, ID:', foundTicket.id);
                     setTicket(foundTicket);
                 } else {
-                    console.log('VerTicketHDSupervisor - Ticket no encontrado, IDs disponibles:', ticketsArray.map(t => t.id));
-                    console.log('VerTicketHDSupervisor - Comparación de tipos:', ticketsArray.map(t => ({ id: t.id, tipo: typeof t.id })));
                     setError('Ticket no encontrado');
                 }
             } catch (err) {
@@ -63,69 +44,17 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
         }
     }, [ticketId, tickets]);
 
-    const getEstadoColor = (estado) => {
-        switch (estado?.toLowerCase()) {
-            case 'solucionado':
-                return 'success';
-            case 'en_proceso':
-                return 'warning';
-            case 'en_espera':
-                return 'info';
-            case 'escalado':
-                return 'danger';
-            case 'cerrado':
-                return 'secondary';
-            default:
-                return 'primary';
-        }
-    };
-
-    const getPrioridadColor = (prioridad) => {
-        switch (prioridad?.toLowerCase()) {
-            case 'critica':
-                return 'dark';
-            case 'alta':
-                return 'danger';
-            case 'media':
-                return 'warning';
-            case 'baja':
-                return 'success';
-            default:
-                return 'secondary';
-        }
-    };
-
-
-
     const asignarAnalista = async () => {
         if (!selectedAnalista) {
             alert('Por favor selecciona un analista');
             return;
         }
-
         try {
-            const token = store.auth.token;
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket.id}/asignar`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    id_analista: parseInt(selectedAnalista)
-                })
-            });
-
-            if (response.ok) {
-                alert('Analista asignado exitosamente');
-                setShowAsignarModal(false);
-                setSelectedAnalista('');
-                // Recargar el ticket
-                window.location.reload();
-            } else {
-                const errorData = await response.json();
-                alert(`Error al asignar analista: ${errorData.message || 'Error desconocido'}`);
-            }
+            await asignarAnalistaAction(store.auth.token, ticket.id, selectedAnalista);
+            alert('Analista asignado exitosamente');
+            setShowAsignarModal(false);
+            setSelectedAnalista('');
+            window.location.reload();
         } catch (err) {
             alert(`Error al asignar analista: ${err.message}`);
         }
@@ -134,22 +63,9 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
     const escalarTicket = async () => {
         if (confirm('¿Estás seguro de que quieres escalar este ticket?')) {
             try {
-                const token = store.auth.token;
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket.id}/escalar`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    alert('Ticket escalado exitosamente');
-                    window.location.reload();
-                } else {
-                    const errorData = await response.json();
-                    alert(`Error al escalar ticket: ${errorData.message || 'Error desconocido'}`);
-                }
+                await escalarTicketAction(store.auth.token, ticket.id);
+                alert('Ticket escalado exitosamente');
+                window.location.reload();
             } catch (err) {
                 alert(`Error al escalar ticket: ${err.message}`);
             }
@@ -159,22 +75,9 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
     const cerrarTicket = async () => {
         if (confirm('¿Estás seguro de que quieres cerrar este ticket?')) {
             try {
-                const token = store.auth.token;
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket.id}/cerrar`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    alert('Ticket cerrado exitosamente');
-                    window.location.reload();
-                } else {
-                    const errorData = await response.json();
-                    alert(`Error al cerrar ticket: ${errorData.message || 'Error desconocido'}`);
-                }
+                await cerrarTicketAction(store.auth.token, ticket.id);
+                alert('Ticket cerrado exitosamente');
+                window.location.reload();
             } catch (err) {
                 alert(`Error al cerrar ticket: ${err.message}`);
             }
@@ -184,53 +87,14 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
     const reabrirTicket = async () => {
         if (confirm('¿Estás seguro de que quieres reabrir este ticket?')) {
             try {
-                const token = store.auth.token;
-
-                // CAMBIO 6: Lógica inteligente según estado actual del ticket
-                let nuevoEstado = 'en_espera'; // Default
-
-                if (ticket) {
-                    const estadoActual = ticket.estado.toLowerCase();
-
-                    if (estadoActual === 'solucionado') {
-                        // Desde solucionado puede ir a 'en espera' (reapertura)
-                        nuevoEstado = 'en espera';
-                    } else if (['creado', 'reabierto'].includes(estadoActual)) {
-                        // Desde creado o reabierto puede ir a 'en_espera'  
-                        nuevoEstado = 'en espera';
-                    } else {
-                        // Para otros estados no hay transición válida directa
-                        alert('No se puede reabrir este ticket desde su estado actual. El ticket debe estar solucionado o cerrado.');
-                        return;
-                    }
-                }
-
-                console.log(`🔄 Reabriendo ticket ${ticket.id}: ${ticket?.estado} → ${nuevoEstado}`);
-
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket.id}/estado`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        estado: nuevoEstado
-                    })
-                });
-
-                if (response.ok) {
-                    alert('Ticket reabierto exitosamente');
-                    window.location.reload();
-                } else {
-                    const errorData = await response.json();
-                    alert(`Error al reabrir ticket: ${errorData.message || 'Error desconocido'}`);
-                }
+                await reabrirTicketAction(store.auth.token, ticket);
+                alert('Ticket reabierto exitosamente');
+                window.location.reload();
             } catch (err) {
                 alert(`Error al reabrir ticket: ${err.message}`);
             }
         }
     };
-    // FIN CAMBIO 6
 
     if (loading) {
         return (
@@ -251,12 +115,8 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
                 <div className="text-center">
                     <i className="fas fa-exclamation-triangle fa-4x text-warning mb-3"></i>
                     <h4 className="text-muted">{error || 'Ticket no encontrado'}</h4>
-                    <button
-                        className="btn btn-primary mt-3"
-                        onClick={onBack}
-                    >
-                        <i className="fas fa-arrow-left me-2"></i>
-                        Volver
+                    <button className="btn btn-primary mt-3" onClick={onBack}>
+                        <i className="fas fa-arrow-left me-2"></i>Volver
                     </button>
                 </div>
             </div>
@@ -270,12 +130,8 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
                 <div className="col-12">
                     <div className="d-flex align-items-center justify-content-between mb-3">
                         <div className="d-flex align-items-center gap-3">
-                            <button
-                                className="btn btn-outline-secondary"
-                                onClick={onBack}
-                            >
-                                <i className="fas fa-arrow-left me-2"></i>
-                                Volver
+                            <button className="btn btn-outline-secondary" onClick={onBack}>
+                                <i className="fas fa-arrow-left me-2"></i>Volver
                             </button>
                             <div>
                                 <h1 className="mb-0 fw-bold">Ticket #{ticket.id}</h1>
@@ -322,11 +178,7 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
                                 <div className="mb-4">
                                     <h6 className="fw-semibold mb-2">Imagen Adjunta</h6>
                                     <div className="text-center">
-                                        <img
-                                            src={ticket.url_imagen}
-                                            alt="Imagen del ticket"
-                                            className="img-fluid rounded shadow-sm image-responsive"
-                                        />
+                                        <img src={ticket.url_imagen} alt="Imagen del ticket" className="img-fluid rounded shadow-sm image-responsive" />
                                     </div>
                                 </div>
                             )}
@@ -404,19 +256,11 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
                                     <h6 className="fw-semibold">{getAnalistaAsignado(ticket)}</h6>
                                     <p className="text-muted mb-3">Analista de Soporte</p>
                                     <div className="d-grid gap-2">
-                                        <button
-                                            className="btn btn-success btn-sm"
-                                            onClick={() => window.open(`/ticket/${ticket.id}/chat`, '_blank')}
-                                        >
-                                            <i className="fas fa-comments me-1"></i>
-                                            Ver Chat
+                                        <button className="btn btn-success btn-sm" onClick={() => window.open(`/ticket/${ticket.id}/chat`, '_blank')}>
+                                            <i className="fas fa-comments me-1"></i>Ver Chat
                                         </button>
-                                        <button
-                                            className="btn btn-warning btn-sm"
-                                            onClick={() => setShowAsignarModal(true)}
-                                        >
-                                            <i className="fas fa-user-edit me-1"></i>
-                                            Reasignar
+                                        <button className="btn btn-warning btn-sm" onClick={() => setShowAsignarModal(true)}>
+                                            <i className="fas fa-user-edit me-1"></i>Reasignar
                                         </button>
                                     </div>
                                 </div>
@@ -429,12 +273,8 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
                                     </div>
                                     <h6 className="fw-semibold text-muted">Sin Asignar</h6>
                                     <p className="text-muted mb-3">Esperando asignación</p>
-                                    <button
-                                        className="btn btn-primary btn-sm"
-                                        onClick={() => setShowAsignarModal(true)}
-                                    >
-                                        <i className="fas fa-user-plus me-1"></i>
-                                        Asignar Analista
+                                    <button className="btn btn-primary btn-sm" onClick={() => setShowAsignarModal(true)}>
+                                        <i className="fas fa-user-plus me-1"></i>Asignar Analista
                                     </button>
                                 </div>
                             )}
@@ -446,17 +286,13 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
                         <div className="card border-0 shadow-sm mb-4">
                             <div className="card-header bg-white border-0">
                                 <h5 className="card-title mb-0">
-                                    <i className="fas fa-star text-warning me-2"></i>
-                                    Calificación
+                                    <i className="fas fa-star text-warning me-2"></i>Calificación
                                 </h5>
                             </div>
                             <div className="card-body text-center">
                                 <div className="mb-3">
                                     {[...Array(5)].map((_, i) => (
-                                        <i
-                                            key={i}
-                                            className={`fas fa-star fs-3 ${i < ticket.calificacion ? 'text-warning' : 'text-muted'}`}
-                                        ></i>
+                                        <i key={i} className={`fas fa-star fs-3 ${i < ticket.calificacion ? 'text-warning' : 'text-muted'}`}></i>
                                     ))}
                                 </div>
                                 <h4 className="fw-bold text-warning">{ticket.calificacion}/5</h4>
@@ -464,7 +300,6 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
                             </div>
                         </div>
                     )}
-
                 </div>
             </div>
 
@@ -474,8 +309,7 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
                     <div className="card border-0 shadow-sm">
                         <div className="card-header bg-white border-0">
                             <h5 className="card-title mb-0">
-                                <i className="fas fa-history text-primary me-2"></i>
-                                Historial del Ticket
+                                <i className="fas fa-history text-primary me-2"></i>Historial del Ticket
                             </h5>
                         </div>
                         <div className="card-body">
@@ -547,20 +381,12 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
                                 <h5 className="modal-title">
                                     {tieneAnalistaAsignado(ticket) ? 'Reasignar Analista' : 'Asignar Analista'}
                                 </h5>
-                                <button
-                                    type="button"
-                                    className="btn-close"
-                                    onClick={() => setShowAsignarModal(false)}
-                                ></button>
+                                <button type="button" className="btn-close" onClick={() => setShowAsignarModal(false)}></button>
                             </div>
                             <div className="modal-body">
                                 <div className="mb-3">
                                     <label className="form-label">Seleccionar Analista:</label>
-                                    <select
-                                        className="form-select"
-                                        value={selectedAnalista}
-                                        onChange={(e) => setSelectedAnalista(e.target.value)}
-                                    >
+                                    <select className="form-select" value={selectedAnalista} onChange={(e) => setSelectedAnalista(e.target.value)}>
                                         <option value="">Selecciona un analista</option>
                                         {analistas.map((analista) => (
                                             <option key={analista.id} value={analista.id}>
@@ -571,18 +397,8 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
                                 </div>
                             </div>
                             <div className="modal-footer">
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary"
-                                    onClick={() => setShowAsignarModal(false)}
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-primary"
-                                    onClick={asignarAnalista}
-                                >
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowAsignarModal(false)}>Cancelar</button>
+                                <button type="button" className="btn btn-primary" onClick={asignarAnalista}>
                                     {tieneAnalistaAsignado(ticket) ? 'Reasignar' : 'Asignar'}
                                 </button>
                             </div>

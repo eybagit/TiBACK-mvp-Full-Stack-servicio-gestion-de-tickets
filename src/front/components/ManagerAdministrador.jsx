@@ -16,17 +16,17 @@ export const ManagerAdministrador = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
     const listarTodosLosAdministradores = () => {
@@ -100,7 +100,7 @@ export const ManagerAdministrador = () => {
                                                 <tr key={administrador.id}>
                                                     <td>{administrador.id}</td>
                                                     <td>{administrador.email}</td>
-                                                    <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    <td className="text-truncate-cell">
                                                         {administrador.permisos_especiales}
                                                     </td>
                                                     <td>

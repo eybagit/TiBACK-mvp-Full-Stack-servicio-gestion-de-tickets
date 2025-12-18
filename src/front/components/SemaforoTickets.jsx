@@ -133,14 +133,7 @@ const SemaforoTickets = () => {
                     <td>
                       <span className="badge bg-secondary">{ticket.estado}</span>
                     </td>
-                    <td
-                      style={{
-                        maxWidth: "200px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <td className="text-truncate-cell">
                       {ticket.titulo}
                     </td>
                     <td>

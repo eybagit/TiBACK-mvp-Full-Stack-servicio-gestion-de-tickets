@@ -36,7 +36,7 @@ export default function VerTicketSupervisor() {
 
     return (
         <div className="container py-4">
-            <div className="card mx-auto" style={{ maxWidth: 600 }}>
+            <div className="card mx-auto container-sm">
                 <div className="card-body">
                     <h4 className="card-title mb-3">Detalle del Ticket #{ticket.id}</h4>
                     <div className="mb-2"><strong>Cliente:</strong> {ticket.cliente?.nombre} {ticket.cliente?.apellido}</div>
@@ -55,8 +55,7 @@ export default function VerTicketSupervisor() {
                                         key={idx}
                                         src={url}
                                         alt={`ticket-${ticket.id}-img-${idx}`}
-                                        className={`img-thumbnail ${selectedImageIndex === idx ? 'border-primary border-2' : ''}`}
-                                        style={{ width: '100px', height: '100px', objectFit: 'cover', cursor: 'pointer', marginRight: 8 }}
+                                        className={`img-thumbnail img-thumb-lg cursor-pointer me-2 ${selectedImageIndex === idx ? 'border-primary border-2' : ''}`}
                                         onClick={() => setSelectedImageIndex(idx)}
                                     />
                                 ))}
@@ -67,8 +66,7 @@ export default function VerTicketSupervisor() {
                                 <img
                                     src={ticket.img_urls[selectedImageIndex]}
                                     alt={`img-${selectedImageIndex}`}
-                                    className="img-fluid rounded border"
-                                    style={{ maxHeight: '400px', objectFit: 'contain' }}
+                                    className="img-fluid rounded border img-preview-lg"
                                 />
                                 {ticket.img_urls.length > 1 && (
                                     <div className="mt-2">

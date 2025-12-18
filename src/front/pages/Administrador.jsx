@@ -4,20 +4,20 @@ import useGlobalReducer from "../hooks/useGlobalReducer";
 
 // Utilidades de token seguras
 const tokenUtils = {
-  decodeToken: (token) => {
-    try {
-      if (!token) return null;
-      const parts = token.split('.');
-      if (parts.length !== 3) return null;
-      return JSON.parse(atob(parts[1]));
-    } catch (error) {
-      return null;
+    decodeToken: (token) => {
+        try {
+            if (!token) return null;
+            const parts = token.split('.');
+            if (parts.length !== 3) return null;
+            return JSON.parse(atob(parts[1]));
+        } catch (error) {
+            return null;
+        }
+    },
+    getRole: (token) => {
+        const payload = tokenUtils.decodeToken(token);
+        return payload ? payload.role : null;
     }
-  },
-  getRole: (token) => {
-    const payload = tokenUtils.decodeToken(token);
-    return payload ? payload.role : null;
-  }
 };
 
 export const Administrador = () => {
@@ -34,17 +34,17 @@ export const Administrador = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
     const listarTodosLosAdministradores = () => {
@@ -119,7 +119,7 @@ export const Administrador = () => {
                                                 <tr key={administrador.id}>
                                                     <td>{administrador.id}</td>
                                                     <td>{administrador.email}</td>
-                                                    <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    <td className="text-truncate-cell">
                                                         {administrador.permisos_especiales}
                                                     </td>
                                                     <td>

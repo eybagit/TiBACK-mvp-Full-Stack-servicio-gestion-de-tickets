@@ -21,41 +21,41 @@ const tokenUtils = {
 };
 
 export function ProtectedRoute({ children, allowedRoles = [] }) {
-    const { store, hasRole } = useGlobalReducer();
-    const location = useLocation();
+  const { store, hasRole } = useGlobalReducer();
+  const location = useLocation();
 
-    // Función para determinar el rol basado en la ruta
-    const getRoleFromPath = (pathname) => {
-        if (pathname.startsWith('/cliente')) return 'cliente';
-        if (pathname.startsWith('/analista')) return 'analista';
-        if (pathname.startsWith('/supervisor')) return 'supervisor';
-        if (pathname.startsWith('/administrador')) return 'administrador';
-        return 'cliente'; // Default fallback
-    };
+  // Función para determinar el rol basado en la ruta
+  const getRoleFromPath = (pathname) => {
+    if (pathname.startsWith('/cliente')) return 'cliente';
+    if (pathname.startsWith('/analista')) return 'analista';
+    if (pathname.startsWith('/supervisor')) return 'supervisor';
+    if (pathname.startsWith('/administrador')) return 'administrador';
+    return 'cliente'; // Default fallback
+  };
 
-    // Si está cargando, mostrar loading
-    if (store.auth.isLoading) {
-        return (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-                <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Cargando...</span>
-                </div>
-            </div>
-        );
-    }
+  // Si está cargando, mostrar loading
+  if (store.auth.isLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center loading-half-height">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+    );
+  }
 
-    // Si no está autenticado, redirigir al login con el rol correspondiente
-    if (!store.auth.isAuthenticated) {
-        const role = getRoleFromPath(location.pathname);
-        return <Navigate to={`/auth?role=${role}`} replace />;
-    }
+  // Si no está autenticado, redirigir al login con el rol correspondiente
+  if (!store.auth.isAuthenticated) {
+    const role = getRoleFromPath(location.pathname);
+    return <Navigate to={`/auth?role=${role}`} replace />;
+  }
 
-    // SEGURIDAD: Verificar rol usando token, no estado local
-    if (allowedRoles.length > 0 && !hasRole(allowedRoles)) {
-        return <Navigate to="/" replace />;
-    }
+  // SEGURIDAD: Verificar rol usando token, no estado local
+  if (allowedRoles.length > 0 && !hasRole(allowedRoles)) {
+    return <Navigate to="/" replace />;
+  }
 
-    return children;
+  return children;
 }
 
 export default ProtectedRoute;

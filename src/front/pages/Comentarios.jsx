@@ -16,17 +16,17 @@ export const Comentarios = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
     const listarTodosLosComentarios = () => {
@@ -108,7 +108,7 @@ export const Comentarios = () => {
                                                     <td>{comentario.id_cliente}</td>
                                                     <td>{comentario.id_analista}</td>
                                                     <td>{comentario.id_supervisor}</td>
-                                                    <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    <td className="text-truncate-cell">
                                                         {comentario.texto}
                                                     </td>
                                                     <td>{comentario.fecha_comentario}</td>

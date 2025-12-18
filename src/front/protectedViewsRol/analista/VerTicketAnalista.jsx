@@ -69,7 +69,7 @@ const VerTicketAnalista = () => {
                             <img
                                 src={ticket.img_urls[selectedImageIndex]}
                                 alt={`ticket-img-${selectedImageIndex}`}
-                                style={{ maxWidth: 400, maxHeight: 300, borderRadius: 8, border: '1px solid #ccc' }}
+                                className="img-preview-md rounded border"
                             />
                         </div>
                         {ticket.img_urls.length > 1 && (
@@ -84,7 +84,7 @@ const VerTicketAnalista = () => {
                                     key={idx}
                                     src={url}
                                     alt={`thumb-${idx}`}
-                                    style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6, border: selectedImageIndex === idx ? '2px solid #007bff' : '1px solid #ccc', cursor: 'pointer' }}
+                                    className={`img-thumb-sm cursor-pointer ${selectedImageIndex === idx ? 'border-primary border-2' : ''}`}
                                     onClick={() => setSelectedImageIndex(idx)}
                                 />
                             ))}

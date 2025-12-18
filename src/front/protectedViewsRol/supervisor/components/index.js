@@ -1,0 +1,10 @@
+export { default as SupervisorDashboard } from './SupervisorDashboard';
+export { default as SupervisorHeader } from './SupervisorHeader';
+export { default as SupervisorTicketsList } from './SupervisorTicketsList';
+export { default as TicketRow } from './TicketRow';
+export { default as ClosedTicketsTable } from './ClosedTicketsTable';
+export { default as AnalistasView } from './AnalistasView';
+export { default as AsignacionesView } from './AsignacionesView';
+export { default as EscalacionesView } from './EscalacionesView';
+export { default as SupervisorProfile } from './SupervisorProfile';
+export { default as InfoFormModal } from './InfoFormModal';

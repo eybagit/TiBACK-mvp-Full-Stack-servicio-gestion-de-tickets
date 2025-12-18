@@ -2,10 +2,16 @@
  * Initial Store - Estado inicial de la aplicación
  */
 
+import { clienteInitialState } from './clienteSlice.js';
+
 export const initialStore = () => {
   return {
     message: null,
     todos: [],
+
+    // Estado de página Cliente (arquitectura tiback-hello)
+    clientePage: { ...clienteInitialState },
+
 
     // Estado de autenticación - SOLO TOKEN COMO FUENTE DE VERDAD
     auth: {

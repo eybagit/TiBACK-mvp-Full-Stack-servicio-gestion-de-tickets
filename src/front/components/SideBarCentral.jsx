@@ -138,10 +138,10 @@ export const SideBarCentral = ({ sidebarHidden, activeView, changeView }) => {
     return (
         <div className={`hyper-sidebar ${sidebarHidden ? 'hidden' : ''} overflow-auto`} data-hidden={sidebarHidden}>
 
-            
+
             <div className="hyper-sidebar-header p-4">
                 <img src="https://res.cloudinary.com/mystoreimg/image/upload/v1759679927/fsq6shibpipmssroqwe4.png" className="w-default-logo" />
-            </div> 
+            </div>
 
             <nav className="p-3">
                 <div className="mb-4">
@@ -184,14 +184,14 @@ export const SideBarCentral = ({ sidebarHidden, activeView, changeView }) => {
                     <div className="px-3 py-2">
                         <div className="hyper-nav-title mb-2">Usuario</div>
                         <div className="d-flex align-items-center gap-2 p-2 bg-light rounded">
-                            <div className="hyper-user-avatar bg-primary d-flex align-items-center justify-content-center rounded-circle" style={{ width: '32px', height: '32px' }}>
-                                <i className="fas fa-user text-white" style={{ fontSize: '0.8rem' }}></i>
+                            <div className="hyper-user-avatar bg-primary d-flex align-items-center justify-content-center rounded-circle sidebar-user-avatar">
+                                <i className="fas fa-user text-white icon-small"></i>
                             </div>
                             <div className="flex-grow-1">
-                                <div className="fw-semibold" style={{ fontSize: '0.92rem' }}>
+                                <div className="fw-semibold sidebar-user-name">
                                     {userData?.nombre === 'Pendiente' ? userRole : userData?.nombre}
                                 </div>
-                                <div className="text-muted" style={{ fontSize: '0.805rem' }}>
+                                <div className="text-muted sidebar-user-role">
                                     {userRole === 'cliente' ? 'Cliente' :
                                         userRole === 'analista' ? 'Analista' :
                                             userRole === 'supervisor' ? 'Supervisor' :

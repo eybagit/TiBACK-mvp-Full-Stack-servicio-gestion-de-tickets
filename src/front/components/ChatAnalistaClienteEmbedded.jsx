@@ -329,7 +329,7 @@ const ChatAnalistaClienteEmbedded = ({ ticketId, onBack }) => {
             <div className="row justify-content-center">
                 <div className="col-md-8 col-lg-6 col-xl-4">
                     <div className="card">
-                        <div className="card-header p-3" style={{ borderTop: '4px solid #0d6efd' }}>
+                        <div className="card-header p-3 chat-header-primary">
                             <div className="d-flex justify-content-between align-items-center mb-2">
                                 <h5 className="mb-0">
                                     <i className="fas fa-comments me-2"></i>
@@ -346,9 +346,8 @@ const ChatAnalistaClienteEmbedded = ({ ticketId, onBack }) => {
                             </div>
                             <div className="d-flex align-items-center">
                                 <div className="d-flex align-items-center">
-                                    <div className="rounded-circle d-flex align-items-center justify-content-center text-white bg-primary me-2"
-                                        style={{ width: '25px', height: '25px' }}>
-                                        <i className="fas fa-user-tie" style={{ fontSize: '12px' }}></i>
+                                    <div className="rounded-circle d-flex align-items-center justify-content-center text-white bg-primary me-2 chat-participant-icon">
+                                        <i className="fas fa-user-tie icon-tiny"></i>
                                     </div>
                                     <small className="text-muted">{nombresParticipantes.analista}</small>
                                 </div>
@@ -356,9 +355,8 @@ const ChatAnalistaClienteEmbedded = ({ ticketId, onBack }) => {
                                     <i className="fas fa-arrow-right text-muted"></i>
                                 </div>
                                 <div className="d-flex align-items-center">
-                                    <div className="rounded-circle d-flex align-items-center justify-content-center text-white bg-success me-2"
-                                        style={{ width: '25px', height: '25px' }}>
-                                        <i className="fas fa-user" style={{ fontSize: '12px' }}></i>
+                                    <div className="rounded-circle d-flex align-items-center justify-content-center text-white bg-success me-2 chat-participant-icon">
+                                        <i className="fas fa-user icon-tiny"></i>
                                     </div>
                                     <small className="text-muted">{nombresParticipantes.cliente}</small>
                                 </div>
@@ -372,7 +370,7 @@ const ChatAnalistaClienteEmbedded = ({ ticketId, onBack }) => {
                             </div>
                         )}
 
-                        <div className="card-body" style={{ position: 'relative', height: '400px', overflowY: 'auto' }}>
+                        <div className="card-body chat-body">
                             {mensajes.length === 0 ? (
                                 <div className="text-center text-muted py-4">
                                     <i className="fas fa-comment-slash fa-3x mb-3"></i>
@@ -382,32 +380,26 @@ const ChatAnalistaClienteEmbedded = ({ ticketId, onBack }) => {
                             ) : (
                                 mensajes.map((mensaje, index) => (
                                     <div key={mensaje.id || index} className={`d-flex ${isCurrentUser(mensaje.autor?.rol) ? 'justify-content-end' : 'justify-content-start'} mb-3`}>
-                                        <div className={`d-flex align-items-end ${isCurrentUser(mensaje.autor?.rol) ? 'flex-row-reverse' : 'flex-row'}`} style={{ maxWidth: '70%' }}>
+                                        <div className={`d-flex align-items-end chat-message-container ${isCurrentUser(mensaje.autor?.rol) ? 'flex-row-reverse' : 'flex-row'}`}>
                                             {/* Avatar */}
-                                            <div className={`rounded-circle d-flex align-items-center justify-content-center text-white ${isCurrentUser(mensaje.autor?.rol) ? 'ms-2' : 'me-2'} ${getRoleColor(mensaje.autor?.rol)}`}
-                                                style={{ width: '35px', height: '35px', flexShrink: 0 }}>
-                                                <i className={getRoleIcon(mensaje.autor?.rol)} style={{ fontSize: '14px' }}></i>
+                                            <div className={`rounded-circle d-flex align-items-center justify-content-center text-white chat-avatar ${isCurrentUser(mensaje.autor?.rol) ? 'ms-2' : 'me-2'} ${getRoleColor(mensaje.autor?.rol)}`}>
+                                                <i className={`${getRoleIcon(mensaje.autor?.rol)} text-md`}></i>
                                             </div>
 
                                             {/* Mensaje */}
                                             <div className={`d-flex flex-column ${isCurrentUser(mensaje.autor?.rol) ? 'align-items-end' : 'align-items-start'}`}>
-                                                <div className={`p-3 rounded-4 ${isCurrentUser(mensaje.autor?.rol) ? 'bg-primary text-white' : 'bg-light text-dark'}`}
-                                                    style={{
-                                                        borderRadius: isCurrentUser(mensaje.autor?.rol) ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                                                        wordWrap: 'break-word',
-                                                        maxWidth: '100%'
-                                                    }}>
-                                                    <p className="mb-0" style={{ fontSize: '14px', lineHeight: '1.4' }}>
+                                                <div className={`p-3 rounded-4 chat-message-bubble ${isCurrentUser(mensaje.autor?.rol) ? 'bg-primary text-white chat-message-bubble-sent' : 'bg-light text-dark chat-message-bubble-received'}`}>
+                                                    <p className="mb-0 chat-message-text">
                                                         {mensaje.mensaje}
                                                     </p>
                                                 </div>
 
                                                 {/* Información del mensaje */}
                                                 <div className={`d-flex align-items-center mt-1 ${isCurrentUser(mensaje.autor?.rol) ? 'flex-row-reverse' : 'flex-row'}`}>
-                                                    <small className="text-muted" style={{ fontSize: '11px' }}>
+                                                    <small className="text-muted chat-message-meta">
                                                         {isCurrentUser(mensaje.autor?.rol) ? 'Tú' : mensaje.autor?.nombre || 'Usuario'}
                                                     </small>
-                                                    <small className="text-muted ms-1" style={{ fontSize: '11px' }}>
+                                                    <small className="text-muted ms-1 chat-message-meta">
                                                         {new Date(mensaje.fecha_mensaje).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </small>
                                                 </div>
@@ -432,12 +424,11 @@ const ChatAnalistaClienteEmbedded = ({ ticketId, onBack }) => {
                                     aria-describedby="button-enviar"
                                 />
                                 <button
-                                    className="btn btn-primary"
+                                    className="btn btn-primary btn-send"
                                     type="button"
                                     id="button-enviar"
                                     onClick={enviarMensaje}
                                     disabled={!nuevoMensaje.trim()}
-                                    style={{ paddingTop: '.55rem' }}
                                 >
                                     <i className="fas fa-paper-plane"></i>
                                 </button>
