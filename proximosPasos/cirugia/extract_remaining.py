@@ -13,7 +13,9 @@ start_idx = content.find(start_marker)
 end_idx = content.find(end_marker)
 
 if start_idx == -1 or end_idx == -1:
-    print("ERROR: No se encontraron los marcadores de Create Ticket View")
+    print(f"ERROR: No se encontraron los marcadores de Create Ticket View")
+    print(f"  start_marker found: {start_idx != -1}")
+    print(f"  end_marker found: {end_idx != -1}")
     exit(1)
 
 create_block = content[start_idx:end_idx].strip()
@@ -28,7 +30,9 @@ start_idx2 = content.find(start_marker2)
 end_idx2 = content.find(end_marker2)
 
 if start_idx2 == -1 or end_idx2 == -1:
-    print("ERROR: No se encontraron los marcadores de Profile View")
+    print(f"ERROR: No se encontraron los marcadores de Profile View")
+    print(f"  start_marker found: {start_idx2 != -1}")
+    print(f"  end_marker found: {end_idx2 != -1}")
     exit(1)
 
 profile_block = content[start_idx2:end_idx2].strip()
@@ -37,20 +41,22 @@ print(f"  Profile View: {len(profile_block.split(chr(10)))} líneas")
 # ========== 3. EXTRAER CHAT VIEW ==========
 print("Extrayendo Chat View...")
 start_marker3 = "{/* Chat View */}"
-# Chat View termina antes de las vistas embebidas
-end_marker3 = "{activeView.startsWith('ticket-')"
+# Chat View termina antes de VerTicketHD View
+end_marker3 = "{/* VerTicketHD View */}"
 
 start_idx3 = content.find(start_marker3)
 end_idx3 = content.find(end_marker3)
 
 if start_idx3 == -1 or end_idx3 == -1:
-    print("ERROR: No se encontraron los marcadores de Chat View")
+    print(f"ERROR: No se encontraron los marcadores de Chat View")
+    print(f"  start_marker found: {start_idx3 != -1}")
+    print(f"  end_marker found: {end_idx3 != -1}")
     exit(1)
 
 chat_block = content[start_idx3:end_idx3].strip()
 print(f"  Chat View: {len(chat_block.split(chr(10)))} líneas")
 
-# Guardar bloques extraídos
+# Guardar bloques extraídos para referencia
 with open('proximosPasos/cirugia/create_view_block.txt', 'w', encoding='utf-8') as f:
     f.write(create_block)
 with open('proximosPasos/cirugia/profile_view_block.txt', 'w', encoding='utf-8') as f:
@@ -111,7 +117,7 @@ content = content[:start_idx2] + profile_replacement + content[end_idx2:]
 
 # Recalcular posiciones
 start_idx3 = content.find("{/* Chat View */}")
-end_idx3 = content.find("{activeView.startsWith('ticket-')")
+end_idx3 = content.find("{/* VerTicketHD View */}")
 
 # Reemplazar Chat View
 chat_replacement = '''                    {/* Chat View */}
@@ -135,3 +141,4 @@ with open('src/front/protectedViewsRol/cliente/ClientePage.jsx', 'w', encoding='
     f.write(content)
 
 print('Lines after:', len(content.split('\n')))
+print('SUCCESS!')

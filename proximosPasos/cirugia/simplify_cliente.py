@@ -1,4 +1,9 @@
-import React from 'react';
+"""
+Script para simplificar ClientePage.jsx para usar useClientePage hook
+"""
+
+# Nuevo contenido de ClientePage.jsx (simplificado)
+new_content = '''import React from 'react';
 import { SideBarCentral } from '../../components/SideBarCentral';
 import { VerTicketHDCliente } from './verTicketHDcliente';
 import ComentariosTicketEmbedded from '../../components/ComentariosTicketEmbedded';
@@ -267,3 +272,11 @@ function ClientePage() {
 }
 
 export default ClientePage;
+'''
+
+# Escribir el nuevo archivo
+with open('src/front/protectedViewsRol/cliente/ClientePage.jsx', 'w', encoding='utf-8') as f:
+    f.write(new_content)
+
+lines = len(new_content.split('\\n'))
+print(f"✅ ClientePage.jsx simplificado: {lines} líneas")
