@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom"
 import useGlobalReducer from "../../hooks/useGlobalReducer"
 
@@ -20,43 +19,22 @@ const tokenUtils = {
     }
 };
 
+// Scroll suave a sección usando window.location.hash (sin useNavigate)
+const scrollToSection = (e, sectionId) => {
+    e.preventDefault();
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.scrollIntoView({ behavior: "smooth" });
+    } else {
+        // Si no está en la página actual, ir a home y luego scroll
+        window.location.href = `/#${sectionId}`;
+    }
+};
+
 export const LandNavbar = () => {
     const { store } = useGlobalReducer();
     const { isAuthenticated, token } = store.auth;
     const role = tokenUtils.getRole(token);
-    const navigate = useNavigate();
-
-    const goToFeature = (e) => {
-        e.preventDefault();
-        navigate("/"); // vuelve a la raíz
-        setTimeout(() => {
-            const feature = document.getElementById("feature");
-            if (feature) {
-                feature.scrollIntoView({ behavior: "smooth" });
-            }
-        }, 300); // da tiempo a que la raíz cargue
-    };
-    const goToDesigns = (e) => {
-        e.preventDefault();
-        navigate("/"); // vuelve a la raíz
-        setTimeout(() => {
-            const feature = document.getElementById("layout");
-            if (feature) {
-                feature.scrollIntoView({ behavior: "smooth" });
-            }
-        }, 300); // da tiempo a que la raíz cargue
-    };
-    const goToQuestion = (e) => {
-        e.preventDefault();
-        navigate("/"); // vuelve a la raíz
-        setTimeout(() => {
-            const feature = document.getElementById("question");
-            if (feature) {
-                feature.scrollIntoView({ behavior: "smooth" });
-            }
-        }, 300); // da tiempo a que la raíz cargue
-    };
-
 
     return (
         <nav className="navbar navbar-expand-lg navbar-dark bg-default">
@@ -72,10 +50,10 @@ export const LandNavbar = () => {
                 <div className="collapse navbar-collapse" id="navbarContent">
                     <ul className="navbar-nav me-auto mb-2 mb-lg-0">
                         <li className="nav-item ms-4"><Link className="nav-link active text-white" to="/">Inicio</Link></li>
-                        <li className="nav-item ms-4"><a className="nav-link text-white-50" href="#layout" onClick={goToDesigns}>Diseños</a></li>
-                        <li className="nav-item ms-4"><a className="nav-link text-white-50" href="#feature" onClick={goToFeature}>Características</a></li>
+                        <li className="nav-item ms-4"><a className="nav-link text-white-50" href="#layout" onClick={(e) => scrollToSection(e, 'layout')}>Diseños</a></li>
+                        <li className="nav-item ms-4"><a className="nav-link text-white-50" href="#feature" onClick={(e) => scrollToSection(e, 'feature')}>Características</a></li>
                         {/* <li className="nav-item ms-4"><a className="nav-link text-white-50" href="#price">Precios</a></li> */}
-                        <li className="nav-item ms-4"><a className="nav-link text-white-50" href="#question" onClick={goToQuestion}>Preguntas Frecuentes</a></li>
+                        <li className="nav-item ms-4"><a className="nav-link text-white-50" href="#question" onClick={(e) => scrollToSection(e, 'question')}>Preguntas Frecuentes</a></li>
                         <li className="nav-item ms-4"><Link className="nav-link text-white-50" to="/contact">Contacto</Link></li>
                     </ul>
                     <div className="d-flex">

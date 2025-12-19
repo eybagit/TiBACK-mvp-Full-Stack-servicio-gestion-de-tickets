@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const ManagerAdministrador = () => {
     const { store, dispatch } = useGlobalReducer();
-    const navigate = useNavigate();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
@@ -60,12 +59,9 @@ export const ManagerAdministrador = () => {
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div></div>
                 <div className="d-flex gap-2">
-                    <button
-                        className="btn btn-primary"
-                        onClick={() => navigate('/agregar-administrador')}
-                    >
+                    <Link to="/agregar-administrador" className="btn btn-primary">
                         <i className="fas fa-plus"></i> Agregar Administrador
-                    </button>
+                    </Link>
                 </div>
             </div>
 
@@ -105,20 +101,20 @@ export const ManagerAdministrador = () => {
                                                     </td>
                                                     <td>
                                                         <div className="d-flex gap-2" role="group">
-                                                            <button
+                                                            <Link
+                                                                to={`/actualizar-administrador/${administrador.id}`}
                                                                 className="btn btn-warning"
-                                                                onClick={() => navigate(`/actualizar-administrador/${administrador.id}`)}
                                                                 title="Actualizar Administrador"
                                                             >
                                                                 <i className="fas fa-edit"></i>
-                                                            </button>
-                                                            <button
+                                                            </Link>
+                                                            <Link
+                                                                to={`/ver-administrador/${administrador.id}`}
                                                                 className="btn btn-info"
-                                                                onClick={() => navigate(`/ver-administrador/${administrador.id}`)}
                                                                 title="Ver Administrador"
                                                             >
                                                                 <i className="fas fa-eye"></i>
-                                                            </button>
+                                                            </Link>
                                                             <button
                                                                 className="btn btn-danger"
                                                                 onClick={() => eliminarAdministrador(administrador.id)}

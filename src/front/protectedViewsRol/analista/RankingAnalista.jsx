@@ -1,21 +1,22 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
 import useGlobalReducer from "../../hooks/useGlobalReducer";
-import { useNavigate } from "react-router-dom";
 import { Bar } from 'react-chartjs-2';
 import 'chart.js/auto';
 import { tokenUtils } from "../../store";
 
 const RankingAnalista = () => {
-    const { store } = useGlobalReducer();
-    const navigate = useNavigate();
+    const { store, dispatch } = useGlobalReducer();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
-    const [ranking, setRanking] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+
+    // Estados desde crudSlice
+    const loading = store.crud?.loading || false;
+    const error = store.crud?.error || null;
+    const ranking = store.crud?.rankingAnalistas || [];
 
     useEffect(() => {
-        setLoading(true);
+        dispatch({ type: 'CRUD_SET_LOADING', payload: true });
         fetch(`${API}/analistas/ranking`, {
             headers: {
                 'Authorization': `Bearer ${store.auth.token}`,
@@ -24,13 +25,17 @@ const RankingAnalista = () => {
         })
             .then(res => res.json())
             .then(data => {
-                setRanking(data);
-                setLoading(false);
+                dispatch({ type: 'CRUD_SET_RANKING_ANALISTAS', payload: data });
+                dispatch({ type: 'CRUD_SET_LOADING', payload: false });
             })
             .catch(err => {
-                setError("Error al cargar ranking");
-                setLoading(false);
+                dispatch({ type: 'CRUD_SET_ERROR', payload: "Error al cargar ranking" });
+                dispatch({ type: 'CRUD_SET_LOADING', payload: false });
             });
+
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
     }, []);
 
     if (loading) return <div className="text-center py-4">Cargando ranking...</div>;
@@ -42,7 +47,6 @@ const RankingAnalista = () => {
     const dataTotales = ranking.map(a => a.tickets_totales);
     const dataResueltos = ranking.map(a => a.tickets_resueltos);
     const dataEscalados = ranking.map(a => a.tickets_escalados);
-    const dataNegativos = ranking.map(a => a.tickets_escalados); // Negativos para la gráfica
 
 
     // Obtener email del analista actual desde el token
@@ -57,9 +61,9 @@ const RankingAnalista = () => {
 
     return (
         <div className="container py-4">
-            <button className="btn btn-secondary mb-3" onClick={() => navigate(-1)}>
+            <Link to="/analista" className="btn btn-secondary mb-3">
                 Volver
-            </button>
+            </Link>
             <h2 className="mb-4">Ranking de Analistas</h2>
             <div className="row mb-4">
                 <div className="col-md-3 mb-2">
