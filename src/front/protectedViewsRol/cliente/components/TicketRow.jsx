@@ -9,6 +9,7 @@ function TicketRow({
     isExpanded,
     solicitudesReapertura,
     ticketsConRecomendaciones,
+    selectedTicketId,
     changeView,
     setSelectedTicketId,
     toggleTicketExpansion,
@@ -23,7 +24,7 @@ function TicketRow({
         <React.Fragment>
             <tr
                 data-ticket-id={ticket.id}
-                className={solicitudesReapertura.has(ticket.id) ? 'table-warning' : ''}
+                className={`${selectedTicketId === ticket.id ? 'table-info' : ''} ${solicitudesReapertura.has(ticket.id) ? 'table-warning' : ''}`.trim()}
             >
                 <td className="text-center px-3">
                     <div className="d-flex align-items-center justify-content-center">

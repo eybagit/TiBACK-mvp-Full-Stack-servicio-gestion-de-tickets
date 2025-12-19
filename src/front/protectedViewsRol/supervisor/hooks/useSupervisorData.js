@@ -75,12 +75,21 @@ export function useSupervisorData({ store, dispatch }) {
         await supervisorActions.loadClosedTickets(dispatch, store.auth.token);
     };
 
-    // Actualizar todas las tablas
+    // Actualizar todas las tablas (con loading visible - para acciones manuales)
     const actualizarTodasLasTablas = async () => {
         await actualizarTickets();
         await actualizarAnalistas();
         if (showCerrados) {
             await cargarTicketsCerrados();
+        }
+    };
+
+    // === SINCRONIZACIÓN SILENCIOSA (sin loading, sin flasheo) ===
+    // Usada por WebSocket para background sync
+    const sincronizarSilenciosamente = async () => {
+        await supervisorActions.loadTicketsSilent(dispatch, store.auth.token, tickets);
+        if (showCerrados) {
+            await supervisorActions.loadClosedTicketsSilent(dispatch, store.auth.token, ticketsCerrados);
         }
     };
 
@@ -176,6 +185,7 @@ export function useSupervisorData({ store, dispatch }) {
         
         // Funciones
         actualizarTodasLasTablas,
+        sincronizarSilenciosamente,
         cargarTicketsCerrados,
         getFilteredTickets,
         getStats,

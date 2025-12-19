@@ -107,10 +107,26 @@ export function useSupervisorPage() {
         joinRoom, joinTicketRoom, startRealtimeSync,
         joinCriticalRooms, joinAllCriticalRooms,
         tickets,
-        setTickets: (data) => dispatch({ type: 'SUPERVISOR_SET_TICKETS', payload: data }),
+        setTickets: (dataOrFn) => {
+            // Soportar tanto datos directos como funciones updater
+            if (typeof dataOrFn === 'function') {
+                const newData = dataOrFn(tickets);
+                dispatch({ type: 'SUPERVISOR_SET_TICKETS', payload: newData });
+            } else {
+                dispatch({ type: 'SUPERVISOR_SET_TICKETS', payload: dataOrFn });
+            }
+        },
         ticketsCerrados,
-        setTicketsCerrados: (data) => dispatch({ type: 'SUPERVISOR_SET_TICKETS_CERRADOS', payload: data }),
-        actualizarTodasLasTablas
+        setTicketsCerrados: (dataOrFn) => {
+            if (typeof dataOrFn === 'function') {
+                const newData = dataOrFn(ticketsCerrados);
+                dispatch({ type: 'SUPERVISOR_SET_TICKETS_CERRADOS', payload: newData });
+            } else {
+                dispatch({ type: 'SUPERVISOR_SET_TICKETS_CERRADOS', payload: dataOrFn });
+            }
+        },
+        actualizarTodasLasTablas,
+        sincronizarSilenciosamente: dataHook.sincronizarSilenciosamente
     });
 
     // ==============================

@@ -37,16 +37,28 @@ export function useAnalistaData({ store, dispatch }) {
     
     const setError = (value) => dispatch({ type: 'ANALISTA_SET_ERROR', payload: value });
     const setTicketsSolicitudReapertura = (value) => {
-        if (value instanceof Set) {
+        if (typeof value === 'function') {
+            // Si es una función, ejecutarla con el estado actual
+            const currentSet = store.analista.ticketsSolicitudReapertura;
+            const newValue = value(currentSet);
+            dispatch({ type: 'ANALISTA_SET_SOLICITUDES_REAPERTURA', payload: Array.from(newValue) });
+        } else if (value instanceof Set) {
             dispatch({ type: 'ANALISTA_SET_SOLICITUDES_REAPERTURA', payload: Array.from(value) });
         } else {
-            dispatch({ type: 'ANALISTA_SET_SOLICITUDES_REAPERTURA', payload: value });
+            dispatch({ type: 'ANALISTA_SET_SOLICITUDES_REAPERTURA', payload: Array.isArray(value) ? value : [] });
         }
     };
     const setModalTicketId = (value) => dispatch({ type: 'ANALISTA_SET_MODAL_TICKET_ID', payload: value });
     const setShowInfoForm = (value) => dispatch({ type: 'ANALISTA_SET_SHOW_INFO_FORM', payload: value });
     const setInfoData = (value) => dispatch({ type: 'ANALISTA_SET_INFO_DATA', payload: value });
-    const setTickets = (value) => dispatch({ type: 'ANALISTA_SET_TICKETS', payload: value });
+    const setTickets = (valueOrFn) => {
+        if (typeof valueOrFn === 'function') {
+            const newValue = valueOrFn(tickets);
+            dispatch({ type: 'ANALISTA_SET_TICKETS', payload: newValue });
+        } else {
+            dispatch({ type: 'ANALISTA_SET_TICKETS', payload: valueOrFn });
+        }
+    };
 
     // Toggle expansión de ticket
     const toggleTicketExpansion = (ticketId) => {
@@ -57,9 +69,14 @@ export function useAnalistaData({ store, dispatch }) {
     // FUNCIONES ASYNC (usan analistaActions)
     // ==============================
 
-    // Actualizar lista de tickets
+    // Actualizar lista de tickets (con loading visible)
     const actualizarTickets = async () => {
         await analistaActions.loadTickets(dispatch, store.auth.token);
+    };
+
+    // Sincronización silenciosa (sin loading, sin flasheo)
+    const sincronizarSilenciosamente = async () => {
+        await analistaActions.loadTicketsSilent(dispatch, store.auth.token, tickets);
     };
 
     // Manejar cambios en formulario
@@ -126,6 +143,7 @@ export function useAnalistaData({ store, dispatch }) {
         // Funciones
         toggleTicketExpansion,
         actualizarTickets,
+        sincronizarSilenciosamente,
         handleInfoChange,
         updateInfo
     };

@@ -36,6 +36,33 @@ export const analistaActions = {
   },
 
   /**
+   * Cargar tickets SILENCIOSAMENTE (sin loading, solo actualiza si hay cambios)
+   * Usado por WebSocket para sincronización en background sin flasheo
+   */
+  loadTicketsSilent: async (dispatch, token, currentTickets) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/analista`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Solo actualizar si hay diferencias reales (IDs + estados)
+        const currentIds = (currentTickets || []).map(t => `${t.id}-${t.estado}`).sort().join(',');
+        const newIds = (data || []).map(t => `${t.id}-${t.estado}`).sort().join(',');
+        if (currentIds !== newIds) {
+          dispatch({ type: 'ANALISTA_SET_TICKETS', payload: data });
+        }
+      }
+    } catch (error) {
+      // Silencioso: no mostrar error
+      console.debug('Sync silenciosa analista fallida:', error.message);
+    }
+  },
+
+  /**
    * Cargar datos del usuario analista
    */
   loadUserData: async (dispatch, token) => {

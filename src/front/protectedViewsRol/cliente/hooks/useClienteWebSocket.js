@@ -67,14 +67,8 @@ function useClienteWebSocket({
             console.log('🔄 CLIENTE - Configurando sincronización crítica');
             joinAllCriticalRooms(store.websocket.socket, store.auth.user, store.auth.token);
 
-            startRealtimeSync({
-                syncTypes: ['tickets', 'comentarios', 'asignaciones'],
-                onSyncTriggered: (data) => {
-                    if (data.type === 'tickets' || data.priority === 'critical') {
-                        actualizarTickets();
-                    }
-                }
-            });
+            // NO usar startRealtimeSync - causa recargas
+            // startRealtimeSync({ ... actualizarTickets() ... });
 
             // Unirse a rooms críticos de tickets
             const ticketIds = tickets.map(ticket => ticket.id);
@@ -89,61 +83,134 @@ function useClienteWebSocket({
                 });
             }
 
-            // Configurar listeners para eventos de tickets
+            // === HANDLERS 100% LOCALES (SIN FETCH) ===
             const socket = store.websocket.socket;
 
+            // Helper para actualizar ticket localmente
+            const updateTicketLocal = (ticketId, changes) => {
+                setTickets(prev => Array.isArray(prev) 
+                    ? prev.map(t => t.id === ticketId ? { ...t, ...changes } : t)
+                    : prev
+                );
+            };
+
             const handleTicketUpdate = (data) => {
-                if (data.ticket_id && data.ticket_estado?.toLowerCase() !== 'solucionado') {
-                    setSolicitudesReapertura(prev => {
-                        const newSet = new Set(prev);
-                        newSet.delete(data.ticket_id);
-                        return newSet;
-                    });
+                if (data.ticket_id) {
+                    // Actualizar estado localmente
+                    const updates = {};
+                    if (data.ticket_estado) updates.estado = data.ticket_estado;
+                    if (data.cambios) Object.assign(updates, data.cambios);
+                    if (Object.keys(updates).length > 0) {
+                        updateTicketLocal(data.ticket_id, updates);
+                    }
+                    // Limpiar solicitudes de reapertura si no está solucionado
+                    if (data.ticket_estado?.toLowerCase() !== 'solucionado') {
+                        setSolicitudesReapertura(prev => {
+                            const newSet = new Set(prev);
+                            newSet.delete(data.ticket_id);
+                            return newSet;
+                        });
+                    }
                 }
-                actualizarTickets();
             };
 
             const handleTicketSolucionado = (data) => {
                 if (data.ticket_id) {
+                    updateTicketLocal(data.ticket_id, { estado: 'solucionado' });
+                    setSolicitudesReapertura(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(data.ticket_id);
+                        return newSet;
+                    });
+                    window.dispatchEvent(new CustomEvent('ticket_solucionado_cliente', {
+                        detail: { ...data, source: 'cliente_websocket' }
+                    }));
+                }
+            };
+
+            const handleTicketAsignado = (data) => {
+                if (data.ticket_id) {
+                    updateTicketLocal(data.ticket_id, { 
+                        estado: 'asignado',
+                        id_analista: data.analista_id || data.id_analista
+                    });
+                }
+            };
+
+            const handleTicketEscalado = (data) => {
+                if (data.ticket_id) {
+                    updateTicketLocal(data.ticket_id, { estado: 'escalado' });
+                }
+            };
+
+            const handleTicketCerrado = (data) => {
+                if (data.ticket_id) {
+                    updateTicketLocal(data.ticket_id, { estado: 'cerrado' });
+                }
+            };
+
+            const handleTicketReabierto = (data) => {
+                if (data.ticket_id) {
+                    updateTicketLocal(data.ticket_id, { estado: data.estado || 'en_espera' });
                     setSolicitudesReapertura(prev => {
                         const newSet = new Set(prev);
                         newSet.delete(data.ticket_id);
                         return newSet;
                     });
                 }
-                actualizarTickets();
-                setTimeout(() => actualizarTickets(), 1000);
-                window.dispatchEvent(new CustomEvent('ticket_solucionado_cliente', {
-                    detail: { ...data, source: 'cliente_websocket' }
-                }));
             };
 
-            const handleGenericUpdate = () => actualizarTickets();
+            const handleSolicitudReapertura = (data) => {
+                if (data.ticket_id) {
+                    updateTicketLocal(data.ticket_id, { estado: 'solucionado' });
+                }
+            };
+
+            const handleReaperturaAprobada = (data) => {
+                if (data.ticket_id) {
+                    updateTicketLocal(data.ticket_id, { estado: 'en_espera' });
+                    setSolicitudesReapertura(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(data.ticket_id);
+                        return newSet;
+                    });
+                }
+            };
+
+            const handleNuevoComentario = (data) => {
+                // Los comentarios se cargan al abrir el ticket, ignorar aquí
+            };
+
+            const handleNuevoTicket = (data) => {
+                if (data.ticket) {
+                    setTickets(prev => Array.isArray(prev) ? [data.ticket, ...prev] : [data.ticket]);
+                }
+            };
 
             socket.on('ticket_actualizado', handleTicketUpdate);
             socket.on('ticket_estado_changed', handleTicketUpdate);
-            socket.on('nuevo_comentario', handleGenericUpdate);
-            socket.on('ticket_asignado', handleGenericUpdate);
-            socket.on('ticket_escalado', handleGenericUpdate);
+            socket.on('nuevo_comentario', handleNuevoComentario);
+            socket.on('ticket_asignado', handleTicketAsignado);
+            socket.on('ticket_escalado', handleTicketEscalado);
             socket.on('ticket_solucionado', handleTicketSolucionado);
-            socket.on('ticket_cerrado', handleGenericUpdate);
-            socket.on('solicitud_reapertura', handleGenericUpdate);
-            socket.on('reapertura_aprobada', handleGenericUpdate);
-            socket.on('ticket_reabierto', handleGenericUpdate);
-            socket.on('nuevo_ticket', handleGenericUpdate);
+            socket.on('ticket_cerrado', handleTicketCerrado);
+            socket.on('solicitud_reapertura', handleSolicitudReapertura);
+            socket.on('reapertura_aprobada', handleReaperturaAprobada);
+            socket.on('ticket_reabierto', handleTicketReabierto);
+            socket.on('nuevo_ticket', handleNuevoTicket);
 
             return () => {
                 socket.off('ticket_actualizado', handleTicketUpdate);
                 socket.off('ticket_estado_changed', handleTicketUpdate);
-                socket.off('nuevo_comentario', handleGenericUpdate);
-                socket.off('ticket_asignado', handleGenericUpdate);
-                socket.off('ticket_escalado', handleGenericUpdate);
+                socket.off('nuevo_comentario', handleNuevoComentario);
+                socket.off('ticket_asignado', handleTicketAsignado);
+                socket.off('ticket_escalado', handleTicketEscalado);
                 socket.off('ticket_solucionado', handleTicketSolucionado);
-                socket.off('ticket_cerrado', handleGenericUpdate);
-                socket.off('solicitud_reapertura', handleGenericUpdate);
-                socket.off('reapertura_aprobada', handleGenericUpdate);
-                socket.off('ticket_reabierto', handleGenericUpdate);
-                socket.off('nuevo_ticket', handleGenericUpdate);
+                socket.off('ticket_cerrado', handleTicketCerrado);
+                socket.off('solicitud_reapertura', handleSolicitudReapertura);
+                socket.off('reapertura_aprobada', handleReaperturaAprobada);
+                socket.off('ticket_reabierto', handleTicketReabierto);
+                socket.off('nuevo_ticket', handleNuevoTicket);
             };
         }
     }, [store.auth.user, store.websocket.connected, tickets.length]);
@@ -152,13 +219,13 @@ function useClienteWebSocket({
     useEffect(() => {
         const handleManualSync = (event) => {
             if (event.detail.role === 'cliente') {
-                actualizarTickets();
+                actualizarTickets(); // OK: acción manual del usuario
             }
         };
 
         const handleTotalSync = (event) => {
             if (event.detail.role === 'cliente' || event.detail.source === 'footer_sync') {
-                actualizarTickets();
+                actualizarTickets(); // OK: acción manual del usuario
             }
         };
 
@@ -179,9 +246,10 @@ function useClienteWebSocket({
 
     // Manejar actualizaciones críticas de tickets
     useEffect(() => {
-        if (store.websocket.criticalTicketUpdate?.priority === 'critical') {
-            actualizarTickets();
-        }
+        // NO actualizar automáticamente - causa recargas
+        // if (store.websocket.criticalTicketUpdate?.priority === 'critical') {
+        //     actualizarTickets();
+        // }
     }, [store.websocket.criticalTicketUpdate]);
 
     // Actualizar tickets cuando lleguen notificaciones WebSocket
@@ -203,17 +271,26 @@ function useClienteWebSocket({
 
             if (lastNotification.tipo === 'solucionado') {
                 if (lastNotification.ticket_id) {
+                    // Actualizar localmente
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === lastNotification.ticket_id ? { ...t, estado: 'solucionado' } : t)
+                        : prev
+                    );
                     setSolicitudesReapertura(prev => {
                         const newSet = new Set(prev);
                         newSet.delete(lastNotification.ticket_id);
                         return newSet;
                     });
                 }
-                actualizarTickets();
-                setTimeout(() => actualizarTickets(), 500);
-                setTimeout(() => actualizarTickets(), 1500);
+                // NO hacer fetch - ya actualizamos localmente
             } else {
-                actualizarTickets();
+                // Otras notificaciones: actualizar localmente si tenemos datos
+                if (lastNotification.ticket_id && lastNotification.estado) {
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === lastNotification.ticket_id ? { ...t, estado: lastNotification.estado } : t)
+                        : prev
+                    );
+                }
             }
         }
     }, [store.websocket.notifications]);

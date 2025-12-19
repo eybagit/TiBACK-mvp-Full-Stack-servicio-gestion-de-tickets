@@ -11,7 +11,7 @@ import { tokenUtils } from '../utils/tokenUtils.js';
  */
 export const supervisorActions = {
   /**
-   * Cargar tickets del supervisor
+   * Cargar tickets del supervisor (con loading visible)
    */
   loadTickets: async (dispatch, token) => {
     dispatch({ type: 'SUPERVISOR_SET_LOADING', payload: true });
@@ -36,6 +36,33 @@ export const supervisorActions = {
   },
 
   /**
+   * Cargar tickets SILENCIOSAMENTE (sin loading, solo actualiza si hay cambios)
+   * Usado por WebSocket para sincronización en background sin flasheo
+   */
+  loadTicketsSilent: async (dispatch, token, currentTickets) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/supervisor`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Solo actualizar si hay diferencias reales
+        const currentIds = (currentTickets || []).map(t => `${t.id}-${t.estado}`).sort().join(',');
+        const newIds = (data || []).map(t => `${t.id}-${t.estado}`).sort().join(',');
+        if (currentIds !== newIds) {
+          dispatch({ type: 'SUPERVISOR_SET_TICKETS', payload: data });
+        }
+      }
+    } catch (error) {
+      // Silencioso: no mostrar error
+      console.debug('Sync silenciosa fallida:', error.message);
+    }
+  },
+
+  /**
    * Cargar tickets cerrados
    */
   loadClosedTickets: async (dispatch, token) => {
@@ -55,6 +82,30 @@ export const supervisorActions = {
       console.error('Error cargando tickets cerrados:', error);
     } finally {
       dispatch({ type: 'SUPERVISOR_SET_LOADING_CERRADOS', payload: false });
+    }
+  },
+
+  /**
+   * Cargar tickets cerrados SILENCIOSAMENTE
+   */
+  loadClosedTicketsSilent: async (dispatch, token, currentCerrados) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/supervisor/cerrados`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const currentIds = (currentCerrados || []).map(t => t.id).sort().join(',');
+        const newIds = (data || []).map(t => t.id).sort().join(',');
+        if (currentIds !== newIds) {
+          dispatch({ type: 'SUPERVISOR_SET_TICKETS_CERRADOS', payload: data });
+        }
+      }
+    } catch (error) {
+      console.debug('Sync silenciosa cerrados fallida:', error.message);
     }
   },
 
@@ -344,13 +395,26 @@ export const supervisorActions = {
   /**
    * Obtener estadísticas (selector)
    */
-  getStats: (tickets) => ({
-    total: tickets.length,
-    activos: tickets.filter(t => t.estado === 'activo').length,
-    resueltos: tickets.filter(t => t.estado === 'resuelto').length,
-    escalados: tickets.filter(t => t.estado === 'escalado').length,
-    pendientes: tickets.filter(t => t.estado === 'pendiente').length
-  }),
+  getStats: (tickets) => {
+    // Validar que tickets sea un array
+    if (!Array.isArray(tickets)) {
+      return {
+        total: 0,
+        activos: 0,
+        resueltos: 0,
+        escalados: 0,
+        pendientes: 0
+      };
+    }
+    
+    return {
+      total: tickets.length,
+      activos: tickets.filter(t => t.estado === 'activo').length,
+      resueltos: tickets.filter(t => t.estado === 'resuelto').length,
+      escalados: tickets.filter(t => t.estado === 'escalado').length,
+      pendientes: tickets.filter(t => t.estado === 'pendiente').length
+    };
+  },
 
   /**
    * Obtener color de estado

@@ -79,6 +79,44 @@ export const Ticket = () => {
             .finally(() => setLoading(false));
     };
 
+    const borrarTodosLosTickets = () => {
+        const totalTickets = Array.isArray(store.tickets) ? store.tickets.length : 0;
+
+        if (totalTickets === 0) {
+            alert("No hay tickets para borrar");
+            return;
+        }
+
+        const confirmacion1 = window.confirm(
+            `⚠️ ADVERTENCIA: Estás a punto de borrar TODOS los ${totalTickets} tickets.\n\n` +
+            `Esta acción NO se puede deshacer.\n\n` +
+            `¿Estás seguro de que quieres continuar?`
+        );
+
+        if (!confirmacion1) return;
+
+        const confirmacion2 = window.confirm(
+            `🚨 CONFIRMACIÓN FINAL:\n\n` +
+            `Se borrarán ${totalTickets} tickets de forma PERMANENTE.\n\n` +
+            `Escribe OK mentalmente y presiona Aceptar para confirmar.`
+        );
+
+        if (!confirmacion2) return;
+
+        setLoading(true);
+        fetchJson(`${API}/tickets/borrar-todos`, { method: "DELETE" })
+            .then(({ ok, data }) => {
+                if (!ok) throw new Error(data.message);
+                dispatch({ type: "tickets_set_list", payload: [] });
+                alert(`✅ ${data.deleted_count || totalTickets} tickets eliminados exitosamente`);
+            })
+            .catch((error) => {
+                setError(error);
+                alert(`❌ Error al borrar tickets: ${error.message || error}`);
+            })
+            .finally(() => setLoading(false));
+    };
+
     // Control del modal mediante dispatch
     const openModal = (images) => {
         dispatch({ type: 'CRUD_SET_MODAL_IMAGES', payload: images });
@@ -192,9 +230,18 @@ export const Ticket = () => {
             <div className="card">
                 <div className="card-header d-flex justify-content-between align-items-center">
                     <h5 className="mb-0">Lista de Tickets</h5>
-                    <button className="btn btn-primary" onClick={listarTodosLosTickets}>
-                        <i className="fas fa-refresh"></i> Actualizar Lista
-                    </button>
+                    <div className="d-flex gap-2">
+                        <button className="btn btn-primary" onClick={listarTodosLosTickets}>
+                            <i className="fas fa-refresh"></i> Actualizar Lista
+                        </button>
+                        <button
+                            className="btn btn-danger"
+                            onClick={borrarTodosLosTickets}
+                            disabled={!Array.isArray(store.tickets) || store.tickets.length === 0}
+                        >
+                            <i className="fas fa-trash"></i> Borrar Todos
+                        </button>
+                    </div>
                 </div>
                 <div className="card-body">
                     {Array.isArray(store.tickets) && store.tickets.length > 0 ? (

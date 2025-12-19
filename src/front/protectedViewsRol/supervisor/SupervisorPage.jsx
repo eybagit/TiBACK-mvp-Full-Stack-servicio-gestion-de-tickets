@@ -237,6 +237,7 @@ export function SupervisorPage() {
                         <VerTicketHDSupervisor
                             ticketId={parseInt(activeView.split('-')[1])}
                             tickets={tickets}
+                            ticketsCerrados={ticketsCerradosCombinados}
                             ticketsConRecomendaciones={ticketsConRecomendaciones}
                             analistas={analistas}
                             onBack={() => setActiveView('tickets')}

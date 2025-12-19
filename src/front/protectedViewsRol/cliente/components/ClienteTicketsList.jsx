@@ -24,6 +24,7 @@ function ClienteTicketsList({
     toggleTicketExpansion,
     solicitudesReapertura,
     ticketsConRecomendaciones,
+    selectedTicketId,
     changeView,
     setSelectedTicketId,
     tieneAnalistaAsignado,
@@ -114,6 +115,7 @@ function ClienteTicketsList({
                                             isExpanded={expandedTickets.has(ticket.id)}
                                             solicitudesReapertura={solicitudesReapertura}
                                             ticketsConRecomendaciones={ticketsConRecomendaciones}
+                                            selectedTicketId={selectedTicketId}
                                             changeView={changeView}
                                             setSelectedTicketId={setSelectedTicketId}
                                             toggleTicketExpansion={toggleTicketExpansion}

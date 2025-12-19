@@ -63,7 +63,7 @@ function ClosedTicketsTable({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {ticketsCerradosCombinados.map((ticket) => (
+                                    {Array.isArray(ticketsCerradosCombinados) && ticketsCerradosCombinados.map((ticket) => (
                                         <tr key={ticket.id}>
                                             <td>#{ticket.id}</td>
                                             <td>

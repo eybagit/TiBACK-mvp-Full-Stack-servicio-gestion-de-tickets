@@ -53,7 +53,7 @@ function AnalistaTicketsList({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {tickets.map((ticket) => {
+                                    {Array.isArray(tickets) && tickets.map((ticket) => {
                                         const isExpanded = expandedTickets.has(ticket.id);
                                         return (
                                             <React.Fragment key={ticket.id}>

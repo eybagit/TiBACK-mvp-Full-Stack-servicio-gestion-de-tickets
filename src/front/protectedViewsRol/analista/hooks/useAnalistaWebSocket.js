@@ -15,7 +15,8 @@ export function useAnalistaWebSocket({
     tickets,
     setTickets,
     setTicketsSolicitudReapertura,
-    actualizarTickets
+    actualizarTickets,
+    sincronizarSilenciosamente
 }) {
     // Conectar WebSocket
     useEffect(() => {
@@ -71,7 +72,7 @@ export function useAnalistaWebSocket({
             joinAllCriticalRooms && joinAllCriticalRooms(socket, userData, store.auth.token);
         } catch (e) {}
 
-        const ticketIds = tickets.map(t => t.id);
+        const ticketIds = Array.isArray(tickets) ? tickets.map(t => t.id) : [];
         if (ticketIds.length && joinCriticalRooms) {
             try { joinCriticalRooms(socket, ticketIds, store.auth.user, store.auth.token); } catch (e) {}
         }
@@ -84,62 +85,112 @@ export function useAnalistaWebSocket({
             });
         }
 
-        // Handlers
+        // === ACTUALIZACIONES INSTANTÁNEAS (100% LOCALES) ===
+
+        // === HANDLERS INSTANTÁNEOS ===
+        
         const onSolicitudReapertura = (data) => {
             if (!data || !data.ticket_id) return;
             setTicketsSolicitudReapertura(prev => { const copy = new Set(prev); copy.add(data.ticket_id); return copy; });
-            setTickets(prev => prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'solucionado' } : t));
+            setTickets(prev => Array.isArray(prev) ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'solucionado' } : t) : prev);
         };
 
         const onTicketReabierto = (data) => {
             if (!data || !data.ticket_id) return;
             setTicketsSolicitudReapertura(prev => { const copy = new Set(prev); copy.delete(data.ticket_id); return copy; });
-            setTickets(prev => prev.map(t => t.id === data.ticket_id ? { ...t, estado: data.estado || 'en_espera' } : t));
-            if (data.assigned_analista_id === store.auth.user?.id) actualizarTickets();
+            setTickets(prev => Array.isArray(prev) ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: data.estado || 'en_espera' } : t) : prev);
         };
 
         const onTicketCerrado = (data) => {
             if (!data || !data.ticket_id) return;
-            setTickets(prev => prev.filter(t => t.id !== data.ticket_id));
+            setTickets(prev => Array.isArray(prev) ? prev.filter(t => t.id !== data.ticket_id) : prev);
         };
 
         const onTicketAsignado = (data) => {
             if (!data || !data.ticket_id) return;
             const esParaMi = data.analista_id === store.auth.user?.id || data.id_analista === store.auth.user?.id;
             if (esParaMi) {
-                actualizarTickets();
-                setTimeout(() => actualizarTickets(), 300);
-                setTimeout(() => actualizarTickets(), 800);
+                if (data.ticket) {
+                    // Si viene el ticket completo, agregarlo
+                    setTickets(prev => {
+                        const exists = Array.isArray(prev) && prev.some(t => t.id === data.ticket.id);
+                        if (exists) {
+                            return prev.map(t => t.id === data.ticket.id ? data.ticket : t);
+                        }
+                        return Array.isArray(prev) ? [data.ticket, ...prev] : [data.ticket];
+                    });
+                } else {
+                    // No viene ticket completo, hacer fetch específico de ese ticket
+                    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${data.ticket_id}`, {
+                        headers: { 'Authorization': `Bearer ${store.auth.token}` }
+                    })
+                    .then(res => res.ok ? res.json() : null)
+                    .then(ticket => {
+                        if (ticket) {
+                            setTickets(prev => {
+                                const exists = Array.isArray(prev) && prev.some(t => t.id === ticket.id);
+                                if (exists) {
+                                    return prev.map(t => t.id === ticket.id ? ticket : t);
+                                }
+                                return Array.isArray(prev) ? [ticket, ...prev] : [ticket];
+                            });
+                        }
+                    })
+                    .catch(err => console.debug('Error fetching ticket:', err));
+                }
             }
         };
 
-        const onTicketAsignadoAMi = () => {
-            actualizarTickets();
-            setTimeout(() => actualizarTickets(), 200);
-            setTimeout(() => actualizarTickets(), 500);
+        const onTicketAsignadoAMi = (data) => {
+            if (data && data.ticket) {
+                setTickets(prev => {
+                    const exists = Array.isArray(prev) && prev.some(t => t.id === data.ticket.id);
+                    if (exists) {
+                        return prev.map(t => t.id === data.ticket.id ? data.ticket : t);
+                    }
+                    return Array.isArray(prev) ? [data.ticket, ...prev] : [data.ticket];
+                });
+            } else if (data && data.ticket_id) {
+                // Fetch específico si no viene completo
+                fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${data.ticket_id}`, {
+                    headers: { 'Authorization': `Bearer ${store.auth.token}` }
+                })
+                .then(res => res.ok ? res.json() : null)
+                .then(ticket => {
+                    if (ticket) {
+                        setTickets(prev => {
+                            const exists = Array.isArray(prev) && prev.some(t => t.id === ticket.id);
+                            if (exists) {
+                                return prev.map(t => t.id === ticket.id ? ticket : t);
+                            }
+                            return Array.isArray(prev) ? [ticket, ...prev] : [ticket];
+                        });
+                    }
+                })
+                .catch(err => console.debug('Error fetching ticket:', err));
+            }
         };
 
         const onGenericUpdate = (data) => {
-            actualizarTickets();
-            if (data && (data.tipo === 'asignado' || data.accion === 'asignado' || data.accion === 'reasignado')) {
-                const esParaMi = data.analista_id === store.auth.user?.id || data.id_analista === store.auth.user?.id;
-                if (esParaMi) {
-                    setTimeout(() => actualizarTickets(), 300);
-                    setTimeout(() => actualizarTickets(), 1000);
-                }
+            if (data && data.ticket_id && data.cambios) {
+                setTickets(prev => Array.isArray(prev) ? prev.map(t => 
+                    t.id === data.ticket_id ? { ...t, ...data.cambios } : t
+                ) : prev);
             }
         };
 
         const onCritical = (data) => {
-            if (data && data.ticket_id) {
-                actualizarTickets();
-                if (data.tipo === 'asignado' || data.accion === 'asignado' || data.accion === 'reasignado') {
-                    const esParaMi = data.analista_id === store.auth.user?.id || data.id_analista === store.auth.user?.id;
-                    if (esParaMi) {
-                        setTimeout(() => actualizarTickets(), 400);
-                        setTimeout(() => actualizarTickets(), 1200);
-                    }
-                }
+            if (!data || !data.ticket_id) return;
+            const estadoMap = {
+                'ticket_iniciado': 'en_proceso',
+                'ticket_solucionado': 'solucionado',
+                'ticket_escalado': 'escalado'
+            };
+            const nuevoEstado = estadoMap[data.action];
+            if (nuevoEstado) {
+                setTickets(prev => Array.isArray(prev) ? prev.map(t => 
+                    t.id === data.ticket_id ? { ...t, estado: nuevoEstado } : t
+                ) : prev);
             }
         };
 

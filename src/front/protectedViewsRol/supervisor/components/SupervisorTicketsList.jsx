@@ -158,16 +158,19 @@ function SupervisorTicketsList({
                             <table className="table table-hover mb-0">
                                 <thead className="table-light">
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Ticket</th>
-                                        <th>Estado</th>
-                                        <th>Prioridad</th>
-                                        <th>Analista</th>
-                                        <th>Acciones</th>
+                                        <th className="text-center px-3">ID</th>
+                                        <th className="text-center px-4">Título</th>
+                                        <th className="text-center px-3">Estado</th>
+                                        <th className="text-center px-3">Prioridad</th>
+                                        <th className="text-center px-3">Analista</th>
+                                        <th className="text-center px-3">Fecha</th>
+                                        <th className="text-center px-3">Cliente</th>
+                                        <th className="text-center px-4">Acciones</th>
+                                        <th className="text-center px-2 th-expand">Expandir</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredTickets.map((ticket) => (
+                                    {Array.isArray(filteredTickets) && filteredTickets.map((ticket) => (
                                         <TicketRow
                                             key={ticket.id}
                                             ticket={ticket}

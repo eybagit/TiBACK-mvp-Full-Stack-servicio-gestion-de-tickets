@@ -51,6 +51,16 @@ function useClienteTickets(passedStore, passedDispatch, joinTicketRoom, emitCrit
                 dispatch({ type: 'CLIENTE_SET_TICKETS', payload: ticketsData });
                 console.log(`📋 Cliente - Tickets cargados: ${ticketsData.length} tickets`);
 
+                // Inicializar solicitudes de reapertura desde los tickets
+                const ticketsConSolicitud = ticketsData
+                    .filter(ticket => ticket.tiene_solicitud_reapertura_pendiente === true)
+                    .map(ticket => ticket.id);
+                
+                if (ticketsConSolicitud.length > 0) {
+                    console.log(`📋 Cliente - Tickets con solicitud de reapertura: ${ticketsConSolicitud.length}`);
+                    dispatch({ type: 'CLIENTE_SET_SOLICITUDES_REAPERTURA', payload: ticketsConSolicitud });
+                }
+
                 // Limpiar solicitudes de reapertura para tickets que ya NO están en estado 'solucionado'
                 ticketsData.forEach(ticket => {
                     if (ticket.estado && ticket.estado.toLowerCase() !== 'solucionado' && solicitudesReapertura.includes(ticket.id)) {
@@ -100,6 +110,7 @@ function useClienteTickets(passedStore, passedDispatch, joinTicketRoom, emitCrit
                 emitCriticalTicketAction?.(store.websocket.socket, ticketId, 'ticket_creado', store.auth.user);
             }
 
+
             await actualizarTickets();
 
             if (store.websocket?.socket && ticketId) {
@@ -107,7 +118,17 @@ function useClienteTickets(passedStore, passedDispatch, joinTicketRoom, emitCrit
                 joinCriticalRooms?.(store.websocket.socket, [ticketId], store.auth.user);
             }
 
+            // Seleccionar visualmente el ticket recién creado
+            dispatch({ type: 'CLIENTE_SET_SELECTED_TICKET_ID', payload: ticketId });
             changeView?.('tickets');
+            
+            // Hacer scroll al ticket después de un breve delay para que se renderice
+            setTimeout(() => {
+                const ticketElement = document.querySelector(`[data-ticket-id="${ticketId}"]`);
+                if (ticketElement) {
+                    ticketElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
         } catch (err) {
             setError(err.message);
             console.error('Error al crear ticket:', err);
@@ -126,13 +147,16 @@ function useClienteTickets(passedStore, passedDispatch, joinTicketRoom, emitCrit
 
         try {
             const token = store.auth.token;
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/cerrar`, {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ calificacion: parseInt(calificacion) })
+                body: JSON.stringify({ 
+                    estado: 'cerrado',
+                    calificacion: parseInt(calificacion) 
+                })
             });
 
             if (!response.ok) {
@@ -242,7 +266,14 @@ function useClienteTickets(passedStore, passedDispatch, joinTicketRoom, emitCrit
     };
 
     // Setters para compatibilidad
-    const setTickets = (t) => dispatch({ type: 'CLIENTE_SET_TICKETS', payload: t });
+    const setTickets = (tOrFn) => {
+        if (typeof tOrFn === 'function') {
+            const newValue = tOrFn(tickets);
+            dispatch({ type: 'CLIENTE_SET_TICKETS', payload: newValue });
+        } else {
+            dispatch({ type: 'CLIENTE_SET_TICKETS', payload: tOrFn });
+        }
+    };
     const setTicketsConRecomendaciones = (t) => dispatch({ type: 'CLIENTE_SET_TICKETS_CON_RECOMENDACIONES', payload: Array.from(t) });
     const setSolicitudesReapertura = () => {}; // Use add/remove instead
     const setShowTicketForm = (v) => dispatch({ type: 'CLIENTE_SET_SHOW_TICKET_FORM', payload: v });

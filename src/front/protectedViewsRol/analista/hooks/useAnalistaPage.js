@@ -67,7 +67,8 @@ export function useAnalistaPage() {
     useAnalistaWebSocket({
         store, connectWebSocket, disconnectWebSocket,
         joinRoom, joinTicketRoom, joinCriticalRooms, joinAllCriticalRooms,
-        tickets, setTickets, setTicketsSolicitudReapertura, actualizarTickets
+        tickets, setTickets, setTicketsSolicitudReapertura, actualizarTickets,
+        sincronizarSilenciosamente: dataHook.sincronizarSilenciosamente
     });
 
     // ==============================

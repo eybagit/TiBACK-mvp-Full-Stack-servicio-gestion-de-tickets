@@ -271,6 +271,14 @@ export const clienteReducer = {
   }),
   
   // === SOLICITUDES DE REAPERTURA ===
+  CLIENTE_SET_SOLICITUDES_REAPERTURA: (store, payload) => ({
+    ...store,
+    clientePage: {
+      ...store.clientePage,
+      solicitudesReapertura: Array.isArray(payload) ? payload : [payload],
+    }
+  }),
+  
   CLIENTE_ADD_SOLICITUD_REAPERTURA: (store, payload) => ({
     ...store,
     clientePage: {

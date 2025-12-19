@@ -161,6 +161,115 @@ def delete_ticket(id):
         return jsonify({"message": f"Error al eliminar: {str(e)}"}), 500
 
 
+
+
+@ticket_bp.route('/tickets/<int:ticket_id>/solicitar-reapertura', methods=['POST'])
+@require_role(['cliente'])
+def solicitar_reapertura_ticket(ticket_id):
+    """Cliente solicita reapertura de un ticket solucionado"""
+    try:
+        from api.models import Comentarios
+        
+        user = get_user_from_token()
+        ticket = Ticket.query.get_or_404(ticket_id)
+        
+        # Verificar que el ticket pertenece al cliente
+        if not ticket.cliente or ticket.cliente.id != user['id']:
+            return jsonify({'error': 'No autorizado para este ticket'}), 403
+        
+        # Verificar que el ticket está en estado 'solucionado'
+        if ticket.estado.lower() != 'solucionado':
+            return jsonify({'error': 'Solo se pueden solicitar reaperturas de tickets solucionados'}), 400
+        
+        # Obtener el motivo del body
+        body = request.get_json() or {}
+        motivo = body.get('motivo', 'Solicitud de reapertura')
+        
+        # Crear comentario de solicitud de reapertura
+        comentario = Comentarios(
+            id_ticket=ticket_id,
+            id_cliente=user['id'],
+            texto=f"Solicitud de reapertura: {motivo}",
+            fecha_comentario=datetime.now()
+        )
+        db.session.add(comentario)
+        db.session.commit()
+        
+        # Emitir evento WebSocket
+        socketio = get_socketio()
+        if socketio:
+            data = {
+                'ticket_id': ticket_id,
+                'ticket_estado': ticket.estado,
+                'tipo': 'solicitud_reapertura',
+                'motivo': motivo,
+                'cliente_id': user['id'],
+                'timestamp': datetime.now().isoformat()
+            }
+            emit_ws_event(socketio, 'solicitud_reapertura', data, 
+                ['supervisores', 'administradores', f'ticket_{ticket_id}'])
+            emit_ws_event(socketio, 'ticket_actualizado', data, 
+                [f'ticket_{ticket_id}', 'supervisores'])
+        
+        return jsonify({
+            'message': 'Solicitud de reapertura enviada',
+            'ticket_id': ticket_id,
+            'comentario_id': comentario.id
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error en solicitar_reapertura_ticket: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return handle_general_error(e, "solicitar reapertura de ticket")
+
+
+
+@ticket_bp.route('/tickets/borrar-todos', methods=['DELETE'])
+@require_role(['administrador'])
+def delete_all_tickets():
+    """Borrar TODOS los tickets - Solo administrador - ACCIÓN IRREVERSIBLE"""
+    try:
+        from api.models import Comentarios, Asignacion
+        
+        # Contar tickets antes de borrar
+        total_tickets = db.session.query(Ticket).count()
+        
+        if total_tickets == 0:
+            return jsonify({"message": "No hay tickets para borrar", "deleted_count": 0}), 200
+        
+        # Borrar primero las relaciones para evitar errores de foreign key
+        # Borrar comentarios
+        db.session.query(Comentarios).delete()
+        # Borrar asignaciones
+        db.session.query(Asignacion).delete()
+        # Borrar tickets
+        db.session.query(Ticket).delete()
+        db.session.commit()
+        
+        # Emitir evento WebSocket
+        socketio = get_socketio()
+        if socketio:
+            user = get_user_from_token()
+            data = {
+                'tipo': 'todos_eliminados',
+                'deleted_count': total_tickets,
+                'usuario': user['role'],
+                'timestamp': datetime.now().isoformat()
+            }
+            rooms = ['clientes', 'analistas', 'supervisores', 'administradores']
+            emit_ws_event(socketio, 'todos_tickets_eliminados', data, rooms)
+        
+        return jsonify({
+            "message": f"Se eliminaron {total_tickets} tickets exitosamente",
+            "deleted_count": total_tickets
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error al borrar todos los tickets: {str(e)}"}), 500
+
+
 # ==================== EVALUACIÓN ====================
 
 @ticket_bp.route('/tickets/<int:id>/evaluar', methods=['POST'])

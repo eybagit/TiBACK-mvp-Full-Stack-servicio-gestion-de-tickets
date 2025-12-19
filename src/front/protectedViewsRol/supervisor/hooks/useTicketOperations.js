@@ -71,12 +71,13 @@ export function useTicketOperations({
                 }, ...prev]);
             }
 
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/cerrar`, {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ estado: 'cerrado' })
             });
 
             if (!response.ok) {
@@ -100,15 +101,16 @@ export function useTicketOperations({
     };
 
     // Función para reabrir ticket
-    const reabrirTicket = async (ticketId) => {
+    const reabrirTicket = async (ticketId) =>{
         try {
             const token = store.auth.token;
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/reabrir`, {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ estado: 'reabierto' })
             });
 
             if (response.ok) {
