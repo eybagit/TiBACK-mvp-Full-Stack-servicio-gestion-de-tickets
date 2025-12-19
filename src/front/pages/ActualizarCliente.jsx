@@ -1,23 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useRef } from "react";
+import { Link, Navigate, useParams } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
-import ImageUpload from "../components/ImageUpload";
 
 export const ActualizarCliente = () => {
     const { store, dispatch } = useGlobalReducer();
-    const navigate = useNavigate();
     const { id } = useParams();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
+    const formRef = useRef(null);
 
-    const [cliente, setCliente] = useState({
-        nombre: "",
-        apellido: "",
-        email: "",
-        contraseña_hash: "",
-        direccion: "",
-        telefono: "",
-        url_imagen: ""
-    });
+    // Estado del store para navegación después de actualizar
+    const shouldRedirect = store.crud?.formSuccess;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -28,32 +20,17 @@ export const ActualizarCliente = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
-    };
-
-    // Funciones para manejar la imagen
-    const handleImageUpload = (imageUrl) => {
-        setCliente(prev => ({
-            ...prev,
-            url_imagen: imageUrl
-        }));
-    };
-
-    const handleImageRemove = () => {
-        setCliente(prev => ({
-            ...prev,
-            url_imagen: ""
-        }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
     const cargarCliente = () => {
@@ -61,45 +38,63 @@ export const ActualizarCliente = () => {
         fetchJson(`${API}/clientes/${id}`)
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data.message);
-                setCliente({
-                    nombre: data.nombre,
-                    apellido: data.apellido,
-                    email: data.email,
-                    contraseña_hash: data.contraseña_hash || "",
-                    direccion: data.direccion,
-                    telefono: data.telefono,
-                    url_imagen: data.url_imagen || ""
-                });
+                dispatch({ type: "cliente_set_detail", payload: data });
             }).catch(setError).finally(() => setLoading(false));
-    };
-
-    const actualizarCliente = () => {
-        // Validación básica
-        if (!cliente.nombre || !cliente.apellido || !cliente.email) {
-            setError("Los campos nombre, apellido y email son obligatorios");
-            return;
-        }
-
-        setLoading(true);
-        fetchJson(`${API}/clientes/${id}`, {
-            method: "PUT",
-            body: JSON.stringify(cliente)
-        }).then(({ ok, data }) => {
-            if (!ok) throw new Error(data.message);
-            dispatch({ type: "clientes_upsert", payload: data });
-            navigate('/clientes'); // Volver al home después de actualizar
-        }).catch(setError).finally(() => setLoading(false));
-    };
-
-    const cancelar = () => {
-        navigate('/clientes');
     };
 
     useEffect(() => {
         if (id) {
             cargarCliente();
         }
+        // Limpiar estado al desmontar
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
     }, [id]);
+
+    const actualizarCliente = (e) => {
+        e.preventDefault();
+
+        // Usar FormData para obtener valores del formulario
+        const formData = new FormData(e.target);
+        const clienteActualizado = {
+            nombre: formData.get('nombre'),
+            apellido: formData.get('apellido'),
+            email: formData.get('email'),
+            contraseña_hash: formData.get('contraseña_hash'),
+            direccion: formData.get('direccion'),
+            telefono: formData.get('telefono'),
+            url_imagen: formData.get('url_imagen') || ''
+        };
+
+        // Validación básica
+        if (!clienteActualizado.nombre || !clienteActualizado.apellido || !clienteActualizado.email) {
+            setError("Los campos nombre, apellido y email son obligatorios");
+            return;
+        }
+
+        setLoading(true);
+        dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: true });
+
+        fetchJson(`${API}/clientes/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(clienteActualizado)
+        }).then(({ ok, data }) => {
+            if (!ok) throw new Error(data.message);
+            dispatch({ type: "clientes_upsert", payload: data });
+            dispatch({ type: 'CRUD_SET_FORM_SUCCESS', payload: true });
+        }).catch(err => {
+            setError(err);
+            dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: false });
+        }).finally(() => setLoading(false));
+    };
+
+    // Navegación declarativa después de actualizar
+    if (shouldRedirect) {
+        return <Navigate to="/clientes" replace />;
+    }
+
+    const cliente = store.clienteDetail;
 
     return (
         <div className="container py-4">
@@ -117,16 +112,16 @@ export const ActualizarCliente = () => {
                                 <div className="alert alert-danger py-2">{String(store.api.error)}</div>
                             )}
 
-                            <form onSubmit={(e) => { e.preventDefault(); actualizarCliente(); }}>
+                            <form ref={formRef} onSubmit={actualizarCliente}>
                                 <div className="row g-3">
                                     <div className="col-md-6">
                                         <label className="form-label">Nombre *</label>
                                         <input
                                             type="text"
+                                            name="nombre"
                                             className="form-control"
                                             placeholder="Ingrese el nombre"
-                                            value={cliente.nombre}
-                                            onChange={e => setCliente(s => ({ ...s, nombre: e.target.value }))}
+                                            defaultValue={cliente?.nombre || ''}
                                             required
                                         />
                                     </div>
@@ -134,10 +129,10 @@ export const ActualizarCliente = () => {
                                         <label className="form-label">Apellido *</label>
                                         <input
                                             type="text"
+                                            name="apellido"
                                             className="form-control"
                                             placeholder="Ingrese el apellido"
-                                            value={cliente.apellido}
-                                            onChange={e => setCliente(s => ({ ...s, apellido: e.target.value }))}
+                                            defaultValue={cliente?.apellido || ''}
                                             required
                                         />
                                     </div>
@@ -145,10 +140,10 @@ export const ActualizarCliente = () => {
                                         <label className="form-label">Email *</label>
                                         <input
                                             type="email"
+                                            name="email"
                                             className="form-control"
                                             placeholder="Ingrese el email"
-                                            value={cliente.email}
-                                            onChange={e => setCliente(s => ({ ...s, email: e.target.value }))}
+                                            defaultValue={cliente?.email || ''}
                                             required
                                         />
                                     </div>
@@ -156,56 +151,55 @@ export const ActualizarCliente = () => {
                                         <label className="form-label">Contraseña</label>
                                         <input
                                             type="password"
+                                            name="contraseña_hash"
                                             className="form-control"
-                                            placeholder="Ingrese la nueva contraseña (dejar vacío para mantener la actual)"
-                                            value={cliente.contraseña_hash}
-                                            onChange={e => setCliente(s => ({ ...s, contraseña_hash: e.target.value }))}
+                                            placeholder="Ingrese la nueva contraseña (dejar vacío para mantener)"
                                         />
                                     </div>
                                     <div className="col-md-6">
                                         <label className="form-label">Teléfono</label>
                                         <input
                                             type="tel"
+                                            name="telefono"
                                             className="form-control"
                                             placeholder="Ingrese el teléfono"
-                                            value={cliente.telefono}
-                                            onChange={e => setCliente(s => ({ ...s, telefono: e.target.value }))}
+                                            defaultValue={cliente?.telefono || ''}
                                         />
                                     </div>
                                     <div className="col-md-6">
                                         <label className="form-label">Dirección</label>
                                         <input
                                             type="text"
+                                            name="direccion"
                                             className="form-control"
                                             placeholder="Ingrese la dirección"
-                                            value={cliente.direccion}
-                                            onChange={e => setCliente(s => ({ ...s, direccion: e.target.value }))}
+                                            defaultValue={cliente?.direccion || ''}
                                         />
                                     </div>
                                     <div className="col-12">
-                                        <label className="form-label">Imagen de Perfil</label>
-                                        <ImageUpload
-                                            onImageUpload={handleImageUpload}
-                                            onImageRemove={handleImageRemove}
-                                            currentImageUrl={cliente.url_imagen}
+                                        <label className="form-label">URL Imagen de Perfil</label>
+                                        <input
+                                            type="text"
+                                            name="url_imagen"
+                                            className="form-control"
+                                            placeholder="URL de imagen"
+                                            defaultValue={cliente?.url_imagen || ''}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="d-flex gap-2 mt-4 justify-content-end">
-                                    <button
-                                        type="button"
+                                    <Link
+                                        to="/clientes"
                                         className="btn btn-secondary"
-                                        onClick={cancelar}
-                                        disabled={store.api.loading}
                                     >
                                         <i className="fas fa-times me-1"></i>
                                         Cancelar
-                                    </button>
+                                    </Link>
                                     <button
                                         type="submit"
                                         className="btn btn-warning"
-                                        disabled={store.api.loading}
+                                        disabled={store.api.loading || store.crud?.formSubmitting}
                                     >
                                         <i className="fas fa-save me-1"></i>
                                         {store.api.loading ? 'Actualizando...' : 'Actualizar Cliente'}

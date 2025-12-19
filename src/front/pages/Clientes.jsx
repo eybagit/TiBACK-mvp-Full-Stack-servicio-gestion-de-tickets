@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 // Utilidades de token seguras
@@ -22,7 +22,6 @@ const tokenUtils = {
 
 export const Clientes = () => {
   const { store, dispatch } = useGlobalReducer();
-  const navigate = useNavigate();
   const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
   const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
@@ -73,18 +72,17 @@ export const Clientes = () => {
     listarTodosLosClientes();
   }, []);
 
+  const userRole = tokenUtils.getRole(store.auth.token);
+
   return (
     <div className="container py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="mb-0">Lista de Clientes</h2>
         <div className="d-flex gap-2">
-          <button className="btn btn-secondary" onClick={() => navigate(`/${tokenUtils.getRole(store.auth.token)}`)}>Volver</button>
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate('/agregar-cliente')}
-          >
+          <Link to={`/${userRole}`} className="btn btn-secondary">Volver</Link>
+          <Link to="/agregar-cliente" className="btn btn-primary">
             <i className="fas fa-plus"></i> Agregar Cliente
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -140,20 +138,20 @@ export const Clientes = () => {
                           <td>{cliente.direccion}</td>
                           <td>
                             <div className="d-flex gap-2" role="group">
-                              <button
+                              <Link
+                                to={`/actualizar-cliente/${cliente.id}`}
                                 className="btn btn-warning"
-                                onClick={() => navigate(`/actualizar-cliente/${cliente.id}`)}
                                 title="Actualizar Cliente"
                               >
                                 <i className="fas fa-edit"></i>
-                              </button>
-                              <button
+                              </Link>
+                              <Link
+                                to={`/ver-cliente/${cliente.id}`}
                                 className="btn btn-info"
-                                onClick={() => navigate(`/ver-cliente/${cliente.id}`)}
                                 title="Ver Cliente"
                               >
                                 <i className="fas fa-eye"></i>
-                              </button>
+                              </Link>
                               <button
                                 className="btn btn-danger"
                                 onClick={() => eliminarCliente(cliente.id)}

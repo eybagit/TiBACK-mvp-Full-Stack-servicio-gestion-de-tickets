@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 // Utilidades de token seguras
@@ -22,7 +22,6 @@ const tokenUtils = {
 
 export const Analistas = () => {
   const { store, dispatch } = useGlobalReducer();
-  const navigate = useNavigate();
   const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
   const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
@@ -34,17 +33,17 @@ export const Analistas = () => {
       'Content-Type': 'application/json',
       ...options.headers
     };
-    
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     return fetch(url, {
       ...options,
       headers
     })
-    .then(res => res.json().then(data => ({ ok: res.ok, data })))
-    .catch(err => ({ ok: false, data: { message: err.message } }));
+      .then(res => res.json().then(data => ({ ok: res.ok, data })))
+      .catch(err => ({ ok: false, data: { message: err.message } }));
   };
 
   const listarTodosLosAnalistas = () => {
@@ -73,25 +72,24 @@ export const Analistas = () => {
     listarTodosLosAnalistas();
   }, []);
 
+  const userRole = tokenUtils.getRole(store.auth.token);
+
   return (
     <div className="container py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="mb-0">Lista de Analistas</h2>
         <div className="d-flex gap-2">
-          <button className="btn btn-secondary" onClick={() => navigate(`/${tokenUtils.getRole(store.auth.token)}`)}>Volver</button>
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate('/agregar-analista')}
-          >
+          <Link to={`/${userRole}`} className="btn btn-secondary">Volver</Link>
+          <Link to="/agregar-analista" className="btn btn-primary">
             <i className="fas fa-plus"></i> Agregar Analista
-          </button>
+          </Link>
         </div>
       </div>
 
       {store.api.error && (
         <div className="alert alert-danger py-2">{String(store.api.error)}</div>
       )}
-  
+
 
       <div className="row">
         <div className="col-12">
@@ -123,15 +121,13 @@ export const Analistas = () => {
                           <td>{analista.especialidad}</td>
                           <td>
                             <div className="btn-group" role="group">
-                              <button
+                              <Link
+                                to={`/actualizar-analista/${analista.id}`}
                                 className="btn btn-warning btn-sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/actualizar-analista/${analista.id}`);
-                                }}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 <i className="fas fa-edit"></i>
-                              </button>
+                              </Link>
                               <button
                                 className="btn btn-danger btn-sm"
                                 onClick={(e) => {
@@ -142,11 +138,12 @@ export const Analistas = () => {
                                 <i className="fas fa-trash"></i>
                               </button>
                             </div>
-                            <button
-                                className="btn btn-info btn-sm ms-4"
-                                onClick={() => navigate(`/ver-analista/${analista.id}`)}>                                
-                                <i className="fa-solid fa-eye"> ver</i>
-                              </button>
+                            <Link
+                              to={`/ver-analista/${analista.id}`}
+                              className="btn btn-info btn-sm ms-4"
+                            >
+                              <i className="fa-solid fa-eye"> ver</i>
+                            </Link>
                           </td>
                         </tr>
                       ))}

@@ -1,17 +1,13 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, Navigate } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const AgregarAdministrador = () => {
     const { store, dispatch } = useGlobalReducer();
-    const navigate = useNavigate();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
-    const [nuevoAdministrador, setNuevoAdministrador] = useState({
-        permisos_especiales: "",
-        email: "",
-        contraseña_hash: ""
-    });
+    // Estado del store para navegación después de crear
+    const shouldRedirect = store.crud?.formSuccess;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -22,28 +18,37 @@ export const AgregarAdministrador = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
-    const limpiarFormulario = () => {
-        setNuevoAdministrador({
-            permisos_especiales: "",
-            email: "",
-            contraseña_hash: ""
-        });
-    };
+    // Limpiar estado al desmontar
+    useEffect(() => {
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
+    }, []);
 
-    const crearAdministrador = () => {
+    const crearAdministrador = (e) => {
+        e.preventDefault();
+
+        // Usar FormData para obtener valores del formulario
+        const formData = new FormData(e.target);
+        const nuevoAdministrador = {
+            permisos_especiales: formData.get('permisos_especiales'),
+            email: formData.get('email'),
+            contraseña_hash: formData.get('contraseña_hash')
+        };
+
         // Validación básica
         if (!nuevoAdministrador.permisos_especiales || !nuevoAdministrador.email || !nuevoAdministrador.contraseña_hash) {
             setError("Todos los campos son obligatorios");
@@ -51,20 +56,25 @@ export const AgregarAdministrador = () => {
         }
 
         setLoading(true);
+        dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: true });
+
         fetchJson(`${API}/administradores`, {
             method: "POST",
             body: JSON.stringify(nuevoAdministrador)
         }).then(({ ok, data }) => {
             if (!ok) throw new Error(data.message);
             dispatch({ type: "administradores_add", payload: data });
-            limpiarFormulario();
-            navigate('/administradores'); // Volver a la lista de administradores
-        }).catch(setError).finally(() => setLoading(false));
+            dispatch({ type: 'CRUD_SET_FORM_SUCCESS', payload: true });
+        }).catch(err => {
+            setError(err);
+            dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: false });
+        }).finally(() => setLoading(false));
     };
 
-    const cancelar = () => {
-        navigate('/administradores');
-    };
+    // Navegación declarativa después de crear
+    if (shouldRedirect) {
+        return <Navigate to="/administradores" replace />;
+    }
 
     return (
         <div className="container py-4">
@@ -81,16 +91,15 @@ export const AgregarAdministrador = () => {
                             {store.api.error && (
                                 <div className="alert alert-danger py-2">{String(store.api.error)}</div>
                             )}
-                            <form onSubmit={(e) => { e.preventDefault(); crearAdministrador(); }}>
+                            <form onSubmit={crearAdministrador}>
                                 <div className="row g-3">
                                     <div className="col-12">
                                         <label className="form-label">Email *</label>
                                         <input
                                             type="email"
+                                            name="email"
                                             className="form-control"
                                             placeholder="Ingrese el email del administrador"
-                                            value={nuevoAdministrador.email}
-                                            onChange={e => setNuevoAdministrador(s => ({ ...s, email: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -98,20 +107,18 @@ export const AgregarAdministrador = () => {
                                         <label className="form-label">Contraseña *</label>
                                         <input
                                             type="password"
+                                            name="contraseña_hash"
                                             className="form-control"
                                             placeholder="Ingrese la contraseña"
-                                            value={nuevoAdministrador.contraseña_hash}
-                                            onChange={e => setNuevoAdministrador(s => ({ ...s, contraseña_hash: e.target.value }))}
                                             required
                                         />
                                     </div>
                                     <div className="col-12">
                                         <label className="form-label">Permisos Especiales *</label>
                                         <textarea
+                                            name="permisos_especiales"
                                             className="form-control"
                                             placeholder="Ingrese los permisos especiales del administrador"
-                                            value={nuevoAdministrador.permisos_especiales}
-                                            onChange={e => setNuevoAdministrador(s => ({ ...s, permisos_especiales: e.target.value }))}
                                             rows="3"
                                             required
                                         />
@@ -119,19 +126,17 @@ export const AgregarAdministrador = () => {
                                 </div>
 
                                 <div className="d-flex gap-2 mt-4 justify-content-end">
-                                    <button
-                                        type="button"
+                                    <Link
+                                        to="/administradores"
                                         className="btn btn-secondary"
-                                        onClick={cancelar}
-                                        disabled={store.api.loading}
                                     >
                                         <i className="fas fa-times me-1"></i>
                                         Cancelar
-                                    </button>
+                                    </Link>
                                     <button
                                         type="submit"
                                         className="btn btn-primary"
-                                        disabled={store.api.loading}
+                                        disabled={store.api.loading || store.crud?.formSubmitting}
                                     >
                                         <i className="fas fa-save me-1"></i>
                                         {store.api.loading ? 'Guardando...' : 'Guardar Administrador'}

@@ -1,20 +1,13 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, Navigate } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const AgregarComentarios = () => {
     const { store, dispatch } = useGlobalReducer();
-    const navigate = useNavigate();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
-    const [nuevoComentario, setNuevoComentario] = useState({
-        id_gestion: "",
-        id_cliente: "",
-        id_analista: "",
-        id_supervisor: "",
-        texto: "",
-        fecha_comentario: new Date().toISOString().split('T')[0] // Fecha actual por defecto
-    });
+    // Estado del store para navegación después de crear
+    const shouldRedirect = store.crud?.formSuccess;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -25,61 +18,67 @@ export const AgregarComentarios = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
-    const limpiarFormulario = () => {
-        setNuevoComentario({
-            id_gestion: "",
-            id_cliente: "",
-            id_analista: "",
-            id_supervisor: "",
-            texto: "",
-            fecha_comentario: new Date().toISOString().split('T')[0]
-        });
-    };
+    // Limpiar estado al desmontar
+    useEffect(() => {
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
+    }, []);
 
-    const crearComentario = () => {
-         
-        if (!nuevoComentario.id_gestion || !nuevoComentario.id_cliente || !nuevoComentario.id_analista || !nuevoComentario.id_supervisor || !nuevoComentario.texto) {
+    const crearComentario = (e) => {
+        e.preventDefault();
+
+        // Usar FormData para obtener valores del formulario
+        const formData = new FormData(e.target);
+
+        if (!formData.get('id_gestion') || !formData.get('id_cliente') || !formData.get('id_analista') || !formData.get('id_supervisor') || !formData.get('texto')) {
             setError("Los campos ID Gestión, ID Cliente, ID Analista, ID Supervisor y Texto son obligatorios");
             return;
         }
 
-        // Convertir strings a números para los IDs mismo caso, luego seran foraneas y no se muestran
+        // Convertir strings a números para los IDs
         const comentarioData = {
-            ...nuevoComentario,
-            id_gestion: parseInt(nuevoComentario.id_gestion),
-            id_cliente: parseInt(nuevoComentario.id_cliente),
-            id_analista: parseInt(nuevoComentario.id_analista),
-            id_supervisor: parseInt(nuevoComentario.id_supervisor)
+            id_gestion: parseInt(formData.get('id_gestion')),
+            id_cliente: parseInt(formData.get('id_cliente')),
+            id_analista: parseInt(formData.get('id_analista')),
+            id_supervisor: parseInt(formData.get('id_supervisor')),
+            texto: formData.get('texto'),
+            fecha_comentario: formData.get('fecha_comentario')
         };
 
         setLoading(true);
+        dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: true });
+
         fetchJson(`${API}/comentarios`, {
             method: "POST",
             body: JSON.stringify(comentarioData)
         }).then(({ ok, data }) => {
             if (!ok) throw new Error(data.message);
             dispatch({ type: "comentarios_add", payload: data });
-            limpiarFormulario();
-            navigate('/comentarios'); 
-        }).catch(setError).finally(() => setLoading(false));
+            dispatch({ type: 'CRUD_SET_FORM_SUCCESS', payload: true });
+        }).catch(err => {
+            setError(err);
+            dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: false });
+        }).finally(() => setLoading(false));
     };
 
-    const cancelar = () => {
-        navigate('/comentarios');
-    };
+    // Navegación declarativa después de crear
+    if (shouldRedirect) {
+        return <Navigate to="/comentarios" replace />;
+    }
 
     return (
         <div className="container py-4">
@@ -96,16 +95,15 @@ export const AgregarComentarios = () => {
                             {store.api.error && (
                                 <div className="alert alert-danger py-2">{String(store.api.error)}</div>
                             )}
-                            <form onSubmit={(e) => { e.preventDefault(); crearComentario(); }}>
+                            <form onSubmit={crearComentario}>
                                 <div className="row g-3">
                                     <div className="col-md-6">
                                         <label className="form-label">ID Gestión *</label>
                                         <input
                                             type="number"
+                                            name="id_gestion"
                                             className="form-control"
                                             placeholder="Ingrese el ID de gestión"
-                                            value={nuevoComentario.id_gestion}
-                                            onChange={e => setNuevoComentario(s => ({ ...s, id_gestion: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -113,10 +111,9 @@ export const AgregarComentarios = () => {
                                         <label className="form-label">ID Cliente *</label>
                                         <input
                                             type="number"
+                                            name="id_cliente"
                                             className="form-control"
                                             placeholder="Ingrese el ID del cliente"
-                                            value={nuevoComentario.id_cliente}
-                                            onChange={e => setNuevoComentario(s => ({ ...s, id_cliente: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -124,10 +121,9 @@ export const AgregarComentarios = () => {
                                         <label className="form-label">ID Analista *</label>
                                         <input
                                             type="number"
+                                            name="id_analista"
                                             className="form-control"
                                             placeholder="Ingrese el ID del analista"
-                                            value={nuevoComentario.id_analista}
-                                            onChange={e => setNuevoComentario(s => ({ ...s, id_analista: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -135,20 +131,18 @@ export const AgregarComentarios = () => {
                                         <label className="form-label">ID Supervisor *</label>
                                         <input
                                             type="number"
+                                            name="id_supervisor"
                                             className="form-control"
                                             placeholder="Ingrese el ID del supervisor"
-                                            value={nuevoComentario.id_supervisor}
-                                            onChange={e => setNuevoComentario(s => ({ ...s, id_supervisor: e.target.value }))}
                                             required
                                         />
                                     </div>
                                     <div className="col-12">
                                         <label className="form-label">Texto del Comentario *</label>
                                         <textarea
+                                            name="texto"
                                             className="form-control"
                                             placeholder="Ingrese el texto del comentario"
-                                            value={nuevoComentario.texto}
-                                            onChange={e => setNuevoComentario(s => ({ ...s, texto: e.target.value }))}
                                             rows="4"
                                             required
                                         />
@@ -157,27 +151,25 @@ export const AgregarComentarios = () => {
                                         <label className="form-label">Fecha del Comentario</label>
                                         <input
                                             type="date"
+                                            name="fecha_comentario"
                                             className="form-control"
-                                            value={nuevoComentario.fecha_comentario}
-                                            onChange={e => setNuevoComentario(s => ({ ...s, fecha_comentario: e.target.value }))}
+                                            defaultValue={new Date().toISOString().split('T')[0]}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="d-flex gap-2 mt-4 justify-content-end">
-                                    <button
-                                        type="button"
+                                    <Link
+                                        to="/comentarios"
                                         className="btn btn-secondary"
-                                        onClick={cancelar}
-                                        disabled={store.api.loading}
                                     >
                                         <i className="fas fa-times me-1"></i>
                                         Cancelar
-                                    </button>
+                                    </Link>
                                     <button
                                         type="submit"
                                         className="btn btn-primary"
-                                        disabled={store.api.loading}
+                                        disabled={store.api.loading || store.crud?.formSubmitting}
                                     >
                                         <i className="fas fa-save me-1"></i>
                                         {store.api.loading ? 'Guardando...' : 'Guardar Comentario'}

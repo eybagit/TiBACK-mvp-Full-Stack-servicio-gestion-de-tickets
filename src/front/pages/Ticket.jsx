@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 // Utilidades de token seguras
@@ -27,10 +27,11 @@ const tokenUtils = {
 export const Ticket = () => {
     const { store, dispatch, connectWebSocket, disconnectWebSocket, joinRoom } = useGlobalReducer();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
-    const navigate = useNavigate();
-    const [showModal, setShowModal] = useState(false);
-    const [modalImages, setModalImages] = useState([]);
-    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+    // Usar crudSlice para el modal de imágenes
+    const showModal = store.crud?.showModal || false;
+    const modalImages = store.crud?.modalImages || [];
+    const selectedImageIndex = store.crud?.selectedImageIndex || 0;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -76,6 +77,25 @@ export const Ticket = () => {
             })
             .catch(setError)
             .finally(() => setLoading(false));
+    };
+
+    // Control del modal mediante dispatch
+    const openModal = (images) => {
+        dispatch({ type: 'CRUD_SET_MODAL_IMAGES', payload: images });
+        dispatch({ type: 'CRUD_SET_SELECTED_IMAGE_INDEX', payload: 0 });
+        dispatch({ type: 'CRUD_SET_SHOW_MODAL', payload: true });
+    };
+
+    const closeModal = () => {
+        dispatch({ type: 'CRUD_SET_SHOW_MODAL', payload: false });
+    };
+
+    const nextImage = () => {
+        dispatch({ type: 'CRUD_SET_SELECTED_IMAGE_INDEX', payload: (selectedImageIndex + 1) % modalImages.length });
+    };
+
+    const prevImage = () => {
+        dispatch({ type: 'CRUD_SET_SELECTED_IMAGE_INDEX', payload: (selectedImageIndex - 1 + modalImages.length) % modalImages.length });
     };
 
     // Conectar WebSocket cuando el usuario esté autenticado
@@ -157,19 +177,16 @@ export const Ticket = () => {
                         </div>
                     )}
                 </div>
-                <button className="btn btn-secondary" onClick={() => navigate(`/administrador`)}>Volver</button>
+                <Link to="/administrador" className="btn btn-secondary">Volver</Link>
             </div>
 
             {store?.api?.error && (
                 <div className="alert alert-danger py-2">{String(store.api.error)}</div>
             )}
             <div className="d-flex justify-content-end mb-3">
-                <button
-                    className="btn btn-primary"
-                    onClick={() => navigate("/tickets/nuevo")}
-                >
+                <Link to="/tickets/nuevo" className="btn btn-primary">
                     <i className="fas fa-plus"></i> Nuevo Ticket
-                </button>
+                </Link>
             </div>
 
             <div className="card">
@@ -223,11 +240,7 @@ export const Ticket = () => {
                                                         src={ticket.img_urls[0]}
                                                         alt={`ticket-${ticket.id}-img`}
                                                         className="img-thumb-sm cursor-pointer"
-                                                        onClick={() => {
-                                                            setModalImages(ticket.img_urls);
-                                                            setSelectedImageIndex(0);
-                                                            setShowModal(true);
-                                                        }}
+                                                        onClick={() => openModal(ticket.img_urls)}
                                                     />
                                                 ) : (
                                                     <span className="text-muted">Sin imagen</span>
@@ -244,13 +257,13 @@ export const Ticket = () => {
                                             </td>
                                             <td>{ticket.fecha_creacion ? new Date(ticket.fecha_creacion).toLocaleString() : ''}</td>
                                             <td>
-                                                <button
+                                                <Link
+                                                    to={`/ver-ticket/${ticket.id}`}
                                                     className="btn btn-info mx-1"
                                                     title="Ver Ticket"
-                                                    onClick={() => navigate(`/ver-ticket/${ticket.id}`)}
                                                 >
                                                     <i className="fas fa-eye"></i>
-                                                </button>
+                                                </Link>
                                                 <button
                                                     className="btn btn-danger mx-1"
                                                     title="Eliminar Ticket"
@@ -279,7 +292,7 @@ export const Ticket = () => {
                         <div className="modal-content">
                             <div className="modal-header">
                                 <h5 className="modal-title">Imagen {selectedImageIndex + 1} de {modalImages.length}</h5>
-                                <button type="button" className="btn-close" aria-label="Close" onClick={() => setShowModal(false)}></button>
+                                <button type="button" className="btn-close" aria-label="Close" onClick={closeModal}></button>
                             </div>
                             <div className="modal-body d-flex flex-column align-items-center">
                                 <img
@@ -289,8 +302,8 @@ export const Ticket = () => {
                                 />
                                 {modalImages.length > 1 && (
                                     <div className="mt-3">
-                                        <button className="btn btn-secondary btn-sm me-2" onClick={() => setSelectedImageIndex((selectedImageIndex - 1 + modalImages.length) % modalImages.length)}>&lt;</button>
-                                        <button className="btn btn-secondary btn-sm" onClick={() => setSelectedImageIndex((selectedImageIndex + 1) % modalImages.length)}>&gt;</button>
+                                        <button className="btn btn-secondary btn-sm me-2" onClick={prevImage}>&lt;</button>
+                                        <button className="btn btn-secondary btn-sm" onClick={nextImage}>&gt;</button>
                                     </div>
                                 )}
                             </div>

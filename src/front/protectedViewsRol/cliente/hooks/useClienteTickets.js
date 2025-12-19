@@ -1,22 +1,39 @@
-import { useState, useEffect } from 'react';
-import { tokenUtils } from '../../../store';
-
 /**
  * useClienteTickets - Hook para manejar la lógica de tickets del cliente
- * Incluye: CRUD, estados, utilidades de tickets
+ * Refactorizado para usar el store global (clienteSlice)
+ * NO useState - arquitectura tiback-hello
  */
-function useClienteTickets(store, dispatch, joinTicketRoom, emitCriticalTicketAction, joinCriticalRooms, changeView) {
-    // Estados de tickets
-    const [tickets, setTickets] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [ticketsConRecomendaciones, setTicketsConRecomendaciones] = useState(new Set());
-    const [solicitudesReapertura, setSolicitudesReapertura] = useState(new Set());
+
+import { tokenUtils } from '../../../store';
+import useGlobalReducer from '../../../hooks/useGlobalReducer';
+
+function useClienteTickets(passedStore, passedDispatch, joinTicketRoom, emitCriticalTicketAction, joinCriticalRooms, changeView) {
+    const { store: globalStore, dispatch: globalDispatch } = useGlobalReducer();
     
-    // Estados para formulario de tickets
-    const [showTicketForm, setShowTicketForm] = useState(false);
-    const [ticketImageUrl, setTicketImageUrl] = useState('');
-    const [uploading, setUploading] = useState(false);
+    // Usar store y dispatch pasados o globales
+    const store = passedStore || globalStore;
+    const dispatch = passedDispatch || globalDispatch;
+    
+    // Acceso al estado del cliente desde el store global
+    const clientePage = store.clientePage || {};
+    
+    // Estados del store
+    const tickets = clientePage.tickets || [];
+    const loading = clientePage.loading ?? true;
+    const error = clientePage.error || '';
+    const ticketsConRecomendaciones = clientePage.ticketsConRecomendaciones || [];
+    const solicitudesReapertura = clientePage.solicitudesReapertura || [];
+    const showTicketForm = clientePage.showTicketForm || false;
+    const ticketImageUrl = clientePage.ticketImageUrl || '';
+    const uploading = clientePage.uploading || false;
+
+    // Helpers para dispatch
+    const setLoading = (v) => dispatch({ type: 'CLIENTE_SET_LOADING', payload: v });
+    const setError = (msg) => {
+        dispatch({ type: 'CLIENTE_SET_ERROR', payload: msg });
+        if (msg) setTimeout(() => dispatch({ type: 'CLIENTE_SET_ERROR', payload: '' }), 2000);
+    };
+    const setUploading = (v) => dispatch({ type: 'CLIENTE_SET_UPLOADING', payload: v });
 
     // Función helper para actualizar tickets sin recargar la página
     const actualizarTickets = async () => {
@@ -31,29 +48,18 @@ function useClienteTickets(store, dispatch, joinTicketRoom, emitCriticalTicketAc
             });
             if (ticketsResponse.ok) {
                 const ticketsData = await ticketsResponse.json();
-                setTickets(ticketsData);
+                dispatch({ type: 'CLIENTE_SET_TICKETS', payload: ticketsData });
                 console.log(`📋 Cliente - Tickets cargados: ${ticketsData.length} tickets`);
 
                 // Limpiar solicitudes de reapertura para tickets que ya NO están en estado 'solucionado'
-                setSolicitudesReapertura(prev => {
-                    const newSet = new Set(prev);
-                    ticketsData.forEach(ticket => {
-                        if (ticket.estado && ticket.estado.toLowerCase() !== 'solucionado' && newSet.has(ticket.id)) {
-                            newSet.delete(ticket.id);
-                        }
-                    });
-                    const ticketIds = new Set(ticketsData.map(t => t.id));
-                    Array.from(newSet).forEach(ticketId => {
-                        if (!ticketIds.has(ticketId)) {
-                            newSet.delete(ticketId);
-                        }
-                    });
-                    return newSet;
+                ticketsData.forEach(ticket => {
+                    if (ticket.estado && ticket.estado.toLowerCase() !== 'solucionado' && solicitudesReapertura.includes(ticket.id)) {
+                        dispatch({ type: 'CLIENTE_REMOVE_SOLICITUD_REAPERTURA', payload: ticket.id });
+                    }
                 });
             }
         } catch (err) {
             setError("Error al actualizar la lista");
-            setTimeout(() => setError(""), 2000);
             console.error('Error al actualizar tickets:', err);
         }
     };
@@ -84,24 +90,24 @@ function useClienteTickets(store, dispatch, joinTicketRoom, emitCriticalTicketAc
             }
 
             e.target.reset();
-            setTicketImageUrl('');
-            setShowTicketForm(false);
+            dispatch({ type: 'CLIENTE_SET_TICKET_IMAGE_URL', payload: '' });
+            dispatch({ type: 'CLIENTE_SET_SHOW_TICKET_FORM', payload: false });
 
             const responseData = await response.json();
             const ticketId = responseData.id;
 
-            if (store.websocket.socket && ticketId) {
-                emitCriticalTicketAction(store.websocket.socket, ticketId, 'ticket_creado', store.auth.user);
+            if (store.websocket?.socket && ticketId) {
+                emitCriticalTicketAction?.(store.websocket.socket, ticketId, 'ticket_creado', store.auth.user);
             }
 
             await actualizarTickets();
 
-            if (store.websocket.socket && ticketId) {
-                joinTicketRoom(store.websocket.socket, ticketId);
-                joinCriticalRooms(store.websocket.socket, [ticketId], store.auth.user);
+            if (store.websocket?.socket && ticketId) {
+                joinTicketRoom?.(store.websocket.socket, ticketId);
+                joinCriticalRooms?.(store.websocket.socket, [ticketId], store.auth.user);
             }
 
-            changeView('tickets');
+            changeView?.('tickets');
         } catch (err) {
             setError(err.message);
             console.error('Error al crear ticket:', err);
@@ -133,8 +139,8 @@ function useClienteTickets(store, dispatch, joinTicketRoom, emitCriticalTicketAc
                 throw new Error('Error al cerrar ticket');
             }
 
-            if (store.websocket.socket) {
-                emitCriticalTicketAction(store.websocket.socket, ticketId, 'ticket_cerrado', store.auth.user);
+            if (store.websocket?.socket) {
+                emitCriticalTicketAction?.(store.websocket.socket, ticketId, 'ticket_cerrado', store.auth.user);
             }
 
             await actualizarTickets();
@@ -167,14 +173,10 @@ function useClienteTickets(store, dispatch, joinTicketRoom, emitCriticalTicketAc
                 throw new Error('Error al solicitar reapertura');
             }
 
-            setSolicitudesReapertura(prev => {
-                const newSet = new Set(prev);
-                newSet.add(ticketId);
-                return newSet;
-            });
+            dispatch({ type: 'CLIENTE_ADD_SOLICITUD_REAPERTURA', payload: ticketId });
 
-            if (store.websocket.socket) {
-                emitCriticalTicketAction(store.websocket.socket, ticketId, 'solicitud_reapertura', store.auth.user);
+            if (store.websocket?.socket) {
+                emitCriticalTicketAction?.(store.websocket.socket, ticketId, 'solicitud_reapertura', store.auth.user);
             }
 
             await actualizarTickets();
@@ -229,33 +231,30 @@ function useClienteTickets(store, dispatch, joinTicketRoom, emitCriticalTicketAc
     };
 
     // Funciones para imágenes del ticket
-    const handleImageUpload = (imageUrl) => {
-        setTicketImageUrl(imageUrl);
-    };
+    const handleImageUpload = (imageUrl) => dispatch({ type: 'CLIENTE_SET_TICKET_IMAGE_URL', payload: imageUrl });
+    const handleImageRemove = () => dispatch({ type: 'CLIENTE_SET_TICKET_IMAGE_URL', payload: '' });
 
-    const handleImageRemove = () => {
-        setTicketImageUrl('');
-    };
-
-    const toggleTicketForm = () => {
-        setShowTicketForm(!showTicketForm);
-        if (showTicketForm) {
-            setTicketImageUrl('');
-        }
-    };
+    const toggleTicketForm = () => dispatch({ type: 'CLIENTE_TOGGLE_TICKET_FORM' });
 
     // Función para generar recomendación
     const generarRecomendacion = (ticket) => {
-        changeView(`recomendacion-${ticket.id}`);
+        changeView?.(`recomendacion-${ticket.id}`);
     };
 
+    // Setters para compatibilidad
+    const setTickets = (t) => dispatch({ type: 'CLIENTE_SET_TICKETS', payload: t });
+    const setTicketsConRecomendaciones = (t) => dispatch({ type: 'CLIENTE_SET_TICKETS_CON_RECOMENDACIONES', payload: Array.from(t) });
+    const setSolicitudesReapertura = () => {}; // Use add/remove instead
+    const setShowTicketForm = (v) => dispatch({ type: 'CLIENTE_SET_SHOW_TICKET_FORM', payload: v });
+    const setTicketImageUrl = (v) => dispatch({ type: 'CLIENTE_SET_TICKET_IMAGE_URL', payload: v });
+
     return {
-        // Estados
+        // Estados (desde store, con Sets para compatibilidad)
         tickets, setTickets,
         loading, setLoading,
         error, setError,
-        ticketsConRecomendaciones, setTicketsConRecomendaciones,
-        solicitudesReapertura, setSolicitudesReapertura,
+        ticketsConRecomendaciones: new Set(ticketsConRecomendaciones), setTicketsConRecomendaciones,
+        solicitudesReapertura: new Set(solicitudesReapertura), setSolicitudesReapertura,
         showTicketForm, setShowTicketForm,
         ticketImageUrl, setTicketImageUrl,
         uploading, setUploading,

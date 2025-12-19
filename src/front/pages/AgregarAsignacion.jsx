@@ -1,18 +1,13 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, Navigate } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const AgregarAsignacion = () => {
     const { store, dispatch } = useGlobalReducer();
-    const navigate = useNavigate();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
-    const [nuevaAsignacion, setNuevaAsignacion] = useState({
-        id_ticket: "",
-        id_supervisor: "",
-        id_analista: "",
-        fecha_asignacion: new Date().toISOString().split('T')[0] // Fecha actual por defecto
-    });
+    // Estado del store para navegación después de crear
+    const shouldRedirect = store.crud?.formSuccess;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -23,57 +18,65 @@ export const AgregarAsignacion = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
-    const limpiarFormulario = () => {
-        setNuevaAsignacion({
-            id_ticket: "",
-            id_supervisor: "",
-            id_analista: "",
-            fecha_asignacion: new Date().toISOString().split('T')[0]
-        });
-    };
+    // Limpiar estado al desmontar
+    useEffect(() => {
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
+    }, []);
 
-    const crearAsignacion = () => {
+    const crearAsignacion = (e) => {
+        e.preventDefault();
+
+        // Usar FormData para obtener valores del formulario
+        const formData = new FormData(e.target);
+
         // Validación básica
-        if (!nuevaAsignacion.id_ticket || !nuevaAsignacion.id_supervisor || !nuevaAsignacion.id_analista) {
+        if (!formData.get('id_ticket') || !formData.get('id_supervisor') || !formData.get('id_analista')) {
             setError("Los campos ID Ticket, ID Supervisor e ID Analista son obligatorios");
             return;
         }
- 
+
         const asignacionData = {
-            ...nuevaAsignacion,
-            id_ticket: parseInt(nuevaAsignacion.id_ticket),
-            id_supervisor: parseInt(nuevaAsignacion.id_supervisor),
-            id_analista: parseInt(nuevaAsignacion.id_analista)
+            id_ticket: parseInt(formData.get('id_ticket')),
+            id_supervisor: parseInt(formData.get('id_supervisor')),
+            id_analista: parseInt(formData.get('id_analista')),
+            fecha_asignacion: formData.get('fecha_asignacion')
         };
 
         setLoading(true);
+        dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: true });
+
         fetchJson(`${API}/asignaciones`, {
             method: "POST",
             body: JSON.stringify(asignacionData)
         }).then(({ ok, data }) => {
             if (!ok) throw new Error(data.message);
             dispatch({ type: "asignaciones_add", payload: data });
-            limpiarFormulario();
-            navigate('/asignaciones'); // Volver a la lista de asignaciones
-        }).catch(setError).finally(() => setLoading(false));
+            dispatch({ type: 'CRUD_SET_FORM_SUCCESS', payload: true });
+        }).catch(err => {
+            setError(err);
+            dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: false });
+        }).finally(() => setLoading(false));
     };
 
-    const cancelar = () => {
-        navigate('/asignaciones');
-    };
+    // Navegación declarativa después de crear
+    if (shouldRedirect) {
+        return <Navigate to="/asignaciones" replace />;
+    }
 
     return (
         <div className="container py-4">
@@ -90,16 +93,15 @@ export const AgregarAsignacion = () => {
                             {store.api.error && (
                                 <div className="alert alert-danger py-2">{String(store.api.error)}</div>
                             )}
-                            <form onSubmit={(e) => { e.preventDefault(); crearAsignacion(); }}>
+                            <form onSubmit={crearAsignacion}>
                                 <div className="row g-3">
                                     <div className="col-md-6">
                                         <label className="form-label">ID Ticket *</label>
                                         <input
                                             type="number"
+                                            name="id_ticket"
                                             className="form-control"
                                             placeholder="Ingrese el ID del ticket"
-                                            value={nuevaAsignacion.id_ticket}
-                                            onChange={e => setNuevaAsignacion(s => ({ ...s, id_ticket: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -107,10 +109,9 @@ export const AgregarAsignacion = () => {
                                         <label className="form-label">ID Supervisor *</label>
                                         <input
                                             type="number"
+                                            name="id_supervisor"
                                             className="form-control"
                                             placeholder="Ingrese el ID del supervisor"
-                                            value={nuevaAsignacion.id_supervisor}
-                                            onChange={e => setNuevaAsignacion(s => ({ ...s, id_supervisor: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -118,10 +119,9 @@ export const AgregarAsignacion = () => {
                                         <label className="form-label">ID Analista *</label>
                                         <input
                                             type="number"
+                                            name="id_analista"
                                             className="form-control"
                                             placeholder="Ingrese el ID del analista"
-                                            value={nuevaAsignacion.id_analista}
-                                            onChange={e => setNuevaAsignacion(s => ({ ...s, id_analista: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -129,27 +129,25 @@ export const AgregarAsignacion = () => {
                                         <label className="form-label">Fecha de Asignación</label>
                                         <input
                                             type="date"
+                                            name="fecha_asignacion"
                                             className="form-control"
-                                            value={nuevaAsignacion.fecha_asignacion}
-                                            onChange={e => setNuevaAsignacion(s => ({ ...s, fecha_asignacion: e.target.value }))}
+                                            defaultValue={new Date().toISOString().split('T')[0]}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="d-flex gap-2 mt-4 justify-content-end">
-                                    <button
-                                        type="button"
+                                    <Link
+                                        to="/asignaciones"
                                         className="btn btn-secondary"
-                                        onClick={cancelar}
-                                        disabled={store.api.loading}
                                     >
                                         <i className="fas fa-times me-1"></i>
                                         Cancelar
-                                    </button>
+                                    </Link>
                                     <button
                                         type="submit"
                                         className="btn btn-primary"
-                                        disabled={store.api.loading}
+                                        disabled={store.api.loading || store.crud?.formSubmitting}
                                     >
                                         <i className="fas fa-save me-1"></i>
                                         {store.api.loading ? 'Guardando...' : 'Guardar Asignación'}

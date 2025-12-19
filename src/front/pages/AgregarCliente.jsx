@@ -1,22 +1,13 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, Navigate } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
-import ImageUpload from "../components/ImageUpload";
 
 export const AgregarCliente = () => {
     const { store, dispatch } = useGlobalReducer();
-    const navigate = useNavigate();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
-    const [nuevoCliente, setNuevoCliente] = useState({
-        nombre: "",
-        apellido: "",
-        email: "",
-        contraseña_hash: "",
-        direccion: "",
-        telefono: "",
-        url_imagen: ""
-    });
+    // Estado del store para navegación después de crear
+    const shouldRedirect = store.crud?.formSuccess;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -27,47 +18,41 @@ export const AgregarCliente = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
-    // Funciones para manejar la imagen
-    const handleImageUpload = (imageUrl) => {
-        setNuevoCliente(prev => ({
-            ...prev,
-            url_imagen: imageUrl
-        }));
-    };
+    // Limpiar estado al desmontar
+    useEffect(() => {
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
+    }, []);
 
-    const handleImageRemove = () => {
-        setNuevoCliente(prev => ({
-            ...prev,
-            url_imagen: ""
-        }));
-    };
+    const crearCliente = (e) => {
+        e.preventDefault();
 
-    const limpiarFormulario = () => {
-        setNuevoCliente({
-            nombre: "",
-            apellido: "",
-            email: "",
-            contraseña_hash: "",
-            direccion: "",
-            telefono: "",
-            url_imagen: ""
-        });
-    };
+        // Usar FormData para obtener valores del formulario
+        const formData = new FormData(e.target);
+        const nuevoCliente = {
+            nombre: formData.get('nombre'),
+            apellido: formData.get('apellido'),
+            email: formData.get('email'),
+            contraseña_hash: formData.get('contraseña_hash'),
+            direccion: formData.get('direccion'),
+            telefono: formData.get('telefono'),
+            url_imagen: formData.get('url_imagen') || ''
+        };
 
-    const crearCliente = () => {
         // Validación básica
         if (!nuevoCliente.nombre || !nuevoCliente.apellido || !nuevoCliente.email) {
             setError("Los campos nombre, apellido y email son obligatorios");
@@ -75,20 +60,25 @@ export const AgregarCliente = () => {
         }
 
         setLoading(true);
+        dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: true });
+
         fetchJson(`${API}/clientes`, {
             method: "POST",
             body: JSON.stringify(nuevoCliente)
         }).then(({ ok, data }) => {
             if (!ok) throw new Error(data.message);
             dispatch({ type: "clientes_add", payload: data });
-            limpiarFormulario();
-            navigate('/clientes'); 
-        }).catch(setError).finally(() => setLoading(false));
+            dispatch({ type: 'CRUD_SET_FORM_SUCCESS', payload: true });
+        }).catch(err => {
+            setError(err);
+            dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: false });
+        }).finally(() => setLoading(false));
     };
 
-    const cancelar = () => {
-        navigate('/clientes');
-    };
+    // Navegación declarativa después de crear
+    if (shouldRedirect) {
+        return <Navigate to="/clientes" replace />;
+    }
 
     return (
         <div className="container py-4">
@@ -105,16 +95,15 @@ export const AgregarCliente = () => {
                             {store.api.error && (
                                 <div className="alert alert-danger py-2">{String(store.api.error)}</div>
                             )}
-                            <form onSubmit={(e) => { e.preventDefault(); crearCliente(); }}>
+                            <form onSubmit={crearCliente}>
                                 <div className="row g-3">
                                     <div className="col-md-6">
                                         <label className="form-label">Nombre *</label>
                                         <input
                                             type="text"
+                                            name="nombre"
                                             className="form-control"
                                             placeholder="Ingrese el nombre"
-                                            value={nuevoCliente.nombre}
-                                            onChange={e => setNuevoCliente(s => ({ ...s, nombre: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -122,10 +111,9 @@ export const AgregarCliente = () => {
                                         <label className="form-label">Apellido *</label>
                                         <input
                                             type="text"
+                                            name="apellido"
                                             className="form-control"
                                             placeholder="Ingrese el apellido"
-                                            value={nuevoCliente.apellido}
-                                            onChange={e => setNuevoCliente(s => ({ ...s, apellido: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -133,10 +121,9 @@ export const AgregarCliente = () => {
                                         <label className="form-label">Email *</label>
                                         <input
                                             type="email"
+                                            name="email"
                                             className="form-control"
                                             placeholder="Ingrese el email"
-                                            value={nuevoCliente.email}
-                                            onChange={e => setNuevoCliente(s => ({ ...s, email: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -144,56 +131,52 @@ export const AgregarCliente = () => {
                                         <label className="form-label">Contraseña</label>
                                         <input
                                             type="password"
+                                            name="contraseña_hash"
                                             className="form-control"
                                             placeholder="Ingrese la contraseña"
-                                            value={nuevoCliente.contraseña_hash}
-                                            onChange={e => setNuevoCliente(s => ({ ...s, contraseña_hash: e.target.value }))}
                                         />
                                     </div>
                                     <div className="col-md-6">
                                         <label className="form-label">Teléfono</label>
                                         <input
                                             type="tel"
+                                            name="telefono"
                                             className="form-control"
                                             placeholder="Ingrese el teléfono"
-                                            value={nuevoCliente.telefono}
-                                            onChange={e => setNuevoCliente(s => ({ ...s, telefono: e.target.value }))}
                                         />
                                     </div>
                                     <div className="col-md-6">
                                         <label className="form-label">Dirección</label>
                                         <input
                                             type="text"
+                                            name="direccion"
                                             className="form-control"
                                             placeholder="Ingrese la dirección"
-                                            value={nuevoCliente.direccion}
-                                            onChange={e => setNuevoCliente(s => ({ ...s, direccion: e.target.value }))}
                                         />
                                     </div>
                                     <div className="col-12">
-                                        <label className="form-label">Imagen de Perfil</label>
-                                        <ImageUpload
-                                            onImageUpload={handleImageUpload}
-                                            onImageRemove={handleImageRemove}
-                                            currentImageUrl={nuevoCliente.url_imagen}
+                                        <label className="form-label">URL Imagen de Perfil</label>
+                                        <input
+                                            type="text"
+                                            name="url_imagen"
+                                            className="form-control"
+                                            placeholder="URL de imagen"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="d-flex gap-2 mt-4 justify-content-end">
-                                    <button
-                                        type="button"
+                                    <Link
+                                        to="/clientes"
                                         className="btn btn-secondary"
-                                        onClick={cancelar}
-                                        disabled={store.api.loading}
                                     >
                                         <i className="fas fa-times me-1"></i>
                                         Cancelar
-                                    </button>
+                                    </Link>
                                     <button
                                         type="submit"
                                         className="btn btn-primary"
-                                        disabled={store.api.loading}
+                                        disabled={store.api.loading || store.crud?.formSubmitting}
                                     >
                                         <i className="fas fa-save me-1"></i>
                                         {store.api.loading ? 'Guardando...' : 'Guardar Cliente'}
