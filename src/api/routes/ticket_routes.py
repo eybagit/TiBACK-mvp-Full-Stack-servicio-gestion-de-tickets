@@ -337,14 +337,17 @@ def asignar_ticket(id):
     if error:
         return jsonify({"message": error}), 400 if "no encontrado" not in error else 404
 
-    # Emitir eventos WebSocket
+    # Emitir eventos WebSocket con ticket COMPLETO
     socketio = get_socketio()
     if socketio:
         from api.models import Analista
         analista = db.session.get(Analista, id_analista)
+        
+        # IMPORTANTE: Siempre incluir ticket completo serializado
         data = {
             'id': ticket.id,
             'ticket_id': ticket.id,
+            'ticket': ticket.serialize(),  # SIEMPRE incluir ticket completo
             'estado': ticket.estado,
             'titulo': ticket.titulo,
             'prioridad': ticket.prioridad,

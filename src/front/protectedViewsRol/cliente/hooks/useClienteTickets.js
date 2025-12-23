@@ -268,7 +268,9 @@ function useClienteTickets(passedStore, passedDispatch, joinTicketRoom, emitCrit
     // Setters para compatibilidad
     const setTickets = (tOrFn) => {
         if (typeof tOrFn === 'function') {
-            const newValue = tOrFn(tickets);
+            // CRÍTICO: Usar estado actual del store, no del closure
+            const currentTickets = store.cliente.tickets || [];
+            const newValue = tOrFn(currentTickets);
             dispatch({ type: 'CLIENTE_SET_TICKETS', payload: newValue });
         } else {
             dispatch({ type: 'CLIENTE_SET_TICKETS', payload: tOrFn });

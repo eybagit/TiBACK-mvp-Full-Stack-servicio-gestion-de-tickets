@@ -25,6 +25,7 @@ function SupervisorTicketsList({
     ticketsConRecomendaciones,
     getAvailableActions,
     asignarTicket,
+    reasignarTicket,
     setActiveView,
     changeView,
     navigate,
@@ -182,6 +183,7 @@ function SupervisorTicketsList({
                                             ticketsConRecomendaciones={ticketsConRecomendaciones}
                                             getAvailableActions={getAvailableActions}
                                             asignarTicket={asignarTicket}
+                                            reasignarTicket={reasignarTicket}
                                             analistasCombinados={analistasCombinados}
                                             setActiveView={setActiveView}
                                             changeView={changeView}

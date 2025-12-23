@@ -14,6 +14,7 @@ function TicketRow({
     ticketsConRecomendaciones,
     getAvailableActions,
     asignarTicket,
+    reasignarTicket,
     analistasCombinados,
     setActiveView,
     changeView,
@@ -239,7 +240,13 @@ function TicketRow({
                                             <li key={analista.id}>
                                                 <button
                                                     className="dropdown-item"
-                                                    onClick={() => asignarTicket(ticket.id, analista.id)}
+                                                    onClick={() => {
+                                                        if (ticket.asignacion_actual?.analista && reasignarTicket) {
+                                                            reasignarTicket(ticket.id, analista.id);
+                                                        } else {
+                                                            asignarTicket(ticket.id, analista.id);
+                                                        }
+                                                    }}
                                                 >
                                                     <i className="fas fa-user me-2"></i>
                                                     {analista.nombre} {analista.apellido}
@@ -367,7 +374,13 @@ function TicketRow({
                                                     <li key={analista.id}>
                                                         <button
                                                             className="dropdown-item"
-                                                            onClick={() => asignarTicket(ticket.id, analista.id)}
+                                                            onClick={() => {
+                                                                if (ticket.asignacion_actual?.analista && reasignarTicket) {
+                                                                    reasignarTicket(ticket.id, analista.id);
+                                                                } else {
+                                                                    asignarTicket(ticket.id, analista.id);
+                                                                }
+                                                            }}
                                                         >
                                                             <i className="fas fa-user me-2"></i>
                                                             {analista.nombre} {analista.apellido}

@@ -1,9 +1,66 @@
+/**
+ * @fileoverview useClienteWebSocket - Hook de WebSocket para Cliente
+ * 
+ * Maneja la conexión WebSocket, eventos de tickets y sincronización
+ * en tiempo real para el rol de Cliente.
+ * 
+ * @module protectedViewsRol/cliente/hooks/useClienteWebSocket
+ */
+
 import { useEffect } from 'react';
 import { tokenUtils } from '../../../store';
+import { useWebSocketEvents } from '../../../hooks/useWebSocketEvents';
 
 /**
- * useClienteWebSocket - Hook para manejar la conexión WebSocket y eventos en tiempo real
- * Configura listeners, sincronización y manejo de eventos de tickets
+ * @typedef {Object} Ticket
+ * @property {number} id - ID único del ticket
+ * @property {string} titulo - Título del ticket
+ * @property {string} descripcion - Descripción del problema
+ * @property {string} estado - Estado actual
+ * @property {string} prioridad - Prioridad (alta, media, baja)
+ * @property {number} id_cliente - ID del cliente
+ * @property {number} [id_analista] - ID del analista asignado
+ */
+
+/**
+ * @typedef {Object} TicketWebSocketEvent
+ * @property {number} ticket_id - ID del ticket afectado
+ * @property {Ticket} [ticket] - Ticket completo
+ * @property {string} [action] - Acción realizada
+ * @property {Object} [cambios] - Cambios específicos
+ * @property {string} [ticket_estado] - Nuevo estado
+ */
+
+/**
+ * @typedef {Object} UseClienteWebSocketConfig
+ * @property {Object} store - Store global
+ * @property {Function} connectWebSocket - Conectar WebSocket
+ * @property {Function} disconnectWebSocket - Desconectar WebSocket
+ * @property {Function} joinRoom - Unirse a room
+ * @property {Function} joinTicketRoom - Unirse a room de ticket
+ * @property {Function} startRealtimeSync - Iniciar sincronización
+ * @property {Function} joinCriticalRooms - Unirse a rooms críticas
+ * @property {Function} joinAllCriticalRooms - Unirse a todas las rooms
+ * @property {Ticket[]} tickets - Lista de tickets
+ * @property {Function} actualizarTickets - Actualizar tickets desde API
+ * @property {Function} setSolicitudesReapertura - Setter de solicitudes
+ * @property {Function} setTickets - Setter de tickets
+ */
+
+/**
+ * Hook para manejar WebSocket y eventos del Cliente.
+ * 
+ * Eventos manejados:
+ * - ticket_asignado: Mi ticket fue asignado a un analista
+ * - ticket_escalado: Mi ticket fue escalado
+ * - ticket_solucionado: Mi ticket fue solucionado
+ * - ticket_cerrado: Mi ticket fue cerrado
+ * - ticket_reabierto: Mi ticket fue reabierto
+ * - solicitud_reapertura: Mi solicitud de reapertura
+ * - reapertura_aprobada: Mi reapertura fue aprobada
+ * - nuevo_ticket: Tengo un nuevo ticket
+ * 
+ * @param {UseClienteWebSocketConfig} config - Configuración del hook
  */
 function useClienteWebSocket({
     store,
@@ -28,14 +85,13 @@ function useClienteWebSocket({
                 const role = tokenUtils.getRole(store.auth.token);
                 joinRoom(socket, role, userId);
 
-                // Unirse EXPLÍCITAMENTE a la room específica del cliente
+                // Unirse a la room específica del cliente
                 if (userId) {
                     try {
                         const clienteRoom = `cliente_${userId}`;
-                        console.log(`🔌 CLIENTE - Uniéndose a room específica: ${clienteRoom}`);
                         socket.emit('join_room', clienteRoom);
                     } catch (e) {
-                        console.error('❌ CLIENTE - Error al unirse a room específica:', e);
+                        console.error('Error al unirse a room específica:', e);
                     }
                 }
             }
@@ -61,14 +117,17 @@ function useClienteWebSocket({
         }
     }, [store.websocket.socket, tickets.length]);
 
-    // Configurar sincronización crítica en tiempo real
+    // Hook centralizado para eventos WebSocket comunes
+    useWebSocketEvents({
+        role: 'cliente',
+        store,
+        setTickets
+    });
+
+    // Configurar listeners de eventos WebSocket
     useEffect(() => {
         if (store.auth.user && store.websocket.connected && store.websocket.socket) {
-            console.log('🔄 CLIENTE - Configurando sincronización crítica');
             joinAllCriticalRooms(store.websocket.socket, store.auth.user, store.auth.token);
-
-            // NO usar startRealtimeSync - causa recargas
-            // startRealtimeSync({ ... actualizarTickets() ... });
 
             // Unirse a rooms críticos de tickets
             const ticketIds = tickets.map(ticket => ticket.id);
@@ -83,40 +142,17 @@ function useClienteWebSocket({
                 });
             }
 
-            // === HANDLERS 100% LOCALES (SIN FETCH) ===
             const socket = store.websocket.socket;
 
-            // Helper para actualizar ticket localmente
-            const updateTicketLocal = (ticketId, changes) => {
-                setTickets(prev => Array.isArray(prev) 
-                    ? prev.map(t => t.id === ticketId ? { ...t, ...changes } : t)
-                    : prev
-                );
-            };
+            // === HANDLERS ESPECÍFICOS DE CLIENTE ===
 
-            const handleTicketUpdate = (data) => {
-                if (data.ticket_id) {
-                    // Actualizar estado localmente
-                    const updates = {};
-                    if (data.ticket_estado) updates.estado = data.ticket_estado;
-                    if (data.cambios) Object.assign(updates, data.cambios);
-                    if (Object.keys(updates).length > 0) {
-                        updateTicketLocal(data.ticket_id, updates);
-                    }
-                    // Limpiar solicitudes de reapertura si no está solucionado
-                    if (data.ticket_estado?.toLowerCase() !== 'solucionado') {
-                        setSolicitudesReapertura(prev => {
-                            const newSet = new Set(prev);
-                            newSet.delete(data.ticket_id);
-                            return newSet;
-                        });
-                    }
-                }
-            };
-
+            /** @param {TicketWebSocketEvent} data */
             const handleTicketSolucionado = (data) => {
                 if (data.ticket_id) {
-                    updateTicketLocal(data.ticket_id, { estado: 'solucionado' });
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'solucionado' } : t)
+                        : prev
+                    );
                     setSolicitudesReapertura(prev => {
                         const newSet = new Set(prev);
                         newSet.delete(data.ticket_id);
@@ -128,30 +164,23 @@ function useClienteWebSocket({
                 }
             };
 
-            const handleTicketAsignado = (data) => {
-                if (data.ticket_id) {
-                    updateTicketLocal(data.ticket_id, { 
-                        estado: 'asignado',
-                        id_analista: data.analista_id || data.id_analista
-                    });
-                }
-            };
-
-            const handleTicketEscalado = (data) => {
-                if (data.ticket_id) {
-                    updateTicketLocal(data.ticket_id, { estado: 'escalado' });
-                }
-            };
-
+            /** @param {TicketWebSocketEvent} data */
             const handleTicketCerrado = (data) => {
                 if (data.ticket_id) {
-                    updateTicketLocal(data.ticket_id, { estado: 'cerrado' });
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'cerrado' } : t)
+                        : prev
+                    );
                 }
             };
 
+            /** @param {TicketWebSocketEvent} data */
             const handleTicketReabierto = (data) => {
                 if (data.ticket_id) {
-                    updateTicketLocal(data.ticket_id, { estado: data.estado || 'en_espera' });
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: data.estado || 'en_espera' } : t)
+                        : prev
+                    );
                     setSolicitudesReapertura(prev => {
                         const newSet = new Set(prev);
                         newSet.delete(data.ticket_id);
@@ -160,15 +189,23 @@ function useClienteWebSocket({
                 }
             };
 
+            /** @param {TicketWebSocketEvent} data */
             const handleSolicitudReapertura = (data) => {
                 if (data.ticket_id) {
-                    updateTicketLocal(data.ticket_id, { estado: 'solucionado' });
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'solucionado' } : t)
+                        : prev
+                    );
                 }
             };
 
+            /** @param {TicketWebSocketEvent} data */
             const handleReaperturaAprobada = (data) => {
                 if (data.ticket_id) {
-                    updateTicketLocal(data.ticket_id, { estado: 'en_espera' });
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'en_espera' } : t)
+                        : prev
+                    );
                     setSolicitudesReapertura(prev => {
                         const newSet = new Set(prev);
                         newSet.delete(data.ticket_id);
@@ -177,21 +214,14 @@ function useClienteWebSocket({
                 }
             };
 
-            const handleNuevoComentario = (data) => {
-                // Los comentarios se cargan al abrir el ticket, ignorar aquí
-            };
-
+            /** @param {TicketWebSocketEvent} data */
             const handleNuevoTicket = (data) => {
                 if (data.ticket) {
                     setTickets(prev => Array.isArray(prev) ? [data.ticket, ...prev] : [data.ticket]);
                 }
             };
 
-            socket.on('ticket_actualizado', handleTicketUpdate);
-            socket.on('ticket_estado_changed', handleTicketUpdate);
-            socket.on('nuevo_comentario', handleNuevoComentario);
-            socket.on('ticket_asignado', handleTicketAsignado);
-            socket.on('ticket_escalado', handleTicketEscalado);
+            // Registrar listeners específicos de cliente
             socket.on('ticket_solucionado', handleTicketSolucionado);
             socket.on('ticket_cerrado', handleTicketCerrado);
             socket.on('solicitud_reapertura', handleSolicitudReapertura);
@@ -199,12 +229,8 @@ function useClienteWebSocket({
             socket.on('ticket_reabierto', handleTicketReabierto);
             socket.on('nuevo_ticket', handleNuevoTicket);
 
+            // Cleanup
             return () => {
-                socket.off('ticket_actualizado', handleTicketUpdate);
-                socket.off('ticket_estado_changed', handleTicketUpdate);
-                socket.off('nuevo_comentario', handleNuevoComentario);
-                socket.off('ticket_asignado', handleTicketAsignado);
-                socket.off('ticket_escalado', handleTicketEscalado);
                 socket.off('ticket_solucionado', handleTicketSolucionado);
                 socket.off('ticket_cerrado', handleTicketCerrado);
                 socket.off('solicitud_reapertura', handleSolicitudReapertura);
@@ -219,13 +245,13 @@ function useClienteWebSocket({
     useEffect(() => {
         const handleManualSync = (event) => {
             if (event.detail.role === 'cliente') {
-                actualizarTickets(); // OK: acción manual del usuario
+                actualizarTickets();
             }
         };
 
         const handleTotalSync = (event) => {
             if (event.detail.role === 'cliente' || event.detail.source === 'footer_sync') {
-                actualizarTickets(); // OK: acción manual del usuario
+                actualizarTickets();
             }
         };
 
@@ -244,15 +270,7 @@ function useClienteWebSocket({
         };
     }, []);
 
-    // Manejar actualizaciones críticas de tickets
-    useEffect(() => {
-        // NO actualizar automáticamente - causa recargas
-        // if (store.websocket.criticalTicketUpdate?.priority === 'critical') {
-        //     actualizarTickets();
-        // }
-    }, [store.websocket.criticalTicketUpdate]);
-
-    // Actualizar tickets cuando lleguen notificaciones WebSocket
+    // Manejar notificaciones WebSocket
     useEffect(() => {
         if (store.websocket.notifications.length > 0) {
             const lastNotification = store.websocket.notifications[store.websocket.notifications.length - 1];
@@ -271,7 +289,6 @@ function useClienteWebSocket({
 
             if (lastNotification.tipo === 'solucionado') {
                 if (lastNotification.ticket_id) {
-                    // Actualizar localmente
                     setTickets(prev => Array.isArray(prev) 
                         ? prev.map(t => t.id === lastNotification.ticket_id ? { ...t, estado: 'solucionado' } : t)
                         : prev
@@ -282,9 +299,7 @@ function useClienteWebSocket({
                         return newSet;
                     });
                 }
-                // NO hacer fetch - ya actualizamos localmente
             } else {
-                // Otras notificaciones: actualizar localmente si tenemos datos
                 if (lastNotification.ticket_id && lastNotification.estado) {
                     setTickets(prev => Array.isArray(prev) 
                         ? prev.map(t => t.id === lastNotification.ticket_id ? { ...t, estado: lastNotification.estado } : t)

@@ -18,6 +18,8 @@ export const websocketReducer = {
       socket: payload,
       connected: true,
       connecting: false,
+      reconnecting: false,
+      reconnectAttempt: 0,
     },
   }),
 
@@ -28,6 +30,16 @@ export const websocketReducer = {
       socket: null,
       connected: false,
       connecting: false,
+    },
+  }),
+  
+  websocket_reconnecting: (store, payload) => ({
+    ...store,
+    websocket: {
+      ...store.websocket,
+      reconnecting: true,
+      reconnectAttempt: payload.attempt,
+      reconnectDelay: payload.delay,
     },
   }),
 

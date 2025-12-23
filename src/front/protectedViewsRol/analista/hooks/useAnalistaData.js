@@ -53,7 +53,9 @@ export function useAnalistaData({ store, dispatch }) {
     const setInfoData = (value) => dispatch({ type: 'ANALISTA_SET_INFO_DATA', payload: value });
     const setTickets = (valueOrFn) => {
         if (typeof valueOrFn === 'function') {
-            const newValue = valueOrFn(tickets);
+            // CRÍTICO: Usar estado actual del store, no del closure
+            const currentTickets = store.analista.tickets || [];
+            const newValue = valueOrFn(currentTickets);
             dispatch({ type: 'ANALISTA_SET_TICKETS', payload: newValue });
         } else {
             dispatch({ type: 'ANALISTA_SET_TICKETS', payload: valueOrFn });

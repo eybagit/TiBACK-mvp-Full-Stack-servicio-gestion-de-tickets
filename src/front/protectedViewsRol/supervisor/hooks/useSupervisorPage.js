@@ -11,6 +11,7 @@
 import { useEffect } from 'react';
 import useGlobalReducer from '../../../hooks/useGlobalReducer';
 import { useSupervisorData } from './useSupervisorData';
+import { useSupervisorActions } from './useSupervisorActions';
 import { useTicketOperations } from './useTicketOperations';
 import { useWebSocketSync } from './useWebSocketSync';
 import { supervisorActions } from '../../../store';
@@ -101,6 +102,26 @@ export function useSupervisorPage() {
         fueEscaladoPorAnalista, getAvailableActions
     } = operationsHook;
 
+    // Hook de acciones del supervisor (reasignar, aprobar reapertura, etc.)
+    const actionsHook = useSupervisorActions({
+        store,
+        tickets,
+        actualizarTickets: dataHook.actualizarTickets,
+        actualizarTodasLasTablas,
+        setError: (msg) => dispatch({ type: 'SUPERVISOR_SET_ERROR', payload: msg }),
+        backendRequest: async (url, options) => {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}${url}`, {
+                ...options,
+                headers: {
+                    'Authorization': `Bearer ${store.auth.token}`,
+                    'Content-Type': 'application/json',
+                    ...options?.headers
+                }
+            });
+            return response;
+        }
+    });
+
     // Hook de WebSocket
     useWebSocketSync({
         store, connectWebSocket, disconnectWebSocket,
@@ -110,7 +131,9 @@ export function useSupervisorPage() {
         setTickets: (dataOrFn) => {
             // Soportar tanto datos directos como funciones updater
             if (typeof dataOrFn === 'function') {
-                const newData = dataOrFn(tickets);
+                // CRÍTICO: Usar estado actual del store, no del closure
+                const currentTickets = store.supervisor.tickets || [];
+                const newData = dataOrFn(currentTickets);
                 dispatch({ type: 'SUPERVISOR_SET_TICKETS', payload: newData });
             } else {
                 dispatch({ type: 'SUPERVISOR_SET_TICKETS', payload: dataOrFn });
@@ -119,7 +142,9 @@ export function useSupervisorPage() {
         ticketsCerrados,
         setTicketsCerrados: (dataOrFn) => {
             if (typeof dataOrFn === 'function') {
-                const newData = dataOrFn(ticketsCerrados);
+                // CRÍTICO: Usar estado actual del store, no del closure
+                const currentTicketsCerrados = store.supervisor.ticketsCerrados || [];
+                const newData = dataOrFn(currentTicketsCerrados);
                 dispatch({ type: 'SUPERVISOR_SET_TICKETS_CERRADOS', payload: newData });
             } else {
                 dispatch({ type: 'SUPERVISOR_SET_TICKETS_CERRADOS', payload: dataOrFn });
@@ -257,6 +282,7 @@ export function useSupervisorPage() {
         
         // Funciones de operaciones
         asignarTicket,
+        reasignarTicket: actionsHook.reasignarTicket,
         cerrarTicket,
         reabrirTicket,
         escalarTicket,
