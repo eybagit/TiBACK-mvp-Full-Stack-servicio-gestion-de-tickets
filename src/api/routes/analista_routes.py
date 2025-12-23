@@ -40,18 +40,12 @@ def create_analista():
         socketio = get_socketio()
         if socketio:
             try:
+                # SOLO global_tickets - TODOS escuchan TODO
                 socketio.emit('analista_creado', {
                     'analista': analista.serialize(),
                     'tipo': 'analista_creado',
                     'timestamp': datetime.now().isoformat()
-                }, room='supervisores')
-
-                socketio.emit('analista_creado', {
-                    'analista': analista.serialize(),
-                    'tipo': 'analista_creado',
-                    'timestamp': datetime.now().isoformat()
-                }, room='administradores')
-                
+                }, room='global_tickets')
             except Exception as e:
                 print(f"Error enviando WebSocket: {e}")
 
@@ -127,10 +121,8 @@ def delete_analista(id):
                     'timestamp': datetime.now().isoformat()
                 }
 
-                socketio.emit('analista_eliminado', eliminacion_data, room='clientes')
-                socketio.emit('analista_eliminado', eliminacion_data, room='analistas')
-                socketio.emit('analista_eliminado', eliminacion_data, room='supervisores')
-                socketio.emit('analista_eliminado', eliminacion_data, room='administradores')
+                # SOLO global_tickets - TODOS escuchan TODO
+                socketio.emit('analista_eliminado', eliminacion_data, room='global_tickets')
                     
             except Exception as e:
                 print(f"Error enviando WebSocket: {e}")

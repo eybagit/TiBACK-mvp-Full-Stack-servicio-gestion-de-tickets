@@ -16,6 +16,8 @@ from .websocket_utils import (
     emit_ticket_asignado,
     emit_ticket_escalado,
     emit_ticket_estado_changed,
+    emit_comentario_nuevo,
+    emit_ticket_evaluado,
     get_socketio
 )
 
@@ -27,5 +29,7 @@ __all__ = [
     'emit_ticket_asignado',
     'emit_ticket_escalado',
     'emit_ticket_estado_changed',
+    'emit_comentario_nuevo',
+    'emit_ticket_evaluado',
     'get_socketio'
 ]

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 /**
  * TicketRow - Fila individual de ticket en la tabla
@@ -20,6 +20,27 @@ function TicketRow({
     solicitarReapertura,
     navigate
 }) {
+    // ====== LÓGICA DINÁMICA REACTIVA A WEBSOCKET ======
+
+    /**
+     * Calcular acciones disponibles basadas en el estado del ticket
+     * Se recalcula automáticamente cuando el ticket cambia vía WebSocket
+     */
+    const actions = useMemo(() => {
+        const estado = ticket.estado?.toLowerCase();
+
+        return {
+            // Botones de cerrar/solicitar reapertura SOLO cuando está solucion ado
+            canCloseOrReopen: estado === 'solucionado' && !solicitudesReapertura.has(ticket.id),
+
+            // Mostrar alerta si ya solicitó reapertura
+            hasReopenRequest: solicitudesReapertura.has(ticket.id),
+
+            // Puede ver detalles siempre
+            canViewDetails: true
+        };
+    }, [ticket.estado, solicitudesReapertura, ticket.id]);
+
     return (
         <React.Fragment>
             <tr
@@ -223,8 +244,8 @@ function TicketRow({
                                 </button>
                             )}
 
-                            {/* Botones de Cerrar y Reabrir */}
-                            {['solucionado', 'asignado', 'en_progreso', 'escalado'].includes(ticket.estado.toLowerCase()) && !solicitudesReapertura.has(ticket.id) && (
+                            {/* Botones de Cerrar y Reabrir - DINÁMICOS */}
+                            {actions.canCloseOrReopen && (
                                 <>
                                     <button
                                         className="btn btn-outline-success btn-sm"
@@ -235,7 +256,7 @@ function TicketRow({
                                     </button>
                                     <button
                                         className="btn btn-outline-warning btn-sm"
-                                        title="Reabrir ticket si la solución no fue satisfactoria"
+                                        title="Solicitar reapertura si la solución no fue satisfactoria"
                                         onClick={() => solicitarReapertura(ticket.id)}
                                     >
                                         <i className="fas fa-redo"></i>
@@ -339,8 +360,8 @@ function TicketRow({
                                         </button>
                                     )}
 
-                                    {/* Botones de Cerrar y Reabrir en vista expandida */}
-                                    {['solucionado', 'asignado', 'en_progreso', 'escalado'].includes(ticket.estado.toLowerCase()) && !solicitudesReapertura.has(ticket.id) && (
+                                    {/* Botones de Cerrar y Reabrir en vista expandida - DINÁMICOS */}
+                                    {actions.canCloseOrReopen && (
                                         <>
                                             <button
                                                 className="btn btn-outline-success flex-fill btn-action-min"
@@ -352,17 +373,17 @@ function TicketRow({
                                             </button>
                                             <button
                                                 className="btn btn-outline-warning flex-fill btn-action-min"
-                                                title="Reabrir ticket si la solución no fue satisfactoria"
+                                                title="Solicitar reapertura si la solución no fue satisfactoria"
                                                 onClick={() => solicitarReapertura(ticket.id)}
                                             >
                                                 <i className="fas fa-redo me-2"></i>
-                                                Reabrir
+                                                Solicitar Reapertura
                                             </button>
                                         </>
                                     )}
 
-                                    {/* Mensaje de solicitud de reapertura pendiente */}
-                                    {['solucionado', 'asignado', 'en_progreso', 'escalado'].includes(ticket.estado.toLowerCase()) && solicitudesReapertura.has(ticket.id) && (
+                                    {/* Mensaje de solicitud de reapertura pendiente - DINÁMICO */}
+                                    {actions.hasReopenRequest && (
                                         <div className="alert alert-warning py-3 px-4 mb-0 flex-fill text-center" role="alert">
                                             <i className="fas fa-clock me-2"></i>
                                             <strong>Solicitud de reapertura enviada</strong>

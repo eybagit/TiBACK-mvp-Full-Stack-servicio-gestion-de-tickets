@@ -17,15 +17,19 @@ from api.routes.utils_routes import (
 ticket_bp = Blueprint('tickets', __name__)
 
 
-def emit_ws_event(socketio, event, data, rooms):
-    """Helper para emitir eventos WebSocket"""
+def emit_ws_event(socketio, event, data, rooms=None):
+    """
+    Helper para emitir eventos WebSocket
+    SIMPLIFICADO: Ignora rooms específicas y SIEMPRE emite a global_tickets
+    """
     if not socketio:
         return
     try:
-        for room in rooms:
-            socketio.emit(event, data, room=room)
+        # SOLO global_tickets - TODOS escuchan TODO
+        socketio.emit(event, data, room='global_tickets')
     except Exception as e:
         print(f"Error enviando WebSocket {event}: {e}")
+
 
 
 # ==================== CRUD BÁSICO ====================
@@ -293,12 +297,16 @@ def evaluar_ticket(id):
     socketio = get_socketio()
     if socketio:
         data = {
+            'ticket_id': ticket.id,
             'ticket': ticket.serialize(),
             'tipo': 'evaluado',
             'calificacion': calificacion,
             'comentario': comentario,
             'timestamp': datetime.now().isoformat()
         }
+        # Emitir evento específico de evaluación para que todos los roles lo vean
+        emit_ws_event(socketio, 'ticket_evaluado', data, [f'room_ticket_{ticket.id}'])
+        # También emitir actualización genérica para compatibilidad
         emit_ws_event(socketio, 'ticket_actualizado', data, [f'room_ticket_{ticket.id}'])
 
     return jsonify(ticket.serialize()), 200
@@ -396,23 +404,11 @@ def _parse_request_body():
 
 def _emit_new_ticket_events(ticket, user):
     """Emitir eventos WebSocket para nuevo ticket"""
-    socketio = get_socketio()
-    ticket_data = {
-        'ticket_id': ticket.id,
-        'ticket_estado': ticket.estado,
-        'ticket_titulo': ticket.titulo,
-        'ticket_prioridad': ticket.prioridad,
-        'cliente_id': ticket.id_cliente,
-        'tipo': 'creado',
-        'timestamp': datetime.now().isoformat()
-    }
-
-    if socketio:
-        rooms = [f'room_ticket_{ticket.id}', 'supervisores', 'administradores']
-        emit_ws_event(socketio, 'nuevo_ticket', ticket_data, rooms)
-        emit_ws_event(socketio, 'nuevo_ticket_disponible', ticket_data, ['supervisores', 'administradores'])
-
-    emit_critical_ticket_action(ticket.id, 'ticket_creado', user)
-    emit_websocket_to_ticket('nuevo_ticket', ticket_data, ticket.id, include_self=False)
-    emit_websocket_to_role('nuevo_ticket_disponible', ticket_data, 'supervisor', include_self=False)
-    emit_websocket_to_role('nuevo_ticket_disponible', ticket_data, 'administrador', include_self=False)
+    print(f"🔔 _emit_new_ticket_events llamado para ticket {ticket.id}")
+    
+    from api.utils import emit_ticket_created
+    
+    # Usar el helper centralizado que emite a global_tickets
+    # Esto garantiza que TODOS los roles (supervisor, analista, cliente, admin) reciban el evento
+    result = emit_ticket_created(ticket)
+    print(f"📤 emit_ticket_created retornó: {result}")

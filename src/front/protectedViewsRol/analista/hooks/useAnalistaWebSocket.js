@@ -84,25 +84,10 @@ export function useAnalistaWebSocket({
                 const userId = store.auth.user?.id || decoded.user_id;
                 const role = 'analista';
 
+                // SIMPLIFICADO: joinRoom se encarga de unir a global_tickets
                 if (joinRoom) {
                     try {
                         joinRoom(socket, role, userId);
-                        socket.emit('join_room', 'global_system_room');
-                        socket.emit('join_room', 'global_tickets');
-                        socket.emit('join_room', 'ticket_status_changes');
-                    } catch (e) {}
-                }
-
-                if (userId) {
-                    try {
-                        socket.emit('join_room', `analista_${userId}`);
-                    } catch (e) {}
-                }
-
-                const userData = { id: userId, role: 'analista' };
-                if (joinAllCriticalRooms) {
-                    try {
-                        joinAllCriticalRooms(socket, userData, store.auth.token);
                     } catch (e) {}
                 }
             }
@@ -127,29 +112,8 @@ export function useAnalistaWebSocket({
             return;
         }
         const socket = store.websocket.socket;
-
-        const userData = store.auth.user
-            ? { ...store.auth.user, role: 'analista' }
-            : (tokenDecoded ? { id: tokenDecoded.user_id, role: 'analista' } : null);
-
-        try {
-            joinAllCriticalRooms && joinAllCriticalRooms(socket, userData, store.auth.token);
-        } catch (e) {}
-
-        const ticketIds = Array.isArray(tickets) ? tickets.map(t => t.id) : [];
-        if (ticketIds.length && joinCriticalRooms) {
-            try { joinCriticalRooms(socket, ticketIds, store.auth.user, store.auth.token); } catch (e) {}
-        }
-
-        if (ticketIds.length) {
-            ticketIds.forEach(id => {
-                if (joinTicketRoom) {
-                    try { joinTicketRoom(socket, id); } catch (err) {}
-                }
-            });
-        }
-
-        // === HANDLERS DE EVENTOS ===
+        
+        // SIMPLIFICADO: Ya estamos en global_tickets, no necesitamos rooms específicas
 
         /** @param {TicketWebSocketEvent} data */
         const onSolicitudReapertura = (data) => {
@@ -260,6 +224,34 @@ export function useAnalistaWebSocket({
                 .catch(err => console.debug('Error fetching ticket:', err));
             }
         };
+        
+        /** 
+         * Handler para cuando el cliente evalúa un ticket
+         * @param {Object} data - Datos de la evaluación
+         */
+        const onTicketEvaluado = (data) => {
+            if (!data || !data.ticket_id) return;
+            
+            // Actualizar el ticket con la calificación
+            setTickets(prev => {
+                if (!Array.isArray(prev)) return prev;
+                return prev.map(t => 
+                    t.id === data.ticket_id 
+                        ? { 
+                            ...t, 
+                            calificacion: data.calificacion,
+                            comentario_evaluacion: data.comentario_evaluacion,
+                            fecha_evaluacion: data.fecha_evaluacion
+                          }
+                        : t
+                );
+            });
+            
+            // Log para desarrollo
+            if (import.meta.env.DEV) {
+                console.log(`📊 Ticket ${data.ticket_id} evaluado con ${data.calificacion} estrellas`);
+            }
+        };
 
         // Registrar listeners específicos de analista
         socket.on('solicitud_reapertura', onSolicitudReapertura);
@@ -267,6 +259,7 @@ export function useAnalistaWebSocket({
         socket.on('ticket_cerrado', onTicketCerrado);
         socket.on('ticket_asignado', onTicketAsignado);
         socket.on('ticket_asignado_a_mi', onTicketAsignadoAMi);
+        socket.on('ticket_evaluado', onTicketEvaluado);
 
         // Cleanup
         return () => {
@@ -275,6 +268,7 @@ export function useAnalistaWebSocket({
             socket.off('ticket_cerrado', onTicketCerrado);
             socket.off('ticket_asignado', onTicketAsignado);
             socket.off('ticket_asignado_a_mi', onTicketAsignadoAMi);
+            socket.off('ticket_evaluado', onTicketEvaluado);
         };
     }, [store.auth.user, store.websocket.connected, tickets]);
 }

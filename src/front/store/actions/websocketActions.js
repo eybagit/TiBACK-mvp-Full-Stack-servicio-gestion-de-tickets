@@ -196,23 +196,20 @@ export const websocketActions = {
   },
 
   /**
-   * Unirse a rooms según el rol del usuario
+   * Unirse a la room global donde TODOS escuchan TODO
    * @param {Socket} socket - Socket conectado
-   * @param {UserRole} role - Rol del usuario
-   * @param {number} userId - ID del usuario
+   * @param {UserRole} role - Rol del usuario (para logging)
+   * @param {number} userId - ID del usuario (para logging)
    */
   joinRoleRoom: (socket, role, userId) => {
     if (socket) {
-      if (role === "supervisor") {
-        socket.emit("join_room", "supervisores");
-      } else if (role === "administrador") {
-        socket.emit("join_room", "supervisores");
-        socket.emit("join_room", "administradores");
-      } else if (role === "analista") {
-        socket.emit("join_room", "analistas");
-        socket.emit("join_room", `analista_${userId}`);
-      } else if (role === "cliente") {
-        socket.emit("join_room", "clientes");
+      // SOLO global_tickets - TODOS escuchan TODO
+      // El frontend filtra con useMemo lo que necesita
+      socket.emit("join_room", "global_tickets");
+      
+      // Debug log (solo dev)
+      if (import.meta.env.DEV) {
+        console.log(`✅ [${role}:${userId}] Joined global_tickets - escuchando TODOS los eventos`);
       }
     }
   },

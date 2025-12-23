@@ -83,17 +83,9 @@ function useClienteWebSocket({
             if (socket) {
                 const userId = tokenUtils.getUserId(store.auth.token);
                 const role = tokenUtils.getRole(store.auth.token);
+                // SIMPLIFICADO: Solo unirse a global_tickets via joinRoom
+                // El frontend filtra eventos por id_cliente
                 joinRoom(socket, role, userId);
-
-                // Unirse a la room específica del cliente
-                if (userId) {
-                    try {
-                        const clienteRoom = `cliente_${userId}`;
-                        socket.emit('join_room', clienteRoom);
-                    } catch (e) {
-                        console.error('Error al unirse a room específica:', e);
-                    }
-                }
             }
         }
 
@@ -104,18 +96,8 @@ function useClienteWebSocket({
         };
     }, [store.auth.isAuthenticated, store.auth.token]);
 
-    // Unirse automáticamente a los rooms de tickets del cliente
-    useEffect(() => {
-        if (store.websocket.socket && tickets.length > 0) {
-            const joinedRooms = new Set();
-            tickets.forEach(ticket => {
-                if (!joinedRooms.has(ticket.id)) {
-                    joinTicketRoom(store.websocket.socket, ticket.id);
-                    joinedRooms.add(ticket.id);
-                }
-            });
-        }
-    }, [store.websocket.socket, tickets.length]);
+    // NOTA: Las rooms de tickets específicos ya no son necesarias
+    // Todos los eventos van a global_tickets y el frontend filtra
 
     // Hook centralizado para eventos WebSocket comunes
     useWebSocketEvents({
@@ -127,20 +109,9 @@ function useClienteWebSocket({
     // Configurar listeners de eventos WebSocket
     useEffect(() => {
         if (store.auth.user && store.websocket.connected && store.websocket.socket) {
-            joinAllCriticalRooms(store.websocket.socket, store.auth.user, store.auth.token);
-
-            // Unirse a rooms críticos de tickets
-            const ticketIds = tickets.map(ticket => ticket.id);
-            if (ticketIds.length > 0) {
-                joinCriticalRooms(store.websocket.socket, ticketIds, store.auth.user, store.auth.token);
-                ticketIds.forEach(ticketId => {
-                    store.websocket.socket.emit('join_ticket_room', {
-                        ticket_id: ticketId,
-                        user_id: store.auth.user.id,
-                        role: 'cliente'
-                    });
-                });
-            }
+            // SIMPLIFICADO: No necesitamos unir a rooms específicas
+            // Ya estamos en global_tickets via joinRoom en el useEffect anterior
+            // El frontend filtra eventos por ticket.id_cliente === store.auth.user.id
 
             const socket = store.websocket.socket;
 

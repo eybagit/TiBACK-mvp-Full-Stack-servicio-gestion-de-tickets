@@ -199,15 +199,21 @@ def asignar_ticket(ticket_id):
     return jsonify(ticket.serialize()), 200
 ```
 
-### 📡 Rooms Disponibles
+### 📡 Room Principal - SIMPLIFICADO
+
+> [!IMPORTANT]
+> **Desde v3.0**: Todos los eventos van a una única room `global_tickets`.
+> El frontend filtra lo que necesita usando `useMemo` y comparando `ticket_id` o `id_cliente`.
 
 | Room | Descripción | Quién se une |
 |------|-------------|--------------|
-| `supervisores` | Todos los supervisores | Supervisores y Administradores |
-| `analistas` | Todos los analistas | Todos los analistas |
-| `analista_{user_id}` | Analista específico | El analista con ese ID |
-| `clientes` | Todos los clientes | Todos los clientes |
-| `ticket_{ticket_id}` | Ticket específico | Usuarios interesados en ese ticket |
+| `global_tickets` | **ÚNICA ROOM** - Todos reciben todos los eventos | Todos los roles |
+
+**Ventajas del enfoque global:**
+- ✅ Eliminación de inconsistencias entre rooms
+- ✅ Código más simple y mantenible  
+- ✅ Todos ven cambios en tiempo real
+- ✅ El frontend filtra según necesidad
 
 ---
 
@@ -768,14 +774,20 @@ window.__wsDebugger.getStats()
 | `ticket_solucionado` | ❌ | ❌ | ✅ | ✅ | Ticket marcado como solucionado |
 | `ticket_cerrado` | ✅ | ✅ | ✅ | ✅ | Ticket cerrado |
 | `ticket_reabierto` | ✅ | ✅ | ✅ | ✅ | Ticket reabierto |
-| `solicitud_reapertura` | ✅ | ✅ | ❌ | ✅ | Cliente solicita reabrir |
+| `solicitud_reapertura` | ✅ | ✅ | ❌ | ✅ | Cliente solicita re abrir |
 | `reapertura_aprobada` | ❌ | ❌ | ✅ | ✅ | Reapertura aprobada |
 | `critical_update` | ✅ | ❌ | ❌ | ✅ | Actualización crítica |
+| `ticket_evaluado` | ✅ | ✅ | ❌ | ✅ | **Cliente evalúa ticket** ⭐ |
+| `comentario_nuevo` | ✅ | ✅ | ✅ | ✅ | **Nuevo comentario** 💬 |
+
+**Total de eventos**: 16
 
 **Leyenda**:
 - ✅ = Hook escucha este evento
 - ✅* = Escucha pero con lógica de validación (¿es para mí?)
 - ❌ = No escucha
+- ⭐ = Nuevo en v2.0 (Mejoras 2025-12-23)
+- 💬 = Nuevo en v2.0 (Infraestructura lista)
 
 ---
 

@@ -166,9 +166,8 @@ export function useWebSocketSync({
     // Configurar listeners de eventos WebSocket
     useEffect(() => {
         if (store.auth.user && store.websocket.connected && store.websocket.socket) {
-            const supervisorData = { ...store.auth.user, role: 'supervisor' };
-            joinAllCriticalRooms(store.websocket.socket, supervisorData, store.auth.token);
-
+            // SIMPLIFICADO: Solo global_tickets, eliminadas todas las rooms específicas
+            
             startRealtimeSync({
                 syncTypes: ['tickets', 'comentarios', 'asignaciones', 'chats'],
                 onSyncTriggered: (data) => {
@@ -178,29 +177,28 @@ export function useWebSocketSync({
                 }
             });
 
-            const ticketIds = tickets.map(ticket => ticket.id);
-            if (ticketIds.length > 0) {
-                joinCriticalRooms(store.websocket.socket, ticketIds, store.auth.user, store.auth.token);
-                ticketIds.forEach(ticketId => {
-                    try {
-                        if (joinTicketRoom) {
-                            joinTicketRoom(store.websocket.socket, ticketId);
-                        }
-                    } catch (e) {}
-                });
-            }
-
             const socket = store.websocket.socket;
             
             // === HANDLERS ESPECÍFICOS DE SUPERVISOR ===
             
             /** @param {TicketWebSocketEvent} data */
             const handleTicketCreated = (data) => {
+                console.log('🎉 [SUPERVISOR] Evento ticket_created recibido:', data);
+                
                 if (data.ticket) {
                     setTickets(prev => {
                         if (!Array.isArray(prev)) return [data.ticket];
+                        // Evitar duplicados: solo agregar si no existe
+                        const exists = prev.some(t => t.id === data.ticket.id);
+                        if (exists) {
+                            console.log('⚠️ Ticket ya existe, actualizando:', data.ticket.id);
+                            return prev.map(t => t.id === data.ticket.id ? data.ticket : t);
+                        }
+                        console.log('✅ Ticket nuevo agregado:', data.ticket.id);
                         return [data.ticket, ...prev];
                     });
+                } else {
+                    console.warn('❌ Evento ticket_created sin ticket:', data);
                 }
             };
             
@@ -236,9 +234,72 @@ export function useWebSocketSync({
                 if (data.ticket) {
                     setTickets(prev => {
                         if (!Array.isArray(prev)) return [data.ticket];
+                        // Evitar duplicados
+                        const exists = prev.some(t => t.id === data.ticket.id);
+                        if (exists) {
+                            return prev.map(t => t.id === data.ticket.id ? data.ticket : t);
+                        }
                         return [data.ticket, ...prev];
                     });
                 }
+            };
+            
+            /** 
+             * Handler para ticket escalado - agregar ticket si no existe
+             * @param {TicketWebSocketEvent} data 
+             */
+            const handleTicketEscalado = (data) => {
+                if (data.ticket) {
+                    setTickets(prev => {
+                        if (!Array.isArray(prev)) return [data.ticket];
+                        // Si el ticket no existe en la lista, agregarlo
+                        const exists = prev.some(t => t.id === data.ticket.id);
+                        if (!exists) {
+                            return [data.ticket, ...prev];
+                        }
+                        // Si ya existe, solo actualizarlo (el hook centralizado ya lo hace)
+                        return prev;
+                    });
+                }
+            };
+
+            /**
+             * Handler para ticket evaluado - actualizar calificación
+             * @param {TicketWebSocketEvent} data 
+             */
+            const handleTicketEvaluado = (data) => {
+                if (!data || !data.ticket_id) return;
+                
+                console.log('⭐ [SUPERVISOR] Evento ticket_evaluado recibido:', data);
+                
+                setTickets(prev => {
+                    if (!Array.isArray(prev)) return prev;
+                    return prev.map(t => 
+                        t.id === data.ticket_id 
+                            ? { 
+                                ...t, 
+                                calificacion: data.calificacion,
+                                comentario_evaluacion: data.comentario,
+                                ...(data.ticket || {})
+                              }
+                            : t
+                    );
+                });
+                
+                // También actualizar en tickets cerrados
+                setTicketsCerrados(prev => {
+                    if (!Array.isArray(prev)) return prev;
+                    return prev.map(t => 
+                        t.id === data.ticket_id 
+                            ? { 
+                                ...t, 
+                                calificacion: data.calificacion,
+                                comentario_evaluacion: data.comentario,
+                                ...(data.ticket || {})
+                              }
+                            : t
+                    );
+                });
             };
 
             // Registrar handlers específicos de supervisor
@@ -246,6 +307,8 @@ export function useWebSocketSync({
             socket.on('ticket_cerrado', handleTicketCerrado);
             socket.on('ticket_reabierto', handleTicketReabierto);
             socket.on('nuevo_ticket_disponible', handleNuevoTicketDisponible);
+            socket.on('ticket_escalado', handleTicketEscalado);
+            socket.on('ticket_evaluado', handleTicketEvaluado);
             socket.on('critical_ticket_update', handleCriticalUpdate);
 
             // Cleanup: remover listeners
@@ -254,6 +317,8 @@ export function useWebSocketSync({
                 socket.off('ticket_cerrado', handleTicketCerrado);
                 socket.off('ticket_reabierto', handleTicketReabierto);
                 socket.off('nuevo_ticket_disponible', handleNuevoTicketDisponible);
+                socket.off('ticket_escalado', handleTicketEscalado);
+                socket.off('ticket_evaluado', handleTicketEvaluado);
                 socket.off('critical_ticket_update', handleCriticalUpdate);
             };
         }

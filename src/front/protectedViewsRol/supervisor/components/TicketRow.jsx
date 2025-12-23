@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 /**
  * TicketRow - Fila individual de ticket del supervisor
@@ -23,9 +23,34 @@ function TicketRow({
     generarRecomendacion
 }) {
     const isExpanded = expandedTickets.has(ticket.id);
-    const actions = getAvailableActions ? getAvailableActions(ticket) : {};
     const tieneSolicitud = tieneSolicitudReapertura ? tieneSolicitudReapertura(ticket) : false;
     const fueEscalado = fueEscaladoPorAnalista ? fueEscaladoPorAnalista(ticket) : false;
+
+    // ====== LÓGICA DINÁMICA REACTIVA A WEBSOCKET ======
+
+    /**
+     * Calcular acciones disponibles basadas en el estado y asignación del ticket
+     * Se recalcula automáticamente cuando el ticket cambia vía WebSocket
+     */
+    const actions = useMemo(() => {
+        const estado = ticket.estado?.toLowerCase();
+        const tieneAnalista = !!ticket.asignacion_actual?.analista;
+
+        return {
+            // Puede asignar si NO tiene analista Y NO está cerrado/solucionado
+            canAssign: !tieneAnalista && estado !== 'cerrado' && estado !== 'solucionado',
+
+            // Puede cerrar si está solucionado
+            canClose: estado === 'solucionado',
+
+            // Puede reabrir si tiene solicitud
+            showReopenButton: tieneSolicitud,
+
+            // Indicadores
+            isEscalated: fueEscalado,
+            hasReopenRequest: tieneSolicitud
+        };
+    }, [ticket.estado, ticket.asignacion_actual, tieneSolicitud, fueEscalado]);
 
     return (
         <React.Fragment>

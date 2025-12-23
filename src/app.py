@@ -118,12 +118,6 @@ def handle_connect(auth=None):
 def handle_disconnect():
     """Manejar desconexión de cliente"""
     print(f'🔌 Cliente desconectado: {request.sid}')
-    
-    # Limpiar sesión
-    if request.sid in socketio.session:
-        user_info = socketio.session[request.sid]
-        print(f'🧹 Limpiando sesión para usuario: {user_info.get("role", "desconocido")}')
-        del socketio.session[request.sid]
 
 @socketio.on('ping')
 def handle_ping():

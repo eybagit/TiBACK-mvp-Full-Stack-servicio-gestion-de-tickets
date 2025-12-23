@@ -11,15 +11,19 @@ from api.routes.utils_routes import get_socketio
 ticket_estado_bp = Blueprint('ticket_estado', __name__)
 
 
-def emit_websocket_event(socketio, event_name, data, rooms):
-    """Helper para emitir eventos WebSocket a múltiples rooms"""
+def emit_websocket_event(socketio, event_name, data, rooms=None):
+    """
+    Helper para emitir eventos WebSocket a múltiples rooms
+    SIMPLIFICADO: Ignora rooms específicas y SIEMPRE emite a global_tickets
+    """
     if not socketio:
         return
     try:
-        for room in rooms:
-            socketio.emit(event_name, data, room=room)
+        # SOLO global_tickets - TODOS escuchan TODO
+        socketio.emit(event_name, data, room='global_tickets')
     except Exception as e:
         print(f"Error enviando WebSocket {event_name}: {e}")
+
 
 
 @ticket_estado_bp.route('/tickets/<int:id>/estado', methods=['PUT'])
