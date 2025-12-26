@@ -186,6 +186,20 @@ function useClienteWebSocket({
             };
 
             /** @param {TicketWebSocketEvent} data */
+            const handleTicketIniciado = (data) => {
+                if (data.ticket_id) {
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'en_proceso' } : t)
+                        : prev
+                    );
+                    // Log para desarrollo
+                    if (import.meta.env.DEV) {
+                        console.log(`🎯 Ticket ${data.ticket_id} iniciado - Analista trabajando en él`);
+                    }
+                }
+            };
+
+            /** @param {TicketWebSocketEvent} data */
             const handleNuevoTicket = (data) => {
                 if (data.ticket) {
                     setTickets(prev => Array.isArray(prev) ? [data.ticket, ...prev] : [data.ticket]);
@@ -193,6 +207,7 @@ function useClienteWebSocket({
             };
 
             // Registrar listeners específicos de cliente
+            socket.on('ticket_iniciado', handleTicketIniciado);  // NUEVO: Ver cuando analista inicia
             socket.on('ticket_solucionado', handleTicketSolucionado);
             socket.on('ticket_cerrado', handleTicketCerrado);
             socket.on('solicitud_reapertura', handleSolicitudReapertura);
@@ -202,6 +217,7 @@ function useClienteWebSocket({
 
             // Cleanup
             return () => {
+                socket.off('ticket_iniciado', handleTicketIniciado);
                 socket.off('ticket_solucionado', handleTicketSolucionado);
                 socket.off('ticket_cerrado', handleTicketCerrado);
                 socket.off('solicitud_reapertura', handleSolicitudReapertura);

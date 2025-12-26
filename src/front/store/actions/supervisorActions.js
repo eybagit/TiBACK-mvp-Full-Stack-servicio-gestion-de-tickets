@@ -401,19 +401,37 @@ export const supervisorActions = {
       return {
         total: 0,
         activos: 0,
-        resueltos: 0,
+        abiertos: 0,
+        enProceso: 0,
         escalados: 0,
-        pendientes: 0
+        solucionados: 0,
+        cerrados: 0,
+        reabiertos: 0
       };
     }
-    
-    return {
+    const stats = {
       total: tickets.length,
-      activos: tickets.filter(t => t.estado === 'activo').length,
-      resueltos: tickets.filter(t => t.estado === 'resuelto').length,
-      escalados: tickets.filter(t => t.estado === 'escalado').length,
-      pendientes: tickets.filter(t => t.estado === 'pendiente').length
+      abiertos: tickets.filter(t => t.estado === 'creado' || t.estado === 'en_espera').length,
+      enProceso: tickets.filter(t => t.estado === 'en_proceso' || t.estado === 'en proceso').length,
+      escalados: 0, // Se calcula en el componente usando fueEscaladoPorAnalista()
+      solucionados: tickets.filter(t => t.estado === 'solucionado').length,
+      cerrados: tickets.filter(t => t.estado === 'cerrado').length,
+      reabiertos: tickets.filter(t => t.estado === 'reabierto').length
     };
+
+    // Calcular escalados por comentarios, no por estado
+    stats.escalados = tickets.filter(t => {
+      const estado = t.estado?.toLowerCase();
+      const estaEnEspera = estado === 'en_espera' || estado === 'en espera';
+      const tieneComentarioEscalamiento = t.comentarios?.some(c => 
+        c.id_analista && 
+        c.texto && 
+        (c.texto.toLowerCase().includes('escal') || c.texto.toLowerCase().includes('supervisor'))
+      );
+      return estaEnEspera && tieneComentarioEscalamiento && !t.asignacion_actual?.analista;
+    }).length;
+
+    return stats;
   },
 
   /**

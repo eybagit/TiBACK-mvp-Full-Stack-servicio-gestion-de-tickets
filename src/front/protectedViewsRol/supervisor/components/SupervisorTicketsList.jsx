@@ -81,11 +81,12 @@ function SupervisorTicketsList({
                                             onChange={(e) => setFilterEstado(e.target.value)}
                                         >
                                             <option value="">Todos los estados</option>
-                                            <option value="activo">Activo</option>
-                                            <option value="en_progreso">En Progreso</option>
-                                            <option value="resuelto">Resuelto</option>
-                                            <option value="escalado">Escalado</option>
+                                            <option value="creado">Creado</option>
+                                            <option value="en_espera">En espera</option>
+                                            <option value="en_proceso">En proceso</option>
+                                            <option value="solucionado">Solucionado</option>
                                             <option value="cerrado">Cerrado</option>
+                                            <option value="reabierto">Reabierto</option>
                                         </select>
                                     </div>
                                 </li>

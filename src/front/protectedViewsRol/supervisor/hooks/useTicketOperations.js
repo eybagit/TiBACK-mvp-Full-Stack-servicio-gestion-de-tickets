@@ -158,10 +158,23 @@ export function useTicketOperations({
     };
 
     // Función para determinar color del semáforo del ticket
-    const getSemaforoColor = (ticket, allTickets) => {
-        if (ticket.estado === 'escalado') return 'table-danger';
-        if (ticket.prioridad === 'critica' || ticket.prioridad === 'alta') return 'table-warning';
-        return 'table-success';
+    const getSemaforoColor = (ticket, tickets) => {
+        const estado = ticket.estado?.toLowerCase();
+        const prioridad = ticket.prioridad?.toLowerCase();
+        
+        // SOLO 6 estados oficiales: creado, en_espera, en_proceso, solucionado, cerrado, reabierto
+        // Prioridad alta siempre es rojo
+        if (prioridad === 'alta') return 'table-danger';
+        
+        // Tickets escalados (detectados por comentarios) son amarillos
+        if (fueEscaladoPorAnalista(ticket)) return 'table-warning';
+        
+        // Estados normales
+        if (estado === 'solucionado') return 'table-success';
+        if (estado === 'en_proceso' || estado === 'en proceso') return 'table-info';
+        if (estado === 'cerrado') return 'table-secondary';
+        
+        return '';
     };
 
     // Verificar si ticket tiene solicitud de reapertura
@@ -174,11 +187,28 @@ export function useTicketOperations({
 
     // Verificar si fue escalado por analista
     const fueEscaladoPorAnalista = (ticket) => {
+        // IMPORTANTE: NO existe estado "escalado" en la especificación
+        // Estados oficiales: creado, en_espera, en_proceso, solucionado, cerrado, reabierto
+        // 
+        // Un ticket fue escalado si:
+        // - Tiene comentarios del analista indicando escalamiento
+        // - Y está en estado "en_espera" (esperando reasignación)
+        
         if (!ticket.comentarios || !Array.isArray(ticket.comentarios)) return false;
-        const tieneComentarioEscalacion = ticket.comentarios.some(c =>
-            c.texto && (c.texto.toLowerCase().includes('escalado') || c.texto.toLowerCase().includes('escalación'))
+        
+        const estado = ticket.estado?.toLowerCase();
+        const estaEnEspera = estado === 'en_espera' || estado === 'en espera';
+        
+        // Buscar comentarios de escalamiento del analista
+        const tieneComentarioEscalamiento = ticket.comentarios.some(c => 
+            c.id_analista && 
+            c.texto && 
+            (c.texto.toLowerCase().includes('escal') || 
+             c.texto.toLowerCase().includes('supervisor'))
         );
-        return ticket.estado === 'en_espera' && tieneComentarioEscalacion && !ticket.asignacion_actual?.analista;
+        
+        // Ticket escalado = en espera + comentario de escalamiento + sin analista asignado
+        return estaEnEspera && tieneComentarioEscalamiento && !ticket.asignacion_actual?.analista;
     };
 
     // Función para determinar acciones disponibles
@@ -205,7 +235,6 @@ export function useTicketOperations({
                 break;
             case 'asignado':
             case 'en_progreso':
-            case 'escalado':
                 actions.canClose = true;
                 actions.canEscalate = true;
                 break;

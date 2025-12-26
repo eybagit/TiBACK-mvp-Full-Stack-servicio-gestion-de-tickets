@@ -29,28 +29,37 @@ function TicketRow({
     // ====== LÓGICA DINÁMICA REACTIVA A WEBSOCKET ======
 
     /**
-     * Calcular acciones disponibles basadas en el estado y asignación del ticket
-     * Se recalcula automáticamente cuando el ticket cambia vía WebSocket
+     * Calcular acciones disponibles basadas en el estado del ticket
+     * REGLA: Supervisor solo puede actuar DESPUÉS de que el cliente actúe primero
      */
     const actions = useMemo(() => {
         const estado = ticket.estado?.toLowerCase();
         const tieneAnalista = !!ticket.asignacion_actual?.analista;
+        const estaEscalado = fueEscalado; // Ticket escalado por analista
+        const tieneSolicitudReapertura = ticket.tiene_solicitud_reapertura_pendiente === true;
 
         return {
-            // Puede asignar si NO tiene analista Y NO está cerrado/solucionado
-            canAssign: !tieneAnalista && estado !== 'cerrado' && estado !== 'solucionado',
+            // Mostrar botón ASIGNAR si:
+            // - NO tiene analista Y NO está escalado
+            // Mostrar botón REASIGNAR si:
+            // - Ticket fue escalado (analista lo escaló, supervisor debe reasignar)
+            canAssign: !tieneAnalista && !estaEscalado,
+            canReassign: estaEscalado,
 
-            // Puede cerrar si está solucionado
-            canClose: estado === 'solucionado',
+            // Supervisor puede cerrar SOLO si:
+            // - Hay solicitud de reapertura pendiente (cliente actuó)
+            // - O ticket está en 'cerrado' (cliente cerró, supervisor confirma)
+            // - O ticket está en 'reabierto' (ya fue reabierto, supervisor puede cerrar de nuevo)
+            canClose: tieneSolicitudReapertura || estado === 'cerrado' || estado === 'reabierto',
 
-            // Puede reabrir si tiene solicitud
-            showReopenButton: tieneSolicitud,
+            // Supervisor puede reabrir SOLO si:
+            // - Hay solicitud de reapertura pendiente del cliente
+            canReopen: tieneSolicitudReapertura,
 
-            // Indicadores
-            isEscalated: fueEscalado,
-            hasReopenRequest: tieneSolicitud
+            // Puede ver detalles siempre
+            canViewDetails: true
         };
-    }, [ticket.estado, ticket.asignacion_actual, tieneSolicitud, fueEscalado]);
+    }, [ticket.estado, ticket.asignacion_actual, ticket.tiene_solicitud_reapertura_pendiente, fueEscalado]);
 
     return (
         <React.Fragment>
@@ -250,13 +259,13 @@ function TicketRow({
                             </div>
 
                             {/* Asignar/Reasignar */}
-                            {actions.canAssign && analistasCombinados && (
+                            {(actions.canAssign || actions.canReassign) && analistasCombinados && (
                                 <div className="dropdown">
                                     <button
-                                        className="btn btn-outline-primary btn-sm dropdown-toggle"
+                                        className={`btn ${actions.canReassign ? 'btn-outline-danger' : 'btn-outline-primary'} btn-sm dropdown-toggle`}
                                         type="button"
                                         data-bs-toggle="dropdown"
-                                        title={ticket.asignacion_actual?.analista ? 'Reasignar' : 'Asignar'}
+                                        title={actions.canReassign ? 'Reasignar analista (Escalado)' : 'Asignar analista'}
                                     >
                                         <i className="fas fa-user-plus"></i>
                                     </button>
@@ -266,7 +275,7 @@ function TicketRow({
                                                 <button
                                                     className="dropdown-item"
                                                     onClick={() => {
-                                                        if (ticket.asignacion_actual?.analista && reasignarTicket) {
+                                                        if (actions.canReassign && reasignarTicket) {
                                                             reasignarTicket(ticket.id, analista.id);
                                                         } else {
                                                             asignarTicket(ticket.id, analista.id);

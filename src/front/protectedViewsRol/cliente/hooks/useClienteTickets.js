@@ -6,6 +6,13 @@
 
 import { tokenUtils } from '../../../store';
 import useGlobalReducer from '../../../hooks/useGlobalReducer';
+import {
+    tieneAnalistaAsignado,
+    getAnalistaAsignado,
+    getFechaAsignacion,
+    getEstadoColor,
+    getPrioridadColor
+} from '../../../utils/ticketHelpers';
 
 function useClienteTickets(passedStore, passedDispatch, joinTicketRoom, emitCriticalTicketAction, joinCriticalRooms, changeView) {
     const { store: globalStore, dispatch: globalDispatch } = useGlobalReducer();
@@ -211,48 +218,11 @@ function useClienteTickets(passedStore, passedDispatch, joinTicketRoom, emitCrit
         }
     };
 
-    // Funciones helper para estados de tickets
-    const getEstadoColor = (estado) => {
-        const estadoLower = estado?.toLowerCase() || '';
-        switch (estadoLower) {
-            case 'solucionado': return 'success';
-            case 'en_proceso': return 'warning';
-            case 'en_espera': return 'info';
-            case 'cerrado': return 'secondary';
-            case 'escalado': return 'danger';
-            default: return 'primary';
-        }
-    };
+    // Funciones helper importadas desde ticketHelpers.js
+    // getEstadoColor, getPrioridadColor, tieneAnalistaAsignado, getAnalistaAsignado, getFechaAsignacion
 
-    const getPrioridadColor = (prioridad) => {
-        switch (prioridad?.toLowerCase()) {
-            case 'alta': return 'danger';
-            case 'media': return 'warning';
-            default: return 'secondary';
-        }
-    };
-
-    // Funciones para manejar analista
-    const tieneAnalistaAsignado = (ticket) => {
-        return ticket.analista_asignado || ticket.analista_id || ticket.analista;
-    };
-
-    const getAnalistaAsignado = (ticket) => {
-        if (ticket.analista_nombre) return ticket.analista_nombre;
-        if (ticket.analista?.nombre) return ticket.analista.nombre;
-        if (ticket.analista_asignado?.nombre) return ticket.analista_asignado.nombre;
-        return 'Analista asignado';
-    };
-
-    const getFechaAsignacion = (ticket) => {
-        const fecha = ticket.fecha_asignacion || ticket.updated_at;
-        if (!fecha) return '';
-        return new Date(fecha).toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
+    // Funciones de analista ya importadas desde ticketHelpers.js
+    // tieneAnalistaAsignado, getAnalistaAsignado, getFechaAsignacion
 
     // Funciones para imágenes del ticket
     const handleImageUpload = (imageUrl) => dispatch({ type: 'CLIENTE_SET_TICKET_IMAGE_URL', payload: imageUrl });
@@ -269,7 +239,8 @@ function useClienteTickets(passedStore, passedDispatch, joinTicketRoom, emitCrit
     const setTickets = (tOrFn) => {
         if (typeof tOrFn === 'function') {
             // CRÍTICO: Usar estado actual del store, no del closure
-            const currentTickets = store.cliente.tickets || [];
+            // CORREGIDO: store.clientePage.tickets (no store.cliente.tickets)
+            const currentTickets = store.clientePage?.tickets || [];
             const newValue = tOrFn(currentTickets);
             dispatch({ type: 'CLIENTE_SET_TICKETS', payload: newValue });
         } else {

@@ -4,6 +4,7 @@
  */
 
 import useGlobalReducer from '../../../hooks/useGlobalReducer';
+import { getEstadoColor, getPrioridadColor } from '../../../utils/ticketHelpers';
 
 export function useAnalistaActions({ 
   store,
@@ -99,27 +100,7 @@ export function useAnalistaActions({
     }
   };
 
-  // Helper: Color de estado
-  const getEstadoColor = (estado) => {
-    const colors = {
-      'abierto': 'warning',
-      'en_progreso': 'info',
-      'solucionado': 'success',
-      'cerrado': 'secondary',
-      'escalado': 'danger'
-    };
-    return colors[estado?.toLowerCase()] || 'secondary';
-  };
-
-  // Helper: Color de prioridad
-  const getPrioridadColor = (prioridad) => {
-    const colors = {
-      'alta': 'danger',
-      'media': 'warning',
-      'baja': 'success'
-    };
-    return colors[prioridad?.toLowerCase()] || 'secondary';
-  };
+  // getEstadoColor y getPrioridadColor importadas desde ticketHelpers.js
 
   // Helper: Acciones disponibles según estado
   const getAvailableActions = (ticket) => {

@@ -96,38 +96,68 @@ def cambiar_estado_ticket(id):
                 result, error = TicketEstadoService.analista_iniciar_ticket(ticket, user['id'])
                 if result:
                     data = TicketEstadoService.build_ticket_event_data(ticket, 'en_proceso', user['id'], 'analista')
+                    
+                    # EVENTO PRINCIPAL: Analista inicia trabajo en ticket
+                    # TODOS los roles deben ver este cambio
+                    emit_websocket_event(socketio, 'ticket_iniciado', data, 
+                        [ticket_room, 'supervisores', 'role_supervisor', 'administradores'])
+                    
+                    # Eventos complementarios para compatibilidad
                     emit_websocket_event(socketio, 'ticket_actualizado', data, 
                         [ticket_room, 'supervisores', 'role_supervisor', 'administradores'])
                     emit_websocket_event(socketio, 'ticket_estado_changed', data, [ticket_room])
                     emit_websocket_event(socketio, 'global_ticket_update', data, [''])
+                    
+                    # Notificar también al cliente que su ticket está siendo atendido
+                    if ticket.id_cliente:
+                        cliente_room = f'cliente_{ticket.id_cliente}'
+                        emit_websocket_event(socketio, 'ticket_iniciado', data, [cliente_room])
+                        emit_websocket_event(socketio, 'ticket_actualizado', data, [cliente_room])
 
             elif nuevo_estado_lower == 'solucionado' and estado_actual == 'en proceso':
                 result, error = TicketEstadoService.analista_solucionar_ticket(ticket, user['id'])
                 if result:
                     data = TicketEstadoService.build_ticket_event_data(ticket, 'solucionado', user['id'], 'analista')
+                    data['mensaje'] = f'El analista ha marcado el ticket como solucionado'
+                    
+                    # EVENTO PRINCIPAL: Analista finaliza/soluciona ticket
+                    # TODOS los roles deben ver este cambio (especialmente el cliente)
                     emit_websocket_event(socketio, 'ticket_solucionado', data, 
                         [ticket_room, 'supervisores', 'role_supervisor', 'administradores'])
+                    
+                    # Eventos complementarios para compatibilidad
                     emit_websocket_event(socketio, 'ticket_actualizado', data, 
                         [ticket_room, 'role_supervisor'])
                     emit_websocket_event(socketio, 'ticket_estado_changed', data, [ticket_room])
                     emit_websocket_event(socketio, 'global_ticket_update', data, [''])
+                    
+                    # CRÍTICO: Notificar al cliente que su ticket está solucionado
+                    # El cliente debe ver esto inmediatamente en tiempo real
                     if ticket.id_cliente:
                         cliente_room = f'cliente_{ticket.id_cliente}'
                         emit_websocket_event(socketio, 'ticket_solucionado', data, [cliente_room])
                         emit_websocket_event(socketio, 'ticket_actualizado', data, [cliente_room])
+                        
+                        # Evento adicional específico para notificación al cliente
+                        data_cliente = data.copy()
+                        data_cliente['notificacion'] = True
+                        data_cliente['titulo'] = f'Ticket #{ticket.id} solucionado'
+                        emit_websocket_event(socketio, 'notificacion_ticket_solucionado', data_cliente, [cliente_room])
 
-            elif nuevo_estado_lower == 'en espera' and estado_actual in ['en espera', 'en proceso']:
+            elif nuevo_estado_lower == 'en_espera' and estado_actual in ['en espera', 'en proceso']:
                 result, error = TicketEstadoService.analista_escalar_ticket(ticket, user['id'])
                 if result:
-                    data = TicketEstadoService.build_ticket_event_data(ticket, 'escalado', user['id'], 'analista')
-                    emit_websocket_event(socketio, 'ticket_escalado', data, 
-                        ['supervisores', 'administradores', 'role_supervisor', ticket_room])
+                    # IMPORTANTE: NO existe estado "escalado" - se mantiene en "en_espera"
+                    # El escalamiento se detecta por comentarios, no por estado
+                    data = TicketEstadoService.build_ticket_event_data(ticket, 'actualizado', user['id'], 'analista')
+                    data['mensaje'] = f'El analista ha escalado el ticket al supervisor'
+                    data['escalado'] = True  # Flag para indicar que fue escalado
+                    
+                    # Emitir como actualización normal, NO como evento especial
                     emit_websocket_event(socketio, 'ticket_actualizado', data, 
-                        [ticket_room, 'supervisores', 'role_supervisor'])
+                        ['supervisores', 'administradores', 'role_supervisor', ticket_room])
                     emit_websocket_event(socketio, 'ticket_estado_changed', data, [ticket_room])
                     emit_websocket_event(socketio, 'global_ticket_update', data, [''])
-                    emit_websocket_event(socketio, 'nuevo_ticket_disponible', data, 
-                        ['supervisores', 'role_supervisor'])
             else:
                 return jsonify({"message": "Transición de estado no válida para analista"}), 400
 

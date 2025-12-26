@@ -152,12 +152,11 @@ def delete_ticket(id):
                 'ticket_info': ticket_info,
                 'tipo': 'eliminado',
                 'usuario': user['role'],
-                'timestamp': datetime.now().isoformat()
+                'timestamp': datetime.now().isoformat(),
+                'message': f'Ticket #{id} eliminado'
             }
-            rooms = ['clientes', 'analistas', 'supervisores', 'administradores', f'room_ticket_{id}']
-            if analista_id:
-                rooms.append(f'analista_{analista_id}')
-            emit_ws_event(socketio, 'ticket_eliminado', data, rooms)
+            # IMPORTANTE: Emitir a global_tickets para que TODOS los roles lo vean
+            emit_ws_event(socketio, 'ticket_eliminado', data, [''])
 
         return jsonify({"message": "Ticket eliminado"}), 200
     except Exception as e:
@@ -252,7 +251,7 @@ def delete_all_tickets():
         db.session.query(Ticket).delete()
         db.session.commit()
         
-        # Emitir evento WebSocket
+        # Emitir evento WebSocket a global_tickets
         socketio = get_socketio()
         if socketio:
             user = get_user_from_token()
@@ -260,10 +259,11 @@ def delete_all_tickets():
                 'tipo': 'todos_eliminados',
                 'deleted_count': total_tickets,
                 'usuario': user['role'],
-                'timestamp': datetime.now().isoformat()
+                'timestamp': datetime.now().isoformat(),
+                'message': f'Se eliminaron {total_tickets} tickets'
             }
-            rooms = ['clientes', 'analistas', 'supervisores', 'administradores']
-            emit_ws_event(socketio, 'todos_tickets_eliminados', data, rooms)
+            # IMPORTANTE: Emitir a global_tickets para que TODOS los roles lo vean
+            emit_ws_event(socketio, 'todos_tickets_eliminados', data, [''])
         
         return jsonify({
             "message": f"Se eliminaron {total_tickets} tickets exitosamente",
