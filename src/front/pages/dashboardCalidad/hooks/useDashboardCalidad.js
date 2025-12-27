@@ -5,6 +5,9 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
+import { fueEscaladoPorAnalista } from '../../../utils/ticketHelpers';
 
 /**
  * Hook para manejo de datos del dashboard
@@ -18,9 +21,13 @@ export const useDashboardCalidad = (store) => {
     // Función para calcular métricas de un analista
     const calcularMetricas = useCallback((tickets) => {
         const ticketsAsignados = tickets.length;
-        const ticketsSolucionados = tickets.filter(t => t.estado === 'solucionado' || t.estado === 'cerrado').length;
-        const ticketsReabiertos = tickets.filter(t => t.estado === 'reabierto').length;
-        const ticketsEscalados = tickets.filter(t => t.estado === 'escalado' || t.estado === 'en_espera').length;
+        const ticketsSolucionados = tickets.filter(t => {
+            const estado = normalizeFromBackend(t.estado);
+            return estado === TICKET_STATES.SOLUCIONADO || estado === TICKET_STATES.CERRADO;
+        }).length;
+        const ticketsReabiertos = tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.REABIERTO).length;
+        // Detectar escalados por comentarios, no por estado inválido
+        const ticketsEscalados = tickets.filter(t => fueEscaladoPorAnalista(t)).length;
 
         // Calificación promedio
         const ticketsConCalificacion = tickets.filter(t => t.calificacion && t.calificacion > 0);
@@ -47,9 +54,18 @@ export const useDashboardCalidad = (store) => {
         const ticketsSemana = tickets.filter(t => new Date(t.fecha_creacion) >= haceUnaSemana);
         const ticketsMes = tickets.filter(t => new Date(t.fecha_creacion) >= haceUnMes);
 
-        const solucionadosHoy = ticketsHoy.filter(t => t.estado === 'cerrado' || t.estado === 'solucionado').length;
-        const solucionadosSemana = ticketsSemana.filter(t => t.estado === 'cerrado' || t.estado === 'solucionado').length;
-        const solucionadosMes = ticketsMes.filter(t => t.estado === 'cerrado' || t.estado === 'solucionado').length;
+        const solucionadosHoy = ticketsHoy.filter(t => {
+            const estado = normalizeFromBackend(t.estado);
+            return estado === TICKET_STATES.CERRADO || estado === TICKET_STATES.SOLUCIONADO;
+        }).length;
+        const solucionadosSemana = ticketsSemana.filter(t => {
+            const estado = normalizeFromBackend(t.estado);
+            return estado === TICKET_STATES.CERRADO || estado === TICKET_STATES.SOLUCIONADO;
+        }).length;
+        const solucionadosMes = ticketsMes.filter(t => {
+            const estado = normalizeFromBackend(t.estado);
+            return estado === TICKET_STATES.CERRADO || estado === TICKET_STATES.SOLUCIONADO;
+        }).length;
 
         // Satisfacción
         const satisfaccion = ticketsConCalificacion.length > 0

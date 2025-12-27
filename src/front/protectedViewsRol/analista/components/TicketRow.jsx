@@ -1,4 +1,7 @@
 import React, { useMemo } from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
+import { getEstadoDotClass } from '../../../utils/cssHelpers';
 
 /**
  * TicketRow - Componente ultra dinámico para fila de ticket del analista
@@ -26,17 +29,17 @@ function TicketRow({
      * Esto se recalcula automáticamente cuando el ticket cambia vía WebSocket
      */
     const actions = useMemo(() => {
-        const estado = ticket.estado?.toLowerCase();
+        const estado = normalizeFromBackend(ticket.estado);
 
         return {
             // Puede iniciar trabajo si está en espera
-            canStart: estado === 'en_espera' || estado === 'asignado',
+            canStart: estado === TICKET_STATES.EN_ESPERA,
 
             // Puede marcar como resuelto si está en proceso
-            canResolve: estado === 'en_proceso',
+            canResolve: estado === TICKET_STATES.EN_PROCESO,
 
-            // Puede escalar en cualquier momento (excepto si ya está escalado)
-            canEscalate: estado !== 'escalado' && estado !== 'solucionado' && estado !== 'cerrado',
+            // Puede escalar en cualquier momento (excepto si ya está solucionado o cerrado)
+            canEscalate: estado !== TICKET_STATES.SOLUCIONADO && estado !== TICKET_STATES.CERRADO,
 
             // Mostrar indicador de solicitud de reapertura
             hasReopenRequest: tieneSolicitudReapertura
@@ -87,11 +90,7 @@ function TicketRow({
                 <td className="text-center px-3">
                     <span className="d-flex align-items-center justify-content-center gap-2">
                         <span
-                            className={`rounded-circle d-inline-block ${ticket.estado?.toLowerCase() === 'solucionado' ? 'dot-estado-solucionado' :
-                                ticket.estado?.toLowerCase() === 'en_proceso' ? 'dot-estado-en-proceso' :
-                                    ticket.estado?.toLowerCase() === 'en_espera' ? 'dot-estado-en-espera' :
-                                        'dot-ct-blue'
-                                }`}
+                            className={`rounded - circle d - inline - block ${getEstadoDotClass(ticket.estado)} `}
                         ></span>
                         <span className="text-dark">{ticket.estado}</span>
                     </span>
@@ -109,10 +108,10 @@ function TicketRow({
                 <td className="text-center px-3">
                     <span className="d-flex align-items-center justify-content-center gap-2">
                         <span
-                            className={`rounded-circle d-inline-block ${ticket.prioridad === 'alta' ? 'dot-prioridad-alta' :
+                            className={`rounded - circle d - inline - block ${ticket.prioridad === 'alta' ? 'dot-prioridad-alta' :
                                 ticket.prioridad === 'media' ? 'dot-prioridad-media' :
                                     'dot-prioridad-baja'
-                                }`}
+                                } `}
                         ></span>
                         <span className="text-dark">{ticket.prioridad || 'Normal'}</span>
                     </span>
@@ -192,7 +191,7 @@ function TicketRow({
                                             className="dropdown-item"
                                             onClick={() => {
                                                 setModalTicketId(ticket.id);
-                                                setActiveView(`recomendacion-${ticket.id}`);
+                                                setActiveView(`recomendacion - ${ticket.id} `);
                                             }}
                                         >
                                             <i className="fas fa-lightbulb me-2"></i>
@@ -204,7 +203,7 @@ function TicketRow({
                                             className="dropdown-item"
                                             onClick={() => {
                                                 setModalTicketId(ticket.id);
-                                                setActiveView(`identificar-${ticket.id}`);
+                                                setActiveView(`identificar - ${ticket.id} `);
                                             }}
                                         >
                                             <i className="fas fa-image me-2"></i>
@@ -224,7 +223,7 @@ function TicketRow({
                         onClick={() => toggleTicketExpansion(ticket.id)}
                         title={isExpanded ? "Colapsar acciones" : "Expandir acciones"}
                     >
-                        <i className={`fas ${isExpanded ? 'fa-arrow-down' : 'fa-arrow-up'}`}></i>
+                        <i className={`fas ${isExpanded ? 'fa-arrow-down' : 'fa-arrow-up'} `}></i>
                     </button>
                 </td>
             </tr>
@@ -233,7 +232,7 @@ function TicketRow({
             {isExpanded && (
                 <tr className={actions.hasReopenRequest ? 'table-warning' : ''}>
                     <td colSpan="8" className="px-0 py-0">
-                        <div className={`w-100 border-top ${actions.hasReopenRequest ? 'bg-warning bg-opacity-25' : 'bg-light'}`}>
+                        <div className={`w - 100 border - top ${actions.hasReopenRequest ? 'bg-warning bg-opacity-25' : 'bg-light'} `}>
                             <div className="px-4 py-3">
                                 <div className="d-flex gap-2 flex-wrap justify-content-center">
                                     {/* Acciones estáticas */}
@@ -286,7 +285,7 @@ function TicketRow({
                                                     className="dropdown-item"
                                                     onClick={() => {
                                                         setModalTicketId(ticket.id);
-                                                        setActiveView(`recomendacion-${ticket.id}`);
+                                                        setActiveView(`recomendacion - ${ticket.id} `);
                                                     }}
                                                 >
                                                     <i className="fas fa-lightbulb me-2"></i>
@@ -298,7 +297,7 @@ function TicketRow({
                                                     className="dropdown-item"
                                                     onClick={() => {
                                                         setModalTicketId(ticket.id);
-                                                        setActiveView(`identificar-${ticket.id}`);
+                                                        setActiveView(`identificar - ${ticket.id} `);
                                                     }}
                                                 >
                                                     <i className="fas fa-image me-2"></i>

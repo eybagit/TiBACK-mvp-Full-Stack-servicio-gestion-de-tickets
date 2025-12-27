@@ -118,7 +118,8 @@ export const reabrirTicketAction = async (token, ticket) => {
 
     if (ticket) {
         const estadoActual = ticket.estado.toLowerCase();
-        if (estadoActual === 'solucionado' || ['creado', 'reabierto'].includes(estadoActual)) {
+        const estado = normalizeFromBackend(estadoActual);
+        if (estado === TICKET_STATES.SOLUCIONADO || [TICKET_STATES.CREADO, TICKET_STATES.REABIERTO].includes(estado)) {
             nuevoEstado = 'en espera';
         } else {
             throw new Error('No se puede reabrir este ticket desde su estado actual. El ticket debe estar solucionado o cerrado.');

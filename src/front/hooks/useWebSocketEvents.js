@@ -1,5 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { validateTicketEvent, logValidationError } from '../utils/websocket-validators';
+import { SYSTEM_EVENTS } from '../constants/ticketEnums';
+
 
 /**
  * Hook centralizado para eventos WebSocket

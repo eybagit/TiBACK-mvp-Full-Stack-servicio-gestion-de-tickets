@@ -1,4 +1,7 @@
 import React from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
+import { getEstadoDotClass } from '../../../utils/cssHelpers';
 
 /**
  * SupervisorDashboard - Vista de dashboard del supervisor
@@ -177,9 +180,7 @@ function SupervisorDashboard({
                                                     <td className="text-center">
                                                         <span className="d-flex align-items-center justify-content-center gap-2">
                                                             <span
-                                                                className={`rounded-circle d-inline-block ${ticket.estado.toLowerCase() === 'solucionado' ? 'dot-estado-solucionado' :
-                                                                    ticket.estado.toLowerCase() === 'en_proceso' ? 'dot-estado-en-proceso' :
-                                                                        'dot-ct-blue'
+                                                                className={`rounded - circle d - inline - block ${getEstadoDotClass(ticket.estado)}
                                                                     }`}
                                                             ></span>
                                                             <span className="text-dark dark-theme:text-white">

@@ -3,6 +3,10 @@
  * Asignar tickets, reabrir, escalar, aprobar reapertura
  */
 
+import { useContext, useState, useCallback } from 'react';
+import { TICKET_STATES, TICKET_PROPS } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
+import { fueEscaladoPorAnalista } from '../../../utils/ticketHelpers';
 import useGlobalReducer from '../../../hooks/useGlobalReducer';
 
 export function useSupervisorActions({ 
@@ -129,15 +133,16 @@ export function useSupervisorActions({
 
   // Helper: Acciones disponibles según estado
   const getAvailableActions = (ticket) => {
-    const estado = ticket.estado?.toLowerCase();
+    const estado = normalizeFromBackend(ticket.estado);
     const tieneAnalista = ticket.asignaciones?.length > 0;
+    const tieneSolicitudReapertura = ticket[TICKET_PROPS.SOLICITUD_PENDIENTE];
     
     const actions = {
-      canAssign: estado === 'abierto' && !tieneAnalista,
-      canReassign: tieneAnalista && ['abierto', 'en_progreso', 'escalado'].includes(estado),
-      canReopen: estado === 'pendiente_reapertura' || estado === 'solucionado',
-      canClose: estado === 'solucionado',
-      canEscalate: ['abierto', 'en_progreso'].includes(estado)
+      canAssign: estado === TICKET_STATES.CREADO && !tieneAnalista,
+      canReassign: tieneAnalista && (fueEscaladoPorAnalista(ticket) || estado === TICKET_STATES.EN_PROCESO),
+      canReopen: tieneSolicitudReapertura || estado === TICKET_STATES.SOLUCIONADO,
+      canClose: estado === TICKET_STATES.SOLUCIONADO,
+      canEscalate: estado === TICKET_STATES.EN_PROCESO || estado === TICKET_STATES.EN_ESPERA
     };
     
     return actions;

@@ -7,7 +7,8 @@
  * @module protectedViewsRol/cliente/hooks/useClienteWebSocket
  */
 
-import { useEffect } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
 import { tokenUtils } from '../../../store';
 import { useWebSocketEvents } from '../../../hooks/useWebSocketEvents';
 
@@ -274,7 +275,7 @@ function useClienteWebSocket({
                 return;
             }
 
-            if (lastNotification.tipo === 'solucionado') {
+            if (lastNotification.tipo === TICKET_STATES.SOLUCIONADO) {
                 if (lastNotification.ticket_id) {
                     setTickets(prev => Array.isArray(prev) 
                         ? prev.map(t => t.id === lastNotification.ticket_id ? { ...t, estado: 'solucionado' } : t)

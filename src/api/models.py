@@ -3,6 +3,7 @@ from sqlalchemy import String, Boolean, ForeignKey, DateTime, Text, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from typing import List
+from api.utils.normalize import normalize_to_backend
 
 db = SQLAlchemy()
 
@@ -210,7 +211,8 @@ class Ticket(db.Model):
         
         # Verificar si tiene solicitud de reapertura pendiente
         tiene_solicitud_pendiente = False
-        if self.estado.lower() == 'solucionado':
+        estado_normalizado = normalize_to_backend(self.estado)
+        if estado_normalizado == TicketState.SOLUCIONADO.value:
             # Importar la función helper
             try:
                 from api.routes import tiene_solicitud_reapertura_pendiente

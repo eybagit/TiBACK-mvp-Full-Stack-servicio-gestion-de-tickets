@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { TICKET_STATES } from '../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../utils/normalize';
 import * as storeUtils from '../../store';
 import useGlobalReducer from '../../hooks/useGlobalReducer';
 
@@ -407,7 +409,7 @@ export const VerTicketHDAnalista = ({ ticketId, tickets, ticketsConRecomendacion
                                     </div>
                                 )}
 
-                                {ticket.estado === 'en_proceso' && (
+                                {normalizeFromBackend(ticket.estado) === TICKET_STATES.EN_PROCESO && (
                                     <div className="timeline-item">
                                         <div className="timeline-marker bg-warning"></div>
                                         <div className="timeline-content">

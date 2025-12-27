@@ -7,6 +7,9 @@
  * @module utils/ticketHelpers
  */
 
+import { TICKET_STATES, ESCALATION_STATES } from '../constants/ticketEnums';
+import { normalizeFromBackend, statesMatch } from './normalize';
+
 // ============================================
 // FUNCIONES DE ANALISTA
 // ============================================
@@ -116,12 +119,13 @@ export const getEstadoColor = (estado) => {
 
 /**
  * Normaliza el estado del ticket (espacios → guiones bajos)
+ * USAR normalizeFromBackend de normalize.js para nuevos casos
  * @param {string} estado - Estado del ticket
  * @returns {string} Estado normalizado
  */
 export const normalizeEstado = (estado) => {
-    if (!estado) return '';
-    return estado.toLowerCase().replace(/\s+/g, '_');
+    // Delegamos a la función centralizada de normalize.js
+    return normalizeFromBackend(estado);
 };
 
 /**
@@ -165,12 +169,11 @@ export const getEstadoLabel = (estado) => {
  * @param {Object} ticket - Objeto ticket
  * @returns {boolean} true si fue escalado por analista
  */
-export const fueEscaladoPorAnalista = (ticket) => {
+export function fueEscaladoPorAnalista(ticket) {
     if (!ticket) return false;
-    if (!ticket.comentarios || !Array.isArray(ticket.comentarios)) return false;
     
-    const estado = ticket.estado?.toLowerCase();
-    const estaEnEspera = estado === 'en_espera' || estado === 'en espera';
+    const estado = normalizeFromBackend(ticket.estado);
+    const estaEnEspera = estado === TICKET_STATES.EN_ESPERA;
     
     if (!estaEnEspera) return false;
     
@@ -390,46 +393,47 @@ export const formatFechaRelativa = (fecha) => {
 export const puedeRealizarAccion = (ticket, accion, userRole) => {
     if (!ticket || !accion || !userRole) return false;
     
-    const estado = ticket.estado?.toLowerCase().replace(/\s+/g, '_') || '';
+    // Usar normalizeFromBackend para comparación consistente
+    const estado = normalizeFromBackend(ticket.estado);
     
     switch (accion) {
         // === CLIENTE ===
         case 'cerrar':
             // Cliente puede cerrar solo si está en solucionado
-            return userRole === 'cliente' && estado === 'solucionado';
+            return userRole === 'cliente' && estado === TICKET_STATES.SOLUCIONADO;
             
         case 'reabrir':
             // Cliente puede solicitar reapertura solo si está cerrado
-            return userRole === 'cliente' && estado === 'cerrado';
+            return userRole === 'cliente' && estado === TICKET_STATES.CERRADO;
             
         case 'evaluar':
             // Cliente puede evaluar después de cerrar
-            return userRole === 'cliente' && estado === 'cerrado';
+            return userRole === 'cliente' && estado === TICKET_STATES.CERRADO;
             
         // === ANALISTA ===
         case 'iniciar':
             // Analista inicia trabajo (en_espera → en_proceso)
-            return userRole === 'analista' && (estado === 'en_espera' || estado === 'reabierto');
+            return userRole === 'analista' && (estado === TICKET_STATES.EN_ESPERA || estado === TICKET_STATES.REABIERTO);
             
         case 'solucionar':
             // Analista soluciona (en_proceso → solucionado)
-            return userRole === 'analista' && estado === 'en_proceso';
+            return userRole === 'analista' && estado === TICKET_STATES.EN_PROCESO;
             
         case 'escalar':
             // Analista escala (en_espera, en_proceso o reabierto → en_espera + comentario)
-            return userRole === 'analista' && (estado === 'en_espera' || estado === 'en_proceso' || estado === 'reabierto');
+            return userRole === 'analista' && (estado === TICKET_STATES.EN_ESPERA || estado === TICKET_STATES.EN_PROCESO || estado === TICKET_STATES.REABIERTO);
             
         // === SUPERVISOR ===
         case 'asignar':
             // Supervisor asigna analista (sin analista asignado)
             if (userRole !== 'supervisor' && userRole !== 'administrador') return false;
-            return (estado === 'creado' || estado === 'en_espera' || estado === 'reabierto') && 
+            return (estado === TICKET_STATES.CREADO || estado === TICKET_STATES.EN_ESPERA || estado === TICKET_STATES.REABIERTO) && 
                    !tieneAnalistaAsignado(ticket);
             
         case 'reasignar':
             // Supervisor reasigna (ticket escalado)
             if (userRole !== 'supervisor' && userRole !== 'administrador') return false;
-            return estado === 'en_espera' && fueEscaladoPorAnalista(ticket);
+            return estado === TICKET_STATES.EN_ESPERA && fueEscaladoPorAnalista(ticket);
             
         case 'aprobar_reapertura':
             // Supervisor aprueba reapertura (cliente solicitó)
@@ -439,7 +443,7 @@ export const puedeRealizarAccion = (ticket, accion, userRole) => {
         case 'cerrar_supervisor':
             // Supervisor confirma cierre (después de cliente cerrar o solicitar reapertura)
             if (userRole !== 'supervisor' && userRole !== 'administrador') return false;
-            return estado === 'solucionado' || ticket.tiene_solicitud_reapertura_pendiente === true;
+            return estado === TICKET_STATES.SOLUCIONADO || ticket.tiene_solicitud_reapertura_pendiente === true;
             
         default:
             return false;
@@ -466,9 +470,9 @@ export const getSemaforoColor = (ticket) => {
     if (fueEscaladoPorAnalista(ticket)) return 'table-warning';
     
     // Prioridad 3: Estado
-    if (estado === 'solucionado') return 'table-success';
-    if (estado === 'en_proceso') return 'table-info';
-    if (estado === 'cerrado') return 'table-secondary';
+    if (estado === TICKET_STATES.SOLUCIONADO) return 'table-success';
+    if (estado === TICKET_STATES.EN_PROCESO) return 'table-info';
+    if (estado === TICKET_STATES.CERRADO) return 'table-secondary';
     
     return '';
 };

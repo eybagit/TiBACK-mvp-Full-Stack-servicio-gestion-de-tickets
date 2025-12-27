@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useGlobalReducer from '../../hooks/useGlobalReducer';
 import HeatmapComponent from '../../components/HeatmapComponent';
+import { TICKET_STATES } from '../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../utils/normalize';
 
 // Utilidades de token seguras
 const tokenUtils = {
@@ -95,10 +97,10 @@ function AdministradorPage() {
 
             if (ticketsResponse.ok) {
                 const tickets = await ticketsResponse.json();
-                const ticketsCreados = tickets.filter(t => t.estado && t.estado.toLowerCase() === 'creado').length;
-                const ticketsEnProceso = tickets.filter(t => t.estado && t.estado.toLowerCase() === 'en_proceso').length;
-                const ticketsSolucionados = tickets.filter(t => t.estado && t.estado.toLowerCase() === 'solucionado').length;
-                const ticketsCerrados = tickets.filter(t => t.estado && t.estado.toLowerCase() === 'cerrado').length;
+                const ticketsCreados = tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.CREADO).length;
+                const ticketsEnProceso = tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.EN_PROCESO).length;
+                const ticketsSolucionados = tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.SOLUCIONADO).length;
+                const ticketsCerrados = tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.CERRADO).length;
 
                 setStats(prev => ({
                     ...prev,

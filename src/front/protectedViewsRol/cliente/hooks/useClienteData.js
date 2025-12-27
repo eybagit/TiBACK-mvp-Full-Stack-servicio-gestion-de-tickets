@@ -4,7 +4,9 @@
  * NO useState - arquitectura tiback-hello
  */
 
-import { useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
 import useGlobalReducer from '../../../hooks/useGlobalReducer';
 import { tokenUtils } from '../../../store';
 
@@ -58,7 +60,7 @@ export function useClienteData() {
 
         // Limpiar solicitudes de reapertura para tickets que ya NO están en estado 'solucionado'
         ticketsData.forEach(ticket => {
-          if (ticket.estado && ticket.estado.toLowerCase() !== 'solucionado' && solicitudesReapertura.includes(ticket.id)) {
+          if (normalizeFromBackend(ticket.estado) !== TICKET_STATES.SOLUCIONADO && solicitudesReapertura.includes(ticket.id)) {
             dispatch({ type: 'CLIENTE_REMOVE_SOLICITUD_REAPERTURA', payload: ticket.id });
           }
         });

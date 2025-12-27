@@ -1,4 +1,8 @@
 import React, { useMemo } from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
+import { getEstadoDotClass } from '../../../utils/cssHelpers';
+
 
 /**
  * TicketRow - Fila individual de ticket del supervisor
@@ -33,15 +37,17 @@ function TicketRow({
      * REGLA: Supervisor solo puede actuar DESPUÉS de que el cliente actúe primero
      */
     const actions = useMemo(() => {
-        const estado = ticket.estado?.toLowerCase();
+        // Normalizar estado para comparación consistente
+        const estadoNormalizado = normalizeFromBackend(ticket.estado);
         const tieneAnalista = !!ticket.asignacion_actual?.analista;
         const estaEscalado = fueEscalado; // Ticket escalado por analista
         const tieneSolicitudReapertura = ticket.tiene_solicitud_reapertura_pendiente === true;
 
         // DEBUG: Verificar valor del campo
-        if (ticket.estado?.toLowerCase() === 'solucionado') {
+        if (estadoNormalizado === TICKET_STATES.SOLUCIONADO) {
             console.log('[TicketRow] DEBUG Ticket', ticket.id, ':', {
                 estado: ticket.estado,
+                estadoNormalizado,
                 tiene_solicitud_reapertura_pendiente: ticket.tiene_solicitud_reapertura_pendiente,
                 tieneSolicitudReapertura,
                 comentarios: ticket.comentarios?.length || 0
@@ -60,22 +66,28 @@ function TicketRow({
             // - Hay solicitud de reapertura pendiente (cliente actuó)
             // - O ticket está en 'cerrado' (cliente cerró, supervisor confirma)
             // - O ticket está en 'reabierto' (ya fue reabierto, supervisor puede cerrar de nuevo)
-            canClose: tieneSolicitudReapertura || estado === 'cerrado' || estado === 'reabierto',
+            canClose: tieneSolicitudReapertura || estadoNormalizado === TICKET_STATES.CERRADO || estadoNormalizado === TICKET_STATES.REABIERTO,
 
             // Supervisor puede reabrir SOLO si:
             // - Hay solicitud de reapertura pendiente del cliente
             canReopen: tieneSolicitudReapertura,
 
+            // Detectar si tiene solicitud activa
+            hasPendingRequest: tieneSolicitudReapertura,
+
+            // Mostrar botón de generar recomendación si el ticket está solucionado
+            canGenerateRecommendation: estadoNormalizado === TICKET_STATES.SOLUCIONADO && !ticketsConRecomendaciones.has(ticket.id),
+
             // Puede ver detalles siempre
             canViewDetails: true
         };
-    }, [ticket.estado, ticket.asignacion_actual, ticket.tiene_solicitud_reapertura_pendiente, fueEscalado]);
+    }, [ticket.estado, ticket.asignacion_actual, ticket.tiene_solicitud_reapertura_pendiente, fueEscalado, ticketsConRecomendaciones]);
 
     return (
         <React.Fragment>
             <tr
                 data-ticket-id={ticket.id}
-                className={`${getSemaforoColor ? getSemaforoColor(ticket, []) : ''} ${tieneSolicitud ? 'table-warning' : ''}`}
+                className={`${getSemaforoColor ? getSemaforoColor(ticket, []) : ''} ${tieneSolicitud ? 'table-warning' : ''} `}
             >
                 {/* ID + Imagen */}
                 <td className="text-center px-3">
@@ -133,11 +145,7 @@ function TicketRow({
                 <td className="text-center px-3">
                     <span className="d-flex align-items-center justify-content-center gap-2">
                         <span
-                            className={`rounded-circle d-inline-block ${ticket.estado?.toLowerCase() === 'solucionado' ? 'dot-estado-solucionado' :
-                                ticket.estado?.toLowerCase() === 'en_proceso' ? 'dot-estado-en-proceso' :
-                                    ticket.estado?.toLowerCase() === 'en_espera' ? 'dot-estado-en-espera' :
-                                        'dot-ct-blue'
-                                }`}
+                            className={`rounded - circle d - inline - block ${getEstadoDotClass(ticket.estado)} `}
                         ></span>
                         <span className="text-dark dark-theme:text-white">
                             {ticket.estado}
@@ -149,10 +157,10 @@ function TicketRow({
                 <td className="text-center px-3">
                     <span className="d-flex align-items-center justify-content-center gap-2">
                         <span
-                            className={`rounded-circle d-inline-block ${ticket.prioridad === 'alta' ? 'dot-prioridad-alta' :
+                            className={`rounded - circle d - inline - block ${ticket.prioridad === 'alta' ? 'dot-prioridad-alta' :
                                 ticket.prioridad === 'media' ? 'dot-prioridad-media' :
                                     'dot-prioridad-baja'
-                                }`}
+                                } `}
                         ></span>
                         <span className="text-dark dark-theme:text-white">
                             {ticket.prioridad || 'Normal'}
@@ -214,21 +222,21 @@ function TicketRow({
                             <button
                                 className="btn btn-sidebar-teal btn-sm"
                                 title="Ver detalles"
-                                onClick={() => setActiveView(`ticket-${ticket.id}`)}
+                                onClick={() => setActiveView(`ticket - ${ticket.id} `)}
                             >
                                 <i className="fas fa-eye"></i>
                             </button>
                             <button
                                 className="btn btn-sidebar-accent btn-sm"
                                 title="Ver y agregar comentarios"
-                                onClick={() => changeView(`comentarios-${ticket.id}`)}
+                                onClick={() => changeView(`comentarios - ${ticket.id} `)}
                             >
                                 <i className="fas fa-users"></i>
                             </button>
                             <button
                                 className="btn btn-sidebar-secondary btn-sm"
                                 title="Chat con analista asignado"
-                                onClick={() => changeView(`supervisor-chat-${ticket.id}`)}
+                                onClick={() => changeView(`supervisor - chat - ${ticket.id} `)}
                             >
                                 <i className="fas fa-user-tie"></i>
                             </button>
@@ -259,7 +267,7 @@ function TicketRow({
                                     <li>
                                         <button
                                             className="dropdown-item"
-                                            onClick={() => changeView(`identificar-${ticket.id}`)}
+                                            onClick={() => changeView(`identificar - ${ticket.id} `)}
                                         >
                                             <i className="fas fa-camera me-2"></i>
                                             Analizar Imagen
@@ -272,7 +280,7 @@ function TicketRow({
                             {(actions.canAssign || actions.canReassign) && analistasCombinados && (
                                 <div className="dropdown">
                                     <button
-                                        className={`btn ${actions.canReassign ? 'btn-outline-danger' : 'btn-outline-primary'} btn-sm dropdown-toggle`}
+                                        className={`btn ${actions.canReassign ? 'btn-outline-danger' : 'btn-outline-primary'} btn - sm dropdown - toggle`}
                                         type="button"
                                         data-bs-toggle="dropdown"
                                         title={actions.canReassign ? 'Reasignar analista (Escalado)' : 'Asignar analista'}
@@ -333,7 +341,7 @@ function TicketRow({
                         onClick={() => toggleTicketExpansion(ticket.id)}
                         title={isExpanded ? "Colapsar acciones" : "Expandir acciones"}
                     >
-                        <i className={`fas ${isExpanded ? 'fa-arrow-down' : 'fa-arrow-up'}`}></i>
+                        <i className={`fas ${isExpanded ? 'fa-arrow-down' : 'fa-arrow-up'} `}></i>
                     </button>
                 </td>
             </tr>
@@ -342,13 +350,13 @@ function TicketRow({
             {isExpanded && (
                 <tr className={tieneSolicitud ? 'table-warning' : ''}>
                     <td colSpan="9" className="px-0 py-0">
-                        <div className={`w-100 border-top ${tieneSolicitud ? 'bg-warning bg-opacity-25' : 'bg-light'}`}>
+                        <div className={`w - 100 border - top ${tieneSolicitud ? 'bg-warning bg-opacity-25' : 'bg-light'} `}>
                             <div className="px-4 py-3">
                                 <div className="d-flex gap-2 flex-wrap justify-content-center">
                                     <button
                                         className="btn btn-sidebar-teal flex-fill btn-action-min"
                                         title="Ver detalles del ticket"
-                                        onClick={() => setActiveView(`ticket-${ticket.id}`)}
+                                        onClick={() => setActiveView(`ticket - ${ticket.id} `)}
                                     >
                                         <i className="fas fa-eye me-2"></i>
                                         Ver Detalles
@@ -356,7 +364,7 @@ function TicketRow({
                                     <button
                                         className="btn btn-sidebar-accent flex-fill btn-action-min"
                                         title="Ver y agregar comentarios"
-                                        onClick={() => changeView(`comentarios-${ticket.id}`)}
+                                        onClick={() => changeView(`comentarios - ${ticket.id} `)}
                                     >
                                         <i className="fas fa-comments me-2"></i>
                                         Comentarios
@@ -364,7 +372,7 @@ function TicketRow({
                                     <button
                                         className="btn btn-sidebar-secondary flex-fill btn-action-min"
                                         title="Chat con analista asignado"
-                                        onClick={() => changeView(`supervisor-chat-${ticket.id}`)}
+                                        onClick={() => changeView(`supervisor - chat - ${ticket.id} `)}
                                     >
                                         <i className="fas fa-user-tie me-2"></i>
                                         Chat Analista
@@ -393,7 +401,7 @@ function TicketRow({
                                             <li>
                                                 <button
                                                     className="dropdown-item"
-                                                    onClick={() => changeView(`identificar-${ticket.id}`)}
+                                                    onClick={() => changeView(`identificar - ${ticket.id} `)}
                                                 >
                                                     <i className="fas fa-camera me-2"></i>
                                                     Analizar Imagen

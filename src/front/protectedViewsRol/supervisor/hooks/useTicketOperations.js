@@ -1,3 +1,6 @@
+import { useCallback } from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
 import { tokenUtils } from '../../../store';
 import { fueEscaladoPorAnalista } from '../../../utils/ticketHelpers';
 
@@ -160,7 +163,6 @@ export function useTicketOperations({
 
     // Función para determinar color del semáforo del ticket
     const getSemaforoColor = (ticket, tickets) => {
-        const estado = ticket.estado?.toLowerCase();
         const prioridad = ticket.prioridad?.toLowerCase();
         
         // SOLO 6 estados oficiales: creado, en_espera, en_proceso, solucionado, cerrado, reabierto
@@ -170,13 +172,17 @@ export function useTicketOperations({
         // Tickets escalados (detectados por comentarios) son amarillos
         if (fueEscaladoPorAnalista(ticket)) return 'table-warning';
         
-        // Estados normales
-        if (estado === 'solucionado') return 'table-success';
-        if (estado === 'en_proceso' || estado === 'en proceso') return 'table-info';
-        if (estado === 'cerrado') return 'table-secondary';
-        
         return '';
     };
+
+    const getRowClass = useCallback((ticket) => {
+        const estado = normalizeFromBackend(ticket.estado);
+        if (estado === TICKET_STATES.SOLUCIONADO) return 'table-success';
+        if (estado === TICKET_STATES.EN_PROCESO) return 'table-info';
+        if (estado === TICKET_STATES.CERRADO) return 'table-secondary';
+        
+        return '';
+    }, []);
 
     // Verificar si ticket tiene solicitud de reapertura
     const tieneSolicitudReapertura = (ticket) => {

@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { TICKET_STATES } from '../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../utils/normalize';
 import useGlobalReducer from '../../hooks/useGlobalReducer';
 import {
     tieneAnalistaAsignado,
@@ -362,7 +364,7 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsCerrados, tick
                                     </div>
                                 )}
 
-                                {ticket.estado === 'cerrado' && (
+                                {normalizeFromBackend(ticket.estado) === TICKET_STATES.CERRADO && (
                                     <div className="timeline-item">
                                         <div className="timeline-marker bg-secondary"></div>
                                         <div className="timeline-content">
