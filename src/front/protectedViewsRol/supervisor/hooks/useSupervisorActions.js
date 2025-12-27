@@ -20,7 +20,7 @@ export function useSupervisorActions({
     try {
       const response = await backendRequest(`/api/tickets/${ticketId}/asignar`, {
         method: 'POST',
-        body: JSON.stringify({ analista_id: analistaId })
+        body: JSON.stringify({ id_analista: analistaId })
       });
 
       if (!response.ok) throw new Error('Error al asignar ticket');
@@ -44,7 +44,7 @@ export function useSupervisorActions({
       const response = await backendRequest(`/api/tickets/${ticketId}/asignar`, {
         method: 'POST',
         body: JSON.stringify({ 
-          analista_id: analistaId,
+          id_analista: analistaId,
           es_reasignacion: true
         })
       });

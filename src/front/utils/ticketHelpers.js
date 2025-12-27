@@ -148,6 +148,51 @@ export const getEstadoLabel = (estado) => {
 };
 
 // ============================================
+// FUNCIONES DE ESCALAMIENTO
+// ============================================
+
+/**
+ * Verifica si un ticket fue escalado por un analista
+ * 
+ * IMPORTANTE: NO existe estado "escalado" en la especificación.
+ * Estados oficiales: creado, en_espera, en_proceso, solucionado, cerrado, reabierto
+ * 
+ * Un ticket fue escalado si:
+ * - Tiene comentarios del analista indicando escalamiento
+ * - Y está en estado "en_espera" (esperando reasignación)
+ * - Y no tiene analista asignado actualmente
+ * 
+ * @param {Object} ticket - Objeto ticket
+ * @returns {boolean} true si fue escalado por analista
+ */
+export const fueEscaladoPorAnalista = (ticket) => {
+    if (!ticket) return false;
+    if (!ticket.comentarios || !Array.isArray(ticket.comentarios)) return false;
+    
+    const estado = ticket.estado?.toLowerCase();
+    const estaEnEspera = estado === 'en_espera' || estado === 'en espera';
+    
+    if (!estaEnEspera) return false;
+    
+    // Verificar que no tenga analista asignado
+    const tieneAnalista = ticket.asignacion_actual?.analista || 
+                          ticket.asignacion_actual?.id_analista ||
+                          ticket.id_analista;
+    
+    if (tieneAnalista) return false;
+    
+    // Buscar comentarios de escalamiento del analista
+    const tieneComentarioEscalamiento = ticket.comentarios.some(c => 
+        c.id_analista && 
+        c.texto && 
+        (c.texto.toLowerCase().includes('escal') || 
+         c.texto.toLowerCase().includes('supervisor'))
+    );
+    
+    return tieneComentarioEscalamiento;
+};
+
+// ============================================
 // FUNCIONES DE PRIORIDAD
 // ============================================
 
@@ -330,6 +375,105 @@ export const formatFechaRelativa = (fecha) => {
 };
 
 // ============================================
+// FUNCIONES DE VALIDACIÓN DE ACCIONES
+// ============================================
+
+/**
+ * Valida si un usuario puede realizar una acción específica sobre un ticket
+ * Según flujoTicket.md - Fuente de Verdad
+ * 
+ * @param {Object} ticket - Objeto ticket
+ * @param {string} accion - Acción a validar: 'cerrar', 'reabrir', 'iniciar', 'solucionar', 'escalar', 'asignar', 'aprobar_reapertura'
+ * @param {string} userRole - Rol del usuario: 'cliente', 'analista', 'supervisor', 'administrador'
+ * @returns {boolean} true si puede realizar la acción
+ */
+export const puedeRealizarAccion = (ticket, accion, userRole) => {
+    if (!ticket || !accion || !userRole) return false;
+    
+    const estado = ticket.estado?.toLowerCase().replace(/\s+/g, '_') || '';
+    
+    switch (accion) {
+        // === CLIENTE ===
+        case 'cerrar':
+            // Cliente puede cerrar solo si está en solucionado
+            return userRole === 'cliente' && estado === 'solucionado';
+            
+        case 'reabrir':
+            // Cliente puede solicitar reapertura solo si está cerrado
+            return userRole === 'cliente' && estado === 'cerrado';
+            
+        case 'evaluar':
+            // Cliente puede evaluar después de cerrar
+            return userRole === 'cliente' && estado === 'cerrado';
+            
+        // === ANALISTA ===
+        case 'iniciar':
+            // Analista inicia trabajo (en_espera → en_proceso)
+            return userRole === 'analista' && (estado === 'en_espera' || estado === 'reabierto');
+            
+        case 'solucionar':
+            // Analista soluciona (en_proceso → solucionado)
+            return userRole === 'analista' && estado === 'en_proceso';
+            
+        case 'escalar':
+            // Analista escala (en_espera, en_proceso o reabierto → en_espera + comentario)
+            return userRole === 'analista' && (estado === 'en_espera' || estado === 'en_proceso' || estado === 'reabierto');
+            
+        // === SUPERVISOR ===
+        case 'asignar':
+            // Supervisor asigna analista (sin analista asignado)
+            if (userRole !== 'supervisor' && userRole !== 'administrador') return false;
+            return (estado === 'creado' || estado === 'en_espera' || estado === 'reabierto') && 
+                   !tieneAnalistaAsignado(ticket);
+            
+        case 'reasignar':
+            // Supervisor reasigna (ticket escalado)
+            if (userRole !== 'supervisor' && userRole !== 'administrador') return false;
+            return estado === 'en_espera' && fueEscaladoPorAnalista(ticket);
+            
+        case 'aprobar_reapertura':
+            // Supervisor aprueba reapertura (cliente solicitó)
+            if (userRole !== 'supervisor' && userRole !== 'administrador') return false;
+            return ticket.tiene_solicitud_reapertura_pendiente === true;
+            
+        case 'cerrar_supervisor':
+            // Supervisor confirma cierre (después de cliente cerrar o solicitar reapertura)
+            if (userRole !== 'supervisor' && userRole !== 'administrador') return false;
+            return estado === 'solucionado' || ticket.tiene_solicitud_reapertura_pendiente === true;
+            
+        default:
+            return false;
+    }
+};
+
+/**
+ * Obtiene el color de semáforo para tickets (vista supervisor)
+ * Según flujoTicket.md líneas 283-296
+ * 
+ * @param {Object} ticket - Objeto ticket
+ * @returns {string} Clase Bootstrap para color de fila
+ */
+export const getSemaforoColor = (ticket) => {
+    if (!ticket) return '';
+    
+    const estado = ticket.estado?.toLowerCase().replace(/\s+/g, '_') || '';
+    const prioridad = ticket.prioridad?.toLowerCase() || '';
+    
+    // Prioridad 1: Prioridad alta = Rojo
+    if (prioridad === 'alta') return 'table-danger';
+    
+    // Prioridad 2: Ticket escalado = Amarillo
+    if (fueEscaladoPorAnalista(ticket)) return 'table-warning';
+    
+    // Prioridad 3: Estado
+    if (estado === 'solucionado') return 'table-success';
+    if (estado === 'en_proceso') return 'table-info';
+    if (estado === 'cerrado') return 'table-secondary';
+    
+    return '';
+};
+
+// ============================================
 // EXPORTACIÓN POR DEFECTO
 // ============================================
 
@@ -343,6 +487,9 @@ export default {
     getEstadoColor,
     normalizeEstado,
     getEstadoLabel,
+    
+    // Escalamiento
+    fueEscaladoPorAnalista,
     
     // Prioridad
     getPrioridadColor,
@@ -359,5 +506,9 @@ export default {
     // Fechas
     formatFechaCreacion,
     formatFechaCierre,
-    formatFechaRelativa
+    formatFechaRelativa,
+    
+    // Validación de acciones (flujoTicket.md)
+    puedeRealizarAccion,
+    getSemaforoColor
 };

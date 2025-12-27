@@ -1,4 +1,5 @@
 import { tokenUtils } from '../../../store';
+import { fueEscaladoPorAnalista } from '../../../utils/ticketHelpers';
 
 /**
  * useTicketOperations - Operaciones CRUD sobre tickets
@@ -185,31 +186,7 @@ export function useTicketOperations({
                ));
     };
 
-    // Verificar si fue escalado por analista
-    const fueEscaladoPorAnalista = (ticket) => {
-        // IMPORTANTE: NO existe estado "escalado" en la especificación
-        // Estados oficiales: creado, en_espera, en_proceso, solucionado, cerrado, reabierto
-        // 
-        // Un ticket fue escalado si:
-        // - Tiene comentarios del analista indicando escalamiento
-        // - Y está en estado "en_espera" (esperando reasignación)
-        
-        if (!ticket.comentarios || !Array.isArray(ticket.comentarios)) return false;
-        
-        const estado = ticket.estado?.toLowerCase();
-        const estaEnEspera = estado === 'en_espera' || estado === 'en espera';
-        
-        // Buscar comentarios de escalamiento del analista
-        const tieneComentarioEscalamiento = ticket.comentarios.some(c => 
-            c.id_analista && 
-            c.texto && 
-            (c.texto.toLowerCase().includes('escal') || 
-             c.texto.toLowerCase().includes('supervisor'))
-        );
-        
-        // Ticket escalado = en espera + comentario de escalamiento + sin analista asignado
-        return estaEnEspera && tieneComentarioEscalamiento && !ticket.asignacion_actual?.analista;
-    };
+    // fueEscaladoPorAnalista importado de ticketHelpers (centralizado)
 
     // Función para determinar acciones disponibles
     const getAvailableActions = (ticket) => {
