@@ -38,6 +38,16 @@ function TicketRow({
         const estaEscalado = fueEscalado; // Ticket escalado por analista
         const tieneSolicitudReapertura = ticket.tiene_solicitud_reapertura_pendiente === true;
 
+        // DEBUG: Verificar valor del campo
+        if (ticket.estado?.toLowerCase() === 'solucionado') {
+            console.log('[TicketRow] DEBUG Ticket', ticket.id, ':', {
+                estado: ticket.estado,
+                tiene_solicitud_reapertura_pendiente: ticket.tiene_solicitud_reapertura_pendiente,
+                tieneSolicitudReapertura,
+                comentarios: ticket.comentarios?.length || 0
+            });
+        }
+
         return {
             // Mostrar botón ASIGNAR si:
             // - NO tiene analista Y NO está escalado
@@ -303,7 +313,7 @@ function TicketRow({
                             )}
 
                             {/* Reabrir */}
-                            {actions.showReopenButton && (
+                            {actions.canReopen && (
                                 <button
                                     className="btn btn-outline-warning btn-sm"
                                     title="Reabrir ticket"
@@ -438,7 +448,7 @@ function TicketRow({
                                     )}
 
                                     {/* Reabrir */}
-                                    {actions.showReopenButton && (
+                                    {actions.canReopen && (
                                         <button
                                             className="btn btn-outline-warning flex-fill btn-action-min"
                                             title="Reabrir ticket"

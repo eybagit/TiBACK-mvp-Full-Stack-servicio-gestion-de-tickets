@@ -367,7 +367,18 @@ export const supervisorActions = {
   getFilteredTickets: (supervisorState) => {
     const { tickets, filterEstado, filterAsignado, filterPrioridad, filterAnalista } = supervisorState;
     
-    let filtered = tickets;
+    // Validar que tickets sea un array
+    if (!Array.isArray(tickets)) {
+      console.warn('[supervisorActions] tickets no es un array:', tickets);
+      return [];
+    }
+    
+    // FILTRO BASE: Excluir tickets cerrados de "Gestión de Tickets"
+    // Los tickets cerrados solo aparecen en la vista "Tickets Cerrados"
+    let filtered = tickets.filter(t => {
+      const estado = t.estado?.toLowerCase();
+      return estado !== 'cerrado';
+    });
     
     if (filterEstado) {
       filtered = filtered.filter(t => t.estado === filterEstado);

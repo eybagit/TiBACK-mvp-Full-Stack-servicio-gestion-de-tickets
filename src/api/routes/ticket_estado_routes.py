@@ -71,6 +71,8 @@ def cambiar_estado_ticket(id):
             elif nuevo_estado_lower == 'solicitud reapertura' and estado_actual == 'solucionado':
                 result, error = TicketEstadoService.cliente_solicitar_reapertura(ticket, user['id'])
                 if result:
+                    # CRÍTICO: Refrescar ticket para que serialize() incluya el nuevo comentario
+                    db.session.refresh(ticket)
                     data = TicketEstadoService.build_ticket_event_data(ticket, 'solicitud_reapertura')
                     # UNA sola emisión - global_tickets recibe todo
                     emit_websocket_event(socketio, 'solicitud_reapertura', data, None)
