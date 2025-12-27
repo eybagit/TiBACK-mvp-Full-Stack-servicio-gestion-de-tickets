@@ -130,6 +130,8 @@ def cambiar_estado_ticket(id):
             elif nuevo_estado_lower == 'reabierto' and (estado_actual in ['cerrado', 'solucionado'] or estado_actual.startswith('cerrado')):
                 result, error = TicketEstadoService.supervisor_reabrir_ticket(ticket, user['id'])
                 if result:
+                    # CRÍTICO: Refrescar ticket para que serialize() incluya el comentario de aprobación
+                    db.session.refresh(ticket)
                     data = TicketEstadoService.build_ticket_event_data(
                         ticket, 'reabierto_por_supervisor', user['id'], 'supervisor', estado_actual
                     )

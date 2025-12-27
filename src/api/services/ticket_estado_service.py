@@ -209,6 +209,10 @@ class TicketEstadoService:
         texto = "Ticket reabierto por supervisor - Listo para nueva asignación" if estado_actual == 'cerrado' else "Supervisor aprobó solicitud de reapertura - Asignaciones anteriores eliminadas, listo para nueva asignación"
         TicketEstadoService.crear_comentario(ticket.id, texto, id_supervisor=user_id)
         
+        
+        print(f"[DEBUG] Supervisor reabriendo ticket {ticket.id}, estado actual: {estado_actual}")
+        print(f"[DEBUG] Asignaciones a eliminar: {len(asignaciones_anteriores) if estado_actual == 'solucionado' else 0}")
+        
         db.session.commit()
         return ticket, None
 
