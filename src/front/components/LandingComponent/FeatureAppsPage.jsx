@@ -1,24 +1,18 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+
+// Scroll suave sin useNavigate
+const goToFeature = (e) => {
+  e.preventDefault();
+  window.location.href = "/#feature";
+};
 
 export const FeatureAppsPage = () => {
-  const navigate = useNavigate();
-
-   const goToDesign = () => {
-        navigate("/"); // vuelve a la raíz
-        setTimeout(() => {
-            const feature = document.getElementById("feature");
-            if (feature) {
-                feature.scrollIntoView({ behavior: "smooth" });
-            }
-        }, 300); // da tiempo a que la raíz cargue
-    };
-
   return (
     <div className="container py-5">
 
-      <a className="btn btn-link text-blue-50" onClick={goToDesign}>← Volver al panel de características</a>
+      <a className="btn btn-link text-blue-50" onClick={goToFeature}>← Volver al panel de características</a>
 
       {/* Título principal */}
       <div className="text-center mb-4">
@@ -55,8 +49,7 @@ export const FeatureAppsPage = () => {
           <img
             src="https://res.cloudinary.com/mystoreimg/image/upload/v1759730939/vhtugercpvzl9leijvag.jpg"
             alt="Panel de control administrativo"
-            className="img-fluid rounded shadow-lg border border-light"
-            style={{ maxHeight: "450px", objectFit: "cover" }}
+            className="img-fluid rounded shadow-lg border border-light img-feature-apps"
           />
         </div>
       </div>
@@ -86,4 +79,3 @@ export const FeatureAppsPage = () => {
   );
 };
 
-            

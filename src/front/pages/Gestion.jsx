@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const Gestion = () => {
   const { store, dispatch } = useGlobalReducer();
-  const navigate = useNavigate();
   const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
   const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
@@ -16,17 +15,17 @@ export const Gestion = () => {
       'Content-Type': 'application/json',
       ...options.headers
     };
-    
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     return fetch(url, {
       ...options,
       headers
     })
-    .then(res => res.json().then(data => ({ ok: res.ok, data })))
-    .catch(err => ({ ok: false, data: { message: err.message } }));
+      .then(res => res.json().then(data => ({ ok: res.ok, data })))
+      .catch(err => ({ ok: false, data: { message: err.message } }));
   };
 
   const listarTodasLasGestiones = () => {
@@ -60,20 +59,17 @@ export const Gestion = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="mb-0">Lista de Gestiones</h2>
         <div className="d-flex gap-2">
-          <button className="btn btn-secondary" onClick={() => navigate(`/administrador`)}>Volver</button>
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate('/agregar-gestion')}
-          >
+          <Link to="/administrador" className="btn btn-secondary">Volver</Link>
+          <Link to="/agregar-gestion" className="btn btn-primary">
             <i className="fas fa-plus"></i> Agregar Gestión
-          </button>
+          </Link>
         </div>
       </div>
 
       {store.api.error && (
         <div className="alert alert-danger py-2">{String(store.api.error)}</div>
       )}
-  
+
       <div className="row">
         <div className="col-12">
           <div className="card">
@@ -102,15 +98,13 @@ export const Gestion = () => {
                           <td>{gestion.Nota_de_caso}</td>
                           <td>
                             <div className="btn-group" role="group">
-                              <button
+                              <Link
+                                to={`/actualizar-gestion/${gestion.id}`}
                                 className="btn btn-warning btn-sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/actualizar-gestion/${gestion.id}`);
-                                }}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 <i className="fas fa-edit"></i>
-                              </button>
+                              </Link>
                               <button
                                 className="btn btn-danger btn-sm"
                                 onClick={(e) => {
@@ -121,11 +115,12 @@ export const Gestion = () => {
                                 <i className="fas fa-trash"></i>
                               </button>
                             </div>
-                            <button
+                            <Link
+                              to={`/ver-gestion/${gestion.id}`}
                               className="btn btn-info btn-sm ms-4"
-                              onClick={() => navigate(`/ver-gestion/${gestion.id}`)}>
+                            >
                               <i className="fa-solid fa-eye"> ver</i>
-                            </button>
+                            </Link>
                           </td>
                         </tr>
                       ))}

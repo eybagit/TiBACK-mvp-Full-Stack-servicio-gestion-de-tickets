@@ -1,11 +1,10 @@
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 const SemaforoTickets = () => {
   const { store, dispatch } = useGlobalReducer();
   const API = import.meta.env.VITE_BACKEND_URL + "/api";
-  const navigate = useNavigate();
 
   // Helpers para manejar estado global de carga y errores
   const setLoading = (valor) =>
@@ -44,6 +43,19 @@ const SemaforoTickets = () => {
       setError(data.message);
     }
     setLoading(false);
+  };
+
+  const eliminarTicket = (id) => {
+    if (!window.confirm("¿Estás seguro de que quieres eliminar este ticket?")) return;
+
+    setLoading(true);
+    fetchJson(`${API}/tickets/${id}`, { method: "DELETE" })
+      .then(({ ok, data }) => {
+        if (!ok) throw new Error(data.message);
+        dispatch({ type: "tickets_remove", payload: id });
+      })
+      .catch(setError)
+      .finally(() => setLoading(false));
   };
 
   // Carga inicial
@@ -101,7 +113,7 @@ const SemaforoTickets = () => {
 
     <>
       <div className="d-inline-flex gap-1 text-center w-100 flex-column">
-        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+        <button className="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
           Lista Prioridad de Casos (Semaforo)
         </button>
       </div>
@@ -147,13 +159,13 @@ const SemaforoTickets = () => {
                         : ""}
                     </td>
                     <td>
-                      <button
+                      <Link
+                        to={`/ver-ticket/${ticket.id}`}
                         className="btn btn-info btn-sm mx-1"
                         title="Ver Ticket"
-                        onClick={() => navigate(`/ver-ticket/${ticket.id}`)}
                       >
                         <i className="fas fa-eye"></i>
-                      </button>
+                      </Link>
                       <button
                         className="btn btn-danger btn-sm mx-1"
                         title="Eliminar Ticket"

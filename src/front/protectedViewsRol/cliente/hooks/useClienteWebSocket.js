@@ -1,9 +1,66 @@
+/**
+ * @fileoverview useClienteWebSocket - Hook de WebSocket para Cliente
+ * 
+ * Maneja la conexión WebSocket, eventos de tickets y sincronización
+ * en tiempo real para el rol de Cliente.
+ * 
+ * @module protectedViewsRol/cliente/hooks/useClienteWebSocket
+ */
+
 import { useEffect } from 'react';
 import { tokenUtils } from '../../../store';
+import { useWebSocketEvents } from '../../../hooks/useWebSocketEvents';
 
 /**
- * useClienteWebSocket - Hook para manejar la conexión WebSocket y eventos en tiempo real
- * Configura listeners, sincronización y manejo de eventos de tickets
+ * @typedef {Object} Ticket
+ * @property {number} id - ID único del ticket
+ * @property {string} titulo - Título del ticket
+ * @property {string} descripcion - Descripción del problema
+ * @property {string} estado - Estado actual
+ * @property {string} prioridad - Prioridad (alta, media, baja)
+ * @property {number} id_cliente - ID del cliente
+ * @property {number} [id_analista] - ID del analista asignado
+ */
+
+/**
+ * @typedef {Object} TicketWebSocketEvent
+ * @property {number} ticket_id - ID del ticket afectado
+ * @property {Ticket} [ticket] - Ticket completo
+ * @property {string} [action] - Acción realizada
+ * @property {Object} [cambios] - Cambios específicos
+ * @property {string} [ticket_estado] - Nuevo estado
+ */
+
+/**
+ * @typedef {Object} UseClienteWebSocketConfig
+ * @property {Object} store - Store global
+ * @property {Function} connectWebSocket - Conectar WebSocket
+ * @property {Function} disconnectWebSocket - Desconectar WebSocket
+ * @property {Function} joinRoom - Unirse a room
+ * @property {Function} joinTicketRoom - Unirse a room de ticket
+ * @property {Function} startRealtimeSync - Iniciar sincronización
+ * @property {Function} joinCriticalRooms - Unirse a rooms críticas
+ * @property {Function} joinAllCriticalRooms - Unirse a todas las rooms
+ * @property {Ticket[]} tickets - Lista de tickets
+ * @property {Function} actualizarTickets - Actualizar tickets desde API
+ * @property {Function} setSolicitudesReapertura - Setter de solicitudes
+ * @property {Function} setTickets - Setter de tickets
+ */
+
+/**
+ * Hook para manejar WebSocket y eventos del Cliente.
+ * 
+ * Eventos manejados:
+ * - ticket_asignado: Mi ticket fue asignado a un analista
+ * - ticket_escalado: Mi ticket fue escalado
+ * - ticket_solucionado: Mi ticket fue solucionado
+ * - ticket_cerrado: Mi ticket fue cerrado
+ * - ticket_reabierto: Mi ticket fue reabierto
+ * - solicitud_reapertura: Mi solicitud de reapertura
+ * - reapertura_aprobada: Mi reapertura fue aprobada
+ * - nuevo_ticket: Tengo un nuevo ticket
+ * 
+ * @param {UseClienteWebSocketConfig} config - Configuración del hook
  */
 function useClienteWebSocket({
     store,
@@ -26,18 +83,9 @@ function useClienteWebSocket({
             if (socket) {
                 const userId = tokenUtils.getUserId(store.auth.token);
                 const role = tokenUtils.getRole(store.auth.token);
+                // SIMPLIFICADO: Solo unirse a global_tickets via joinRoom
+                // El frontend filtra eventos por id_cliente
                 joinRoom(socket, role, userId);
-
-                // Unirse EXPLÍCITAMENTE a la room específica del cliente
-                if (userId) {
-                    try {
-                        const clienteRoom = `cliente_${userId}`;
-                        console.log(`🔌 CLIENTE - Uniéndose a room específica: ${clienteRoom}`);
-                        socket.emit('join_room', clienteRoom);
-                    } catch (e) {
-                        console.error('❌ CLIENTE - Error al unirse a room específica:', e);
-                    }
-                }
             }
         }
 
@@ -48,102 +96,134 @@ function useClienteWebSocket({
         };
     }, [store.auth.isAuthenticated, store.auth.token]);
 
-    // Unirse automáticamente a los rooms de tickets del cliente
-    useEffect(() => {
-        if (store.websocket.socket && tickets.length > 0) {
-            const joinedRooms = new Set();
-            tickets.forEach(ticket => {
-                if (!joinedRooms.has(ticket.id)) {
-                    joinTicketRoom(store.websocket.socket, ticket.id);
-                    joinedRooms.add(ticket.id);
-                }
-            });
-        }
-    }, [store.websocket.socket, tickets.length]);
+    // NOTA: Las rooms de tickets específicos ya no son necesarias
+    // Todos los eventos van a global_tickets y el frontend filtra
 
-    // Configurar sincronización crítica en tiempo real
+    // Hook centralizado para eventos WebSocket comunes
+    useWebSocketEvents({
+        role: 'cliente',
+        store,
+        setTickets
+    });
+
+    // Configurar listeners de eventos WebSocket
     useEffect(() => {
         if (store.auth.user && store.websocket.connected && store.websocket.socket) {
-            console.log('🔄 CLIENTE - Configurando sincronización crítica');
-            joinAllCriticalRooms(store.websocket.socket, store.auth.user, store.auth.token);
+            // SIMPLIFICADO: No necesitamos unir a rooms específicas
+            // Ya estamos en global_tickets via joinRoom en el useEffect anterior
+            // El frontend filtra eventos por ticket.id_cliente === store.auth.user.id
 
-            startRealtimeSync({
-                syncTypes: ['tickets', 'comentarios', 'asignaciones'],
-                onSyncTriggered: (data) => {
-                    if (data.type === 'tickets' || data.priority === 'critical') {
-                        actualizarTickets();
-                    }
-                }
-            });
-
-            // Unirse a rooms críticos de tickets
-            const ticketIds = tickets.map(ticket => ticket.id);
-            if (ticketIds.length > 0) {
-                joinCriticalRooms(store.websocket.socket, ticketIds, store.auth.user, store.auth.token);
-                ticketIds.forEach(ticketId => {
-                    store.websocket.socket.emit('join_ticket_room', {
-                        ticket_id: ticketId,
-                        user_id: store.auth.user.id,
-                        role: 'cliente'
-                    });
-                });
-            }
-
-            // Configurar listeners para eventos de tickets
             const socket = store.websocket.socket;
 
-            const handleTicketUpdate = (data) => {
-                if (data.ticket_id && data.ticket_estado?.toLowerCase() !== 'solucionado') {
-                    setSolicitudesReapertura(prev => {
-                        const newSet = new Set(prev);
-                        newSet.delete(data.ticket_id);
-                        return newSet;
-                    });
-                }
-                actualizarTickets();
-            };
+            // === HANDLERS ESPECÍFICOS DE CLIENTE ===
 
+            /** @param {TicketWebSocketEvent} data */
             const handleTicketSolucionado = (data) => {
                 if (data.ticket_id) {
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'solucionado' } : t)
+                        : prev
+                    );
+                    setSolicitudesReapertura(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(data.ticket_id);
+                        return newSet;
+                    });
+                    window.dispatchEvent(new CustomEvent('ticket_solucionado_cliente', {
+                        detail: { ...data, source: 'cliente_websocket' }
+                    }));
+                }
+            };
+
+            /** @param {TicketWebSocketEvent} data */
+            const handleTicketCerrado = (data) => {
+                if (data.ticket_id) {
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'cerrado' } : t)
+                        : prev
+                    );
+                }
+            };
+
+            /** @param {TicketWebSocketEvent} data */
+            const handleTicketReabierto = (data) => {
+                if (data.ticket_id) {
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: data.estado || 'en_espera' } : t)
+                        : prev
+                    );
                     setSolicitudesReapertura(prev => {
                         const newSet = new Set(prev);
                         newSet.delete(data.ticket_id);
                         return newSet;
                     });
                 }
-                actualizarTickets();
-                setTimeout(() => actualizarTickets(), 1000);
-                window.dispatchEvent(new CustomEvent('ticket_solucionado_cliente', {
-                    detail: { ...data, source: 'cliente_websocket' }
-                }));
             };
 
-            const handleGenericUpdate = () => actualizarTickets();
+            /** @param {TicketWebSocketEvent} data */
+            const handleSolicitudReapertura = (data) => {
+                if (data.ticket_id) {
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'solucionado' } : t)
+                        : prev
+                    );
+                }
+            };
 
-            socket.on('ticket_actualizado', handleTicketUpdate);
-            socket.on('ticket_estado_changed', handleTicketUpdate);
-            socket.on('nuevo_comentario', handleGenericUpdate);
-            socket.on('ticket_asignado', handleGenericUpdate);
-            socket.on('ticket_escalado', handleGenericUpdate);
+            /** @param {TicketWebSocketEvent} data */
+            const handleReaperturaAprobada = (data) => {
+                if (data.ticket_id) {
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'en_espera' } : t)
+                        : prev
+                    );
+                    setSolicitudesReapertura(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(data.ticket_id);
+                        return newSet;
+                    });
+                }
+            };
+
+            /** @param {TicketWebSocketEvent} data */
+            const handleTicketIniciado = (data) => {
+                if (data.ticket_id) {
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'en_proceso' } : t)
+                        : prev
+                    );
+                    // Log para desarrollo
+                    if (import.meta.env.DEV) {
+                        console.log(`🎯 Ticket ${data.ticket_id} iniciado - Analista trabajando en él`);
+                    }
+                }
+            };
+
+            /** @param {TicketWebSocketEvent} data */
+            const handleNuevoTicket = (data) => {
+                if (data.ticket) {
+                    setTickets(prev => Array.isArray(prev) ? [data.ticket, ...prev] : [data.ticket]);
+                }
+            };
+
+            // Registrar listeners específicos de cliente
+            socket.on('ticket_iniciado', handleTicketIniciado);  // NUEVO: Ver cuando analista inicia
             socket.on('ticket_solucionado', handleTicketSolucionado);
-            socket.on('ticket_cerrado', handleGenericUpdate);
-            socket.on('solicitud_reapertura', handleGenericUpdate);
-            socket.on('reapertura_aprobada', handleGenericUpdate);
-            socket.on('ticket_reabierto', handleGenericUpdate);
-            socket.on('nuevo_ticket', handleGenericUpdate);
+            socket.on('ticket_cerrado', handleTicketCerrado);
+            socket.on('solicitud_reapertura', handleSolicitudReapertura);
+            socket.on('reapertura_aprobada', handleReaperturaAprobada);
+            socket.on('ticket_reabierto', handleTicketReabierto);
+            socket.on('nuevo_ticket', handleNuevoTicket);
 
+            // Cleanup
             return () => {
-                socket.off('ticket_actualizado', handleTicketUpdate);
-                socket.off('ticket_estado_changed', handleTicketUpdate);
-                socket.off('nuevo_comentario', handleGenericUpdate);
-                socket.off('ticket_asignado', handleGenericUpdate);
-                socket.off('ticket_escalado', handleGenericUpdate);
+                socket.off('ticket_iniciado', handleTicketIniciado);
                 socket.off('ticket_solucionado', handleTicketSolucionado);
-                socket.off('ticket_cerrado', handleGenericUpdate);
-                socket.off('solicitud_reapertura', handleGenericUpdate);
-                socket.off('reapertura_aprobada', handleGenericUpdate);
-                socket.off('ticket_reabierto', handleGenericUpdate);
-                socket.off('nuevo_ticket', handleGenericUpdate);
+                socket.off('ticket_cerrado', handleTicketCerrado);
+                socket.off('solicitud_reapertura', handleSolicitudReapertura);
+                socket.off('reapertura_aprobada', handleReaperturaAprobada);
+                socket.off('ticket_reabierto', handleTicketReabierto);
+                socket.off('nuevo_ticket', handleNuevoTicket);
             };
         }
     }, [store.auth.user, store.websocket.connected, tickets.length]);
@@ -177,14 +257,7 @@ function useClienteWebSocket({
         };
     }, []);
 
-    // Manejar actualizaciones críticas de tickets
-    useEffect(() => {
-        if (store.websocket.criticalTicketUpdate?.priority === 'critical') {
-            actualizarTickets();
-        }
-    }, [store.websocket.criticalTicketUpdate]);
-
-    // Actualizar tickets cuando lleguen notificaciones WebSocket
+    // Manejar notificaciones WebSocket
     useEffect(() => {
         if (store.websocket.notifications.length > 0) {
             const lastNotification = store.websocket.notifications[store.websocket.notifications.length - 1];
@@ -203,17 +276,23 @@ function useClienteWebSocket({
 
             if (lastNotification.tipo === 'solucionado') {
                 if (lastNotification.ticket_id) {
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === lastNotification.ticket_id ? { ...t, estado: 'solucionado' } : t)
+                        : prev
+                    );
                     setSolicitudesReapertura(prev => {
                         const newSet = new Set(prev);
                         newSet.delete(lastNotification.ticket_id);
                         return newSet;
                     });
                 }
-                actualizarTickets();
-                setTimeout(() => actualizarTickets(), 500);
-                setTimeout(() => actualizarTickets(), 1500);
             } else {
-                actualizarTickets();
+                if (lastNotification.ticket_id && lastNotification.estado) {
+                    setTickets(prev => Array.isArray(prev) 
+                        ? prev.map(t => t.id === lastNotification.ticket_id ? { ...t, estado: lastNotification.estado } : t)
+                        : prev
+                    );
+                }
             }
         }
     }, [store.websocket.notifications]);

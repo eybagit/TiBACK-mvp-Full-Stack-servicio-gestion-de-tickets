@@ -29,32 +29,34 @@ export const Navbar = () => {
 	// Estado de sincronización en tiempo real
 	const realtimeStatus = getRealtimeStatus();
 
+	// Obtener clase de badge según estado de sincronización
+	const getSyncBadgeClass = () => {
+		if (realtimeStatus.isConnected) return 'badge-sync-connected';
+		if (realtimeStatus.isPolling) return 'badge-sync-polling';
+		return 'badge-sync-disconnected';
+	};
+
 	return (
-		<nav className="navbar navbar-expand-lg navbar-dark shadow-sm" style={{
-			background: 'linear-gradient(135deg, var(--ct-primary) 0%, var(--ct-indigo) 25%, var(--ct-purple) 50%, var(--ct-pink) 75%, var(--ct-red) 100%)',
-			borderBottom: '3px solid var(--ct-gray-800)'
-		}}>
+		<nav className="navbar navbar-expand-lg navbar-dark shadow-sm navbar-gradient">
 			<div className="container-fluid">
 				{/* Logo y marca */}
 				<Link to="/" className="navbar-brand d-flex align-items-center">
 					<img
 						src="https://res.cloudinary.com/mystoreimg/image/upload/v1759679927/fsq6shibpipmssroqwe4.png"
 						alt="TiBACK Logo"
-						className="me-2"
-						style={{ height: '40px', width: 'auto' }}
+						className="me-2 navbar-logo"
 					/>
 				</Link>
 
 				{/* Botón de colapso para móviles */}
 				<button
-					className="navbar-toggler"
+					className="navbar-toggler navbar-toggler-yellow"
 					type="button"
 					data-bs-toggle="collapse"
 					data-bs-target="#navbarNav"
 					aria-controls="navbarNav"
 					aria-expanded="false"
 					aria-label="Toggle navigation"
-					style={{ borderColor: 'var(--ct-yellow)' }}
 				>
 					<span className="navbar-toggler-icon"></span>
 				</button>
@@ -79,49 +81,42 @@ export const Navbar = () => {
 							{/* Menú de usuarios */}
 							<div className="dropdown me-4">
 								<button
-									className="btn dropdown-toggle d-flex align-items-center px-4 py-2"
+									className="btn dropdown-toggle d-flex align-items-center px-4 py-2 btn-admin-teal"
 									type="button"
 									data-bs-toggle="dropdown"
 									aria-expanded="false"
-									style={{
-										backgroundColor: 'var(--ct-teal)',
-										borderColor: 'var(--ct-teal)',
-										color: 'var(--ct-white)',
-										fontSize: '1.1rem',
-										fontWeight: '500'
-									}}
 								>
 									<i className="fas fa-users-cog me-2"></i>
 									Gestión de Usuarios
 								</button>
 								<ul className="dropdown-menu dropdown-menu-center">
 									<li>
-										<h6 className="dropdown-header" style={{ backgroundColor: 'var(--ct-gray-100)', color: 'var(--ct-gray-800)' }}>
-											<i className="fas fa-user-friends me-2" style={{ color: 'var(--ct-primary)' }}></i>
+										<h6 className="dropdown-header dropdown-header-styled">
+											<i className="fas fa-user-friends me-2 icon-ct-primary"></i>
 											Tipos de Usuarios
 										</h6>
 									</li>
 									<li>
 										<Link to="/clientes" className="dropdown-item">
-											<i className="fas fa-users me-2" style={{ color: 'var(--ct-blue)' }}></i>
+											<i className="fas fa-users me-2 icon-ct-blue"></i>
 											Clientes
 										</Link>
 									</li>
 									<li>
 										<Link to="/analistas" className="dropdown-item">
-											<i className="fas fa-user-tie me-2" style={{ color: 'var(--ct-orange)' }}></i>
+											<i className="fas fa-user-tie me-2 icon-ct-orange"></i>
 											Analistas
 										</Link>
 									</li>
 									<li>
 										<Link to="/supervisores" className="dropdown-item">
-											<i className="fas fa-user-shield me-2" style={{ color: 'var(--ct-green)' }}></i>
+											<i className="fas fa-user-shield me-2 icon-ct-green"></i>
 											Supervisores
 										</Link>
 									</li>
 									<li>
 										<Link to="/administradores" className="dropdown-item">
-											<i className="fas fa-user-cog me-2" style={{ color: 'var(--ct-red)' }}></i>
+											<i className="fas fa-user-cog me-2 icon-ct-red"></i>
 											Administradores
 										</Link>
 									</li>
@@ -131,49 +126,42 @@ export const Navbar = () => {
 							{/* Menú de gestión */}
 							<div className="dropdown ms-4">
 								<button
-									className="btn dropdown-toggle d-flex align-items-center px-4 py-2"
+									className="btn dropdown-toggle d-flex align-items-center px-4 py-2 btn-admin-cyan"
 									type="button"
 									data-bs-toggle="dropdown"
 									aria-expanded="false"
-									style={{
-										backgroundColor: 'var(--ct-cyan)',
-										borderColor: 'var(--ct-cyan)',
-										color: 'var(--ct-white)',
-										fontSize: '1.1rem',
-										fontWeight: '500'
-									}}
 								>
 									<i className="fas fa-cogs me-2"></i>
 									Herramientas de Gestión
 								</button>
 								<ul className="dropdown-menu dropdown-menu-center">
 									<li>
-										<h6 className="dropdown-header" style={{ backgroundColor: 'var(--ct-gray-100)', color: 'var(--ct-gray-800)' }}>
-											<i className="fas fa-tools me-2" style={{ color: 'var(--ct-primary)' }}></i>
+										<h6 className="dropdown-header dropdown-header-styled">
+											<i className="fas fa-tools me-2 icon-ct-primary"></i>
 											Sistema de Gestión
 										</h6>
 									</li>
 									<li>
 										<Link to="/tickets" className="dropdown-item">
-											<i className="fas fa-ticket-alt me-2" style={{ color: 'var(--ct-primary)' }}></i>
+											<i className="fas fa-ticket-alt me-2 icon-ct-primary"></i>
 											Tickets
 										</Link>
 									</li>
 									<li>
 										<Link to="/gestiones" className="dropdown-item">
-											<i className="fas fa-tasks me-2" style={{ color: 'var(--ct-purple)' }}></i>
+											<i className="fas fa-tasks me-2 icon-ct-purple"></i>
 											Gestiones
 										</Link>
 									</li>
 									<li>
 										<Link to="/asignaciones" className="dropdown-item">
-											<i className="fas fa-user-check me-2" style={{ color: 'var(--ct-blue)' }}></i>
+											<i className="fas fa-user-check me-2 icon-ct-blue"></i>
 											Asignaciones
 										</Link>
 									</li>
 									<li>
 										<Link to="/comentarios" className="dropdown-item">
-											<i className="fas fa-comments me-2" style={{ color: 'var(--ct-green)' }}></i>
+											<i className="fas fa-comments me-2 icon-ct-green"></i>
 											Comentarios
 										</Link>
 									</li>
@@ -186,18 +174,10 @@ export const Navbar = () => {
 					{isAuthenticated && role === 'administrador' && (
 						<div className="d-flex align-items-center">
 							<div className="d-flex align-items-center">
-								<span
-									className="badge me-2"
-									style={{
-										backgroundColor: realtimeStatus.isConnected ? 'var(--ct-green)' : realtimeStatus.isPolling ? 'var(--ct-yellow)' : 'var(--ct-red)',
-										color: 'var(--ct-white)',
-										fontSize: '1.1rem',
-										fontWeight: '500'
-									}}
-								>
+								<span className={`badge me-2 badge-sync ${getSyncBadgeClass()}`}>
 									{realtimeStatus.statusIcon} {realtimeStatus.statusText}
 								</span>
-								<small style={{ color: 'var(--ct-white)', opacity: 0.9, fontSize: '1.1rem', fontWeight: '500' }}>
+								<small className="sync-text">
 									Sync: {realtimeStatus.lastSyncFormatted}
 								</small>
 							</div>

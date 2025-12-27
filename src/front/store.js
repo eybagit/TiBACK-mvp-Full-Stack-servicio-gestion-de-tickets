@@ -21,6 +21,11 @@ export {
   clearAllTokens,
   initialStore,
   clienteActions,
+  supervisorActions,
+  analistaActions,
+  adminActions,
+  chatActions,
+  iaActions,
 } from './store/index.js';
 
 // Importar acciones base
@@ -174,18 +179,16 @@ export const authActions = {
   },
 
   // Funciones de WebSocket rooms
+  // CORREGIDO: Siempre unirse a global_tickets (todos reciben todo)
+  // El frontend filtra lo que necesita con useMemo
   joinRoom: (socket, role, userId) => {
     if (socket) {
-      if (role === "supervisor") {
-        socket.emit("join_room", "supervisores");
-      } else if (role === "administrador") {
-        socket.emit("join_room", "supervisores");
-        socket.emit("join_room", "administradores");
-      } else if (role === "analista") {
-        socket.emit("join_room", "analistas");
-        socket.emit("join_room", `analista_${userId}`);
-      } else if (role === "cliente") {
-        socket.emit("join_room", "clientes");
+      // SOLO global_tickets - TODOS escuchan TODO
+      socket.emit("join_room", "global_tickets");
+      
+      // Debug log (solo dev)
+      if (import.meta.env.DEV) {
+        console.log(`✅ [${role}:${userId}] Joined global_tickets - escuchando TODOS los eventos`);
       }
     }
   },

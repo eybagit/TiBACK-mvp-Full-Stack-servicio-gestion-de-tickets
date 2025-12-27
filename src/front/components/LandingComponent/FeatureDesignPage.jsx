@@ -1,23 +1,16 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { Link } from "react-router-dom";
+
+// Scroll suave sin useNavigate
+const goToFeature = (e) => {
+  e.preventDefault();
+  window.location.href = "/#feature";
+};
 
 export const FeatureDesignPage = () => {
-  const navigate = useNavigate();
-
-
-  const goToDesign = () => {
-        navigate("/"); // vuelve a la raíz
-        setTimeout(() => {
-            const feature = document.getElementById("feature");
-            if (feature) {
-                feature.scrollIntoView({ behavior: "smooth" });
-            }
-        }, 300); // da tiempo a que la raíz cargue
-    };
-
   return (
     <div className="container py-5">
-      <a className="btn btn-link text-blue-50" onClick={goToDesign}>← Volver al panel de características</a>
+      <a className="btn btn-link text-blue-50" onClick={goToFeature}>← Volver al panel de características</a>
 
       <div className="text-center mb-4">
         <h2 className="fw-bold text-dark">Diseño del Módulo de Soporte y Supervisión</h2>
@@ -32,7 +25,7 @@ export const FeatureDesignPage = () => {
           <h4 className="fw-semibold text-primary mb-3">Flujo de atención estructurado</h4>
           <p className="text-muted">
             Cada solicitud enviada por un cliente se canaliza directamente al analista correspondiente,
-            quien gestiona y documenta el caso en tiempo real.  
+            quien gestiona y documenta el caso en tiempo real.
             La Supervisor supervisa las incidencias, prioriza los casos críticos y garantiza el cumplimiento
             de los niveles de servicio (SLA).
           </p>
@@ -57,8 +50,7 @@ export const FeatureDesignPage = () => {
           <img
             src="https://res.cloudinary.com/mystoreimg/image/upload/v1759732380/fqoa6qkdincx1jfrben2.png"
             alt="Panel de soporte y supervisión"
-            className="img-fluid rounded shadow-sm border border-light"
-            style={{ cursor: "pointer", maxHeight: "420px", objectFit: "cover" }}
+            className="img-fluid rounded shadow-sm border border-light img-feature"
           />
         </div>
       </div>

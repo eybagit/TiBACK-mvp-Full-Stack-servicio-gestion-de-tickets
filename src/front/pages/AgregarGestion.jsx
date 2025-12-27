@@ -1,17 +1,13 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, Navigate } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const AgregarGestion = () => {
     const { store, dispatch } = useGlobalReducer();
-    const navigate = useNavigate();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
-    const [nuevaGestion, setNuevaGestion] = useState({
-        id_ticket: "",
-        fecha_cambio: "",
-        Nota_de_caso: "",
-    });
+    // Estado del store para navegación después de crear
+    const shouldRedirect = store.crud?.formSuccess;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -22,28 +18,37 @@ export const AgregarGestion = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
-    const limpiarFormulario = () => {
-        setNuevaGestion({
-            id_ticket: "",
-            fecha_cambio: "",
-            Nota_de_caso: "",
-        });
-    };
+    // Limpiar estado al desmontar
+    useEffect(() => {
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
+    }, []);
 
-    const crearGestion = () => {
+    const crearGestion = (e) => {
+        e.preventDefault();
+
+        // Usar FormData para obtener valores del formulario
+        const formData = new FormData(e.target);
+        const nuevaGestion = {
+            id_ticket: formData.get('id_ticket'),
+            fecha_cambio: formData.get('fecha_cambio'),
+            Nota_de_caso: formData.get('Nota_de_caso')
+        };
+
         // Validación básica
         if (!nuevaGestion.id_ticket || !nuevaGestion.fecha_cambio || !nuevaGestion.Nota_de_caso) {
             setError("Los campos Ticket, Fecha de cambio y la nota del caso son obligatorios");
@@ -51,20 +56,25 @@ export const AgregarGestion = () => {
         }
 
         setLoading(true);
+        dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: true });
+
         fetchJson(`${API}/gestiones`, {
             method: "POST",
             body: JSON.stringify(nuevaGestion)
         }).then(({ ok, data }) => {
             if (!ok) throw new Error(data.message);
             dispatch({ type: "gestiones_add", payload: data });
-            limpiarFormulario();
-            navigate('/gestiones'); // Volver al home después de crear
-        }).catch(setError).finally(() => setLoading(false));
+            dispatch({ type: 'CRUD_SET_FORM_SUCCESS', payload: true });
+        }).catch(err => {
+            setError(err);
+            dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: false });
+        }).finally(() => setLoading(false));
     };
 
-    const cancelar = () => {
-        navigate('/gestiones');
-    };
+    // Navegación declarativa después de crear
+    if (shouldRedirect) {
+        return <Navigate to="/gestiones" replace />;
+    }
 
     return (
         <div className="container py-4">
@@ -81,16 +91,15 @@ export const AgregarGestion = () => {
                             {store.api.error && (
                                 <div className="alert alert-danger py-2">{String(store.api.error)}</div>
                             )}
-                            <form onSubmit={(e) => { e.preventDefault(); crearGestion(); }}>
+                            <form onSubmit={crearGestion}>
                                 <div className="row g-3">
                                     <div className="col-md-6">
                                         <label className="form-label">Ticket *</label>
                                         <input
                                             type="text"
+                                            name="id_ticket"
                                             className="form-control"
                                             placeholder="Ingrese el ticket"
-                                            value={nuevaGestion.id_ticket}
-                                            onChange={e => setNuevaGestion(s => ({ ...s, id_ticket: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -98,10 +107,9 @@ export const AgregarGestion = () => {
                                         <label className="form-label">Fecha *</label>
                                         <input
                                             type="text"
+                                            name="fecha_cambio"
                                             className="form-control"
-                                            placeholder="Ingrese la fecha de emisión del cambio de la fecha"
-                                            value={nuevaGestion.fecha_cambio}
-                                            onChange={e => setNuevaGestion(s => ({ ...s, fecha_cambio: e.target.value }))}
+                                            placeholder="Ingrese la fecha de emisión del cambio"
                                             required
                                         />
                                     </div>
@@ -109,29 +117,26 @@ export const AgregarGestion = () => {
                                         <label className="form-label">Nota del caso *</label>
                                         <input
                                             type="text"
+                                            name="Nota_de_caso"
                                             className="form-control"
                                             placeholder="Ingrese una nota para el caso"
-                                            value={nuevaGestion.Nota_de_caso}
-                                            onChange={e => setNuevaGestion(s => ({ ...s, Nota_de_caso: e.target.value }))}
                                             required
                                         />
                                     </div>
                                 </div>
 
                                 <div className="d-flex gap-2 mt-4 justify-content-end">
-                                    <button
-                                        type="button"
+                                    <Link
+                                        to="/gestiones"
                                         className="btn btn-secondary"
-                                        onClick={cancelar}
-                                        disabled={store.api.loading}
                                     >
                                         <i className="fas fa-times me-1"></i>
                                         Cancelar
-                                    </button>
+                                    </Link>
                                     <button
                                         type="submit"
                                         className="btn btn-primary"
-                                        disabled={store.api.loading}
+                                        disabled={store.api.loading || store.crud?.formSubmitting}
                                     >
                                         <i className="fas fa-save me-1"></i>
                                         {store.api.loading ? 'Guardando...' : 'Guardar Gestión'}

@@ -25,15 +25,19 @@ export const getAnalistaAsignado = (ticket) => {
  * Obtiene el color del badge según el estado
  */
 export const getEstadoColor = (estado) => {
-    switch (estado?.toLowerCase()) {
-        case 'solucionado': return 'success';
-        case 'en_proceso': return 'warning';
-        case 'en_espera': return 'info';
-        case 'escalado': return 'danger';
-        case 'cerrado': return 'secondary';
-        default: return 'primary';
+    const estadoLower = estado?.toLowerCase().replace(/\s+/g, '_');
+    
+    // SOLO 6 estados oficiales
+    switch (estadoLower) {
+      case 'creado': return 'primary';
+      case 'en_espera': return 'info';
+      case 'en_proceso': return 'warning';
+      case 'solucionado': return 'success';
+      case 'cerrado': return 'secondary';
+      case 'reabierto': return 'warning';
+      default: return 'primary';
     }
-};
+  };
 
 /**
  * Obtiene el color del badge según la prioridad

@@ -14,7 +14,7 @@ export const Price = () => {
                     </div>
                 </div>
                 <div className="mt-5 pt-3 row justify-content-center gap-1">
-                    <div className="col-md-4 card p-0 mx-2 border border-none shadow-lg bg-body-tertiary rounded" style={{ width: "26rem" }}>
+                    <div className="col-md-4 card p-0 mx-2 border border-none shadow-lg bg-body-tertiary rounded card-pricing">
                         <div className="card-body text-center">
                             <h5 className="card-title text-muted">LICENCIA ESTANDAR</h5>
                             <h2 className="card-subtitle my-3 text-body-secondary text-muted">$49 <span>/ Licencia</span></h2>
@@ -32,7 +32,7 @@ export const Price = () => {
 
 
 
-                    <div className="col-md-4 card p-0 mx-2 border border-none shadow-lg bg-body-tertiary rounded" style={{ width: "26rem" }}>
+                    <div className="col-md-4 card p-0 mx-2 border border-none shadow-lg bg-body-tertiary rounded card-pricing">
                         <span className="card-title text-center m-0 text-bg-danger bg-opacity-25 text-danger rounded-top-1">Recomendado</span>
                         <hr className="m-0" />
                         <div className="card-body text-center">
@@ -52,7 +52,7 @@ export const Price = () => {
 
 
 
-                    <div className="col-md-4 card p-0 mx-2 card border border-none shadow-lg bg-body-tertiary rounded" style={{ width: "26rem" }}>
+                    <div className="col-md-4 card p-0 mx-2 card border border-none shadow-lg bg-body-tertiary rounded card-pricing">
                         <div className="card-body text-center">
                             <h5 className="card-title text-muted">LICCENCIA EXTENDIDA</h5>
                             <h2 className="card-subtitle my-3 text-body-secondary text-muted">$599 <span>/ Licencia</span></h2>

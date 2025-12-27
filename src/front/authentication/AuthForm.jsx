@@ -168,11 +168,11 @@ export function AuthForm() {
 
                     {/* Logo arriba */}
                     <div className="mb-4 ms-3">
-                        <img src={TiBACKLogo} className="btn cursor-pointer ps-0" onClick={() => navigate('/')} alt="TiBACK Logo" style={{ maxWidth: "170px", height: "auto" }} />
+                        <img src={TiBACKLogo} className="btn cursor-pointer ps-0 auth-logo" onClick={() => navigate('/')} alt="TiBACK Logo" />
                     </div>
 
                     {/* Formulario */}
-                    <div className="w-100 ms-3" style={{ maxWidth: "320px" }}>
+                    <div className="w-100 ms-3 auth-form-container">
                         <h4 className="mb-2 text-muted">
                             {isLogin ? 'Iniciar Sesión' : 'Registrarse'}
                         </h4>
@@ -281,7 +281,7 @@ export function AuthForm() {
                         </div>
                         <div className="text-center text-muted">
                             <Link to="/" className="btn btn-link link-secondary">
-                                    Volver Atras
+                                Volver Atras
                             </Link>
                         </div>
                     </div>

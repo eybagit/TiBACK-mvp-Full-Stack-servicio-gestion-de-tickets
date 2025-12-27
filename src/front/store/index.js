@@ -13,6 +13,11 @@ export { initialStore } from './slices/initialStore.js';
 export { authActions } from './actions/authActions.js';
 export { websocketActions } from './actions/websocketActions.js';
 export { clienteActions } from './actions/clienteActions.js';
+export { supervisorActions } from './actions/supervisorActions.js';
+export { analistaActions } from './actions/analistaActions.js';
+export { adminActions } from './actions/adminActions.js';
+export { chatActions } from './actions/chatActions.js';
+export { iaActions } from './actions/iaActions.js';
 
 // Importar slices para combinar
 import { authReducer } from './slices/authSlice.js';
@@ -34,6 +39,24 @@ import {
 // Importar slice de ClientePage (arquitectura tiback-hello)
 import { clienteReducer } from './slices/clienteSlice.js';
 
+// Importar slice de SupervisorPage (arquitectura tiback-hello)
+import { supervisorReducer } from './slices/supervisorSlice.js';
+
+// Importar slice de AnalistaPage (arquitectura tiback-hello)
+import { analistaReducer } from './slices/analistaSlice.js';
+
+// Importar slice de AdminPage (arquitectura tiback-hello)
+import { adminReducer } from './slices/adminSlice.js';
+
+// Importar slice de Chat (arquitectura tiback-hello)
+import { chatReducer } from './slices/chatSlice.js';
+
+// Importar slice de IA (arquitectura tiback-hello)
+import { iaReducer } from './slices/iaSlice.js';
+
+// Importar slice de CRUD (arquitectura tiback-hello)
+import { crudReducer } from './slices/crudSlice.js';
+
 // Combinar todos los reducers en un mapa
 const allReducers = {
   ...authReducer,
@@ -51,6 +74,18 @@ const allReducers = {
   ...miscReducer,
   // Reducer de ClientePage
   ...clienteReducer,
+  // Reducer de SupervisorPage
+  ...supervisorReducer,
+  // Reducer de AnalistaPage
+  ...analistaReducer,
+  // Reducer de AdminPage
+  ...adminReducer,
+  // Reducer de Chat
+  ...chatReducer,
+  // Reducer de IA
+  ...iaReducer,
+  // Reducer de CRUD
+  ...crudReducer,
 };
 
 /**

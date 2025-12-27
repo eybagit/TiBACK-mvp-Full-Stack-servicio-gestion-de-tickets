@@ -10,8 +10,7 @@ const ImagePreview = ({ imageUrl, onRemove, disabled }) => {
                 <img
                     src={imageUrl}
                     alt="Imagen actual"
-                    className="img-thumbnail me-3"
-                    style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                    className="img-thumbnail me-3 img-preview-thumb"
                 />
                 <div>
                     <p className="mb-1 text-success">

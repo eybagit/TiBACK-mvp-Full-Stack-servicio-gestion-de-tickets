@@ -1,20 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useRef } from "react";
+import { useParams, Link, Navigate } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 const ActualizarSupervisor = () => {
-     const { supervisorid } = useParams();
-    const navigate = useNavigate();
+    const { supervisorid } = useParams();
     const { store, dispatch } = useGlobalReducer();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
+    const formRef = useRef(null);
 
-    const [supervisor, setSupervisor] = useState({
-        nombre: "",
-        apellido: "",
-        email: "",
-        contraseña_hash: "",
-        area_responsable: ""
-    });
+    // Estado del store para navegación después de actualizar
+    const shouldRedirect = store.crud?.formSuccess;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -25,17 +20,17 @@ const ActualizarSupervisor = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
     const cargarSupervisor = () => {
@@ -44,35 +39,59 @@ const ActualizarSupervisor = () => {
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data.message);
                 dispatch({ type: "supervisor_set_detail", payload: data });
-                setSupervisor(data);
-            })
-            .catch(setError)
-            .finally(() => setLoading(false));
-    };
-
-    const actualizarSupervisor = () => {
-        setLoading(true);
-        fetchJson(`${API}/supervisores/${supervisorid}`, {
-            method: "PUT",
-            body: JSON.stringify(supervisor)
-        })
-            .then(({ ok, data }) => {
-                if (!ok) throw new Error(data.message);
-                dispatch({ type: "supervisores_upsert", payload: data });
-                navigate(`/supervisor/${supervisorid}`);
             })
             .catch(setError)
             .finally(() => setLoading(false));
     };
 
     useEffect(() => {
-        cargarSupervisor();
+        if (supervisorid) {
+            cargarSupervisor();
+        }
+        // Limpiar estado al desmontar
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
     }, [supervisorid]);
 
-    const controlCambio = (e) => {
-        const { name, value } = e.target;
-        setSupervisor(f => ({ ...f, [name]: value }));
+    const actualizarSupervisor = (e) => {
+        e.preventDefault();
+
+        // Usar FormData para obtener valores del formulario
+        const formData = new FormData(e.target);
+        const supervisorActualizado = {
+            nombre: formData.get('nombre'),
+            apellido: formData.get('apellido'),
+            email: formData.get('email'),
+            contraseña_hash: formData.get('contraseña_hash'),
+            area_responsable: formData.get('area_responsable')
+        };
+
+        setLoading(true);
+        dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: true });
+
+        fetchJson(`${API}/supervisores/${supervisorid}`, {
+            method: "PUT",
+            body: JSON.stringify(supervisorActualizado)
+        })
+            .then(({ ok, data }) => {
+                if (!ok) throw new Error(data.message);
+                dispatch({ type: "supervisores_upsert", payload: data });
+                dispatch({ type: 'CRUD_SET_FORM_SUCCESS', payload: true });
+            })
+            .catch(err => {
+                setError(err);
+                dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: false });
+            })
+            .finally(() => setLoading(false));
     };
+
+    // Navegación declarativa después de actualizar
+    if (shouldRedirect) {
+        return <Navigate to={`/supervisor/${supervisorid}`} replace />;
+    }
+
+    const supervisor = store.supervisorDetail;
 
     return (
         <div className="container py-4">
@@ -82,26 +101,69 @@ const ActualizarSupervisor = () => {
 
             <div className="card">
                 <div className="card-body">
-                   <form onSubmit={(e) => { e.preventDefault(); actualizarSupervisor(); }}>
-                        {["nombre", "apellido", "email", "contraseña", "area_responsable"].map((field, idx) => (
-                            <div className="mb-3" key={idx}>
-                                <label className="form-label text-capitalize">{field.replace("_", " ")}</label>
-                                <input
-                                       type={field === "email" ? "email" : field === "contraseña_hash" ? "password" : "text"}
-                                    className="form-control"
-                                    name={field}
-                                    value={supervisor[field] || ""}
-                                    onChange={controlCambio}
-                                    required
-                                />
-                            </div>
-                        ))}
-                        <div className="d-flex justify-content-end">
-                            <button type="submit" className="btn btn-primary">
+                    <form ref={formRef} onSubmit={actualizarSupervisor}>
+                        <div className="mb-3">
+                            <label className="form-label">Nombre</label>
+                            <input
+                                type="text"
+                                name="nombre"
+                                className="form-control"
+                                defaultValue={supervisor?.nombre || ''}
+                                required
+                            />
+                        </div>
+                        <div className="mb-3">
+                            <label className="form-label">Apellido</label>
+                            <input
+                                type="text"
+                                name="apellido"
+                                className="form-control"
+                                defaultValue={supervisor?.apellido || ''}
+                                required
+                            />
+                        </div>
+                        <div className="mb-3">
+                            <label className="form-label">Email</label>
+                            <input
+                                type="email"
+                                name="email"
+                                className="form-control"
+                                defaultValue={supervisor?.email || ''}
+                                required
+                            />
+                        </div>
+                        <div className="mb-3">
+                            <label className="form-label">Contraseña</label>
+                            <input
+                                type="password"
+                                name="contraseña_hash"
+                                className="form-control"
+                                placeholder="Dejar vacío para mantener"
+                            />
+                        </div>
+                        <div className="mb-3">
+                            <label className="form-label">Área Responsable</label>
+                            <input
+                                type="text"
+                                name="area_responsable"
+                                className="form-control"
+                                defaultValue={supervisor?.area_responsable || ''}
+                                required
+                            />
+                        </div>
+                        <div className="d-flex justify-content-end gap-2">
+                            <Link to={`/supervisor/${supervisorid}`} className="btn btn-secondary">
+                                Cancelar
+                            </Link>
+                            <button
+                                type="submit"
+                                className="btn btn-primary"
+                                disabled={store.api.loading || store.crud?.formSubmitting}
+                            >
                                 <i className="fas fa-save"></i> Guardar Cambios
                             </button>
                         </div>
-                     </form>
+                    </form>
                 </div>
             </div>
         </div>

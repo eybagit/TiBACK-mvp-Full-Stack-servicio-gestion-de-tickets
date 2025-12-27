@@ -68,6 +68,7 @@ export function SupervisorPage() {
         cargarTicketsCerrados,
         actualizarTodasLasTablas,
         asignarTicket,
+        reasignarTicket,
         cerrarTicket,
         reabrirTicket,
         escalarTicket,
@@ -167,6 +168,7 @@ export function SupervisorPage() {
                             ticketsConRecomendaciones={ticketsConRecomendaciones}
                             getAvailableActions={getAvailableActions}
                             asignarTicket={asignarTicket}
+                            reasignarTicket={reasignarTicket}
                             setSelectedTicketImages={setSelectedTicketImages}
                             setSelectedImageIndex={setSelectedImageIndex}
                             setActiveView={setActiveView}
@@ -237,6 +239,7 @@ export function SupervisorPage() {
                         <VerTicketHDSupervisor
                             ticketId={parseInt(activeView.split('-')[1])}
                             tickets={tickets}
+                            ticketsCerrados={ticketsCerradosCombinados}
                             ticketsConRecomendaciones={ticketsConRecomendaciones}
                             analistas={analistas}
                             onBack={() => setActiveView('tickets')}

@@ -81,16 +81,16 @@ def create_comentario():
         db.session.add(comentario)
         db.session.commit()
 
-        # Emitir evento WebSocket para notificar nuevo comentario al room del ticket
+        # Emitir evento WebSocket para notificar nuevo comentario
         socketio = get_socketio()
         if socketio:
             try:
-                ticket_room = f'room_ticket_{comentario.id_ticket}'
+                # SOLO global_tickets - TODOS escuchan TODO
                 socketio.emit('nuevo_comentario', {
                     'comentario': comentario.serialize(),
                     'tipo': 'comentario_agregado',
                     'timestamp': datetime.now().isoformat()
-                }, room=ticket_room)
+                }, room='global_tickets')
                     
             except Exception as e:
                 print(f"Error enviando WebSocket: {e}")

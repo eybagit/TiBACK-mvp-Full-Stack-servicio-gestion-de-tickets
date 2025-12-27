@@ -11,7 +11,7 @@ import {
     reabrirTicketAction
 } from './hooks/useTicketHDActions';
 
-export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaciones, onBack, analistas, setActiveView }) => {
+export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsCerrados, ticketsConRecomendaciones, onBack, analistas, setActiveView }) => {
     const { store } = useGlobalReducer();
     const [ticket, setTicket] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -24,7 +24,13 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
             try {
                 setLoading(true);
                 const ticketsArray = tickets || [];
-                const foundTicket = ticketsArray.find(t => t.id === ticketId);
+                const ticketsCerradosArray = ticketsCerrados || [];
+
+                // Buscar primero en tickets activos, luego en cerrados
+                let foundTicket = ticketsArray.find(t => t.id === ticketId);
+                if (!foundTicket) {
+                    foundTicket = ticketsCerradosArray.find(t => t.id === ticketId);
+                }
 
                 if (foundTicket) {
                     setTicket(foundTicket);
@@ -39,10 +45,10 @@ export const VerTicketHDSupervisor = ({ ticketId, tickets, ticketsConRecomendaci
             }
         };
 
-        if (ticketId && tickets) {
+        if (ticketId) {
             fetchTicket();
         }
-    }, [ticketId, tickets]);
+    }, [ticketId, tickets, ticketsCerrados]);
 
     const asignarAnalista = async () => {
         if (!selectedAnalista) {

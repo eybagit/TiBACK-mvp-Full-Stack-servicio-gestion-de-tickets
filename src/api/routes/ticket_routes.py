@@ -17,15 +17,19 @@ from api.routes.utils_routes import (
 ticket_bp = Blueprint('tickets', __name__)
 
 
-def emit_ws_event(socketio, event, data, rooms):
-    """Helper para emitir eventos WebSocket"""
+def emit_ws_event(socketio, event, data, rooms=None):
+    """
+    Helper para emitir eventos WebSocket
+    SIMPLIFICADO: Ignora rooms específicas y SIEMPRE emite a global_tickets
+    """
     if not socketio:
         return
     try:
-        for room in rooms:
-            socketio.emit(event, data, room=room)
+        # SOLO global_tickets - TODOS escuchan TODO
+        socketio.emit(event, data, room='global_tickets')
     except Exception as e:
         print(f"Error enviando WebSocket {event}: {e}")
+
 
 
 # ==================== CRUD BÁSICO ====================
@@ -148,17 +152,126 @@ def delete_ticket(id):
                 'ticket_info': ticket_info,
                 'tipo': 'eliminado',
                 'usuario': user['role'],
-                'timestamp': datetime.now().isoformat()
+                'timestamp': datetime.now().isoformat(),
+                'message': f'Ticket #{id} eliminado'
             }
-            rooms = ['clientes', 'analistas', 'supervisores', 'administradores', f'room_ticket_{id}']
-            if analista_id:
-                rooms.append(f'analista_{analista_id}')
-            emit_ws_event(socketio, 'ticket_eliminado', data, rooms)
+            # IMPORTANTE: Emitir a global_tickets para que TODOS los roles lo vean
+            emit_ws_event(socketio, 'ticket_eliminado', data, [''])
 
         return jsonify({"message": "Ticket eliminado"}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": f"Error al eliminar: {str(e)}"}), 500
+
+
+
+
+@ticket_bp.route('/tickets/<int:ticket_id>/solicitar-reapertura', methods=['POST'])
+@require_role(['cliente'])
+def solicitar_reapertura_ticket(ticket_id):
+    """Cliente solicita reapertura de un ticket solucionado"""
+    try:
+        from api.models import Comentarios
+        
+        user = get_user_from_token()
+        ticket = Ticket.query.get_or_404(ticket_id)
+        
+        # Verificar que el ticket pertenece al cliente
+        if not ticket.cliente or ticket.cliente.id != user['id']:
+            return jsonify({'error': 'No autorizado para este ticket'}), 403
+        
+        # Verificar que el ticket está en estado 'solucionado'
+        if ticket.estado.lower() != 'solucionado':
+            return jsonify({'error': 'Solo se pueden solicitar reaperturas de tickets solucionados'}), 400
+        
+        # Obtener el motivo del body
+        body = request.get_json() or {}
+        motivo = body.get('motivo', 'Solicitud de reapertura')
+        
+        # Crear comentario de solicitud de reapertura
+        comentario = Comentarios(
+            id_ticket=ticket_id,
+            id_cliente=user['id'],
+            texto=f"Solicitud de reapertura: {motivo}",
+            fecha_comentario=datetime.now()
+        )
+        db.session.add(comentario)
+        db.session.commit()
+        
+        # Emitir evento WebSocket
+        socketio = get_socketio()
+        if socketio:
+            data = {
+                'ticket_id': ticket_id,
+                'ticket_estado': ticket.estado,
+                'tipo': 'solicitud_reapertura',
+                'motivo': motivo,
+                'cliente_id': user['id'],
+                'timestamp': datetime.now().isoformat()
+            }
+            emit_ws_event(socketio, 'solicitud_reapertura', data, 
+                ['supervisores', 'administradores', f'ticket_{ticket_id}'])
+            emit_ws_event(socketio, 'ticket_actualizado', data, 
+                [f'ticket_{ticket_id}', 'supervisores'])
+        
+        return jsonify({
+            'message': 'Solicitud de reapertura enviada',
+            'ticket_id': ticket_id,
+            'comentario_id': comentario.id
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error en solicitar_reapertura_ticket: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return handle_general_error(e, "solicitar reapertura de ticket")
+
+
+
+@ticket_bp.route('/tickets/borrar-todos', methods=['DELETE'])
+@require_role(['administrador'])
+def delete_all_tickets():
+    """Borrar TODOS los tickets - Solo administrador - ACCIÓN IRREVERSIBLE"""
+    try:
+        from api.models import Comentarios, Asignacion
+        
+        # Contar tickets antes de borrar
+        total_tickets = db.session.query(Ticket).count()
+        
+        if total_tickets == 0:
+            return jsonify({"message": "No hay tickets para borrar", "deleted_count": 0}), 200
+        
+        # Borrar primero las relaciones para evitar errores de foreign key
+        # Borrar comentarios
+        db.session.query(Comentarios).delete()
+        # Borrar asignaciones
+        db.session.query(Asignacion).delete()
+        # Borrar tickets
+        db.session.query(Ticket).delete()
+        db.session.commit()
+        
+        # Emitir evento WebSocket a global_tickets
+        socketio = get_socketio()
+        if socketio:
+            user = get_user_from_token()
+            data = {
+                'tipo': 'todos_eliminados',
+                'deleted_count': total_tickets,
+                'usuario': user['role'],
+                'timestamp': datetime.now().isoformat(),
+                'message': f'Se eliminaron {total_tickets} tickets'
+            }
+            # IMPORTANTE: Emitir a global_tickets para que TODOS los roles lo vean
+            emit_ws_event(socketio, 'todos_tickets_eliminados', data, [''])
+        
+        return jsonify({
+            "message": f"Se eliminaron {total_tickets} tickets exitosamente",
+            "deleted_count": total_tickets
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error al borrar todos los tickets: {str(e)}"}), 500
 
 
 # ==================== EVALUACIÓN ====================
@@ -184,12 +297,16 @@ def evaluar_ticket(id):
     socketio = get_socketio()
     if socketio:
         data = {
+            'ticket_id': ticket.id,
             'ticket': ticket.serialize(),
             'tipo': 'evaluado',
             'calificacion': calificacion,
             'comentario': comentario,
             'timestamp': datetime.now().isoformat()
         }
+        # Emitir evento específico de evaluación para que todos los roles lo vean
+        emit_ws_event(socketio, 'ticket_evaluado', data, [f'room_ticket_{ticket.id}'])
+        # También emitir actualización genérica para compatibilidad
         emit_ws_event(socketio, 'ticket_actualizado', data, [f'room_ticket_{ticket.id}'])
 
     return jsonify(ticket.serialize()), 200
@@ -228,14 +345,17 @@ def asignar_ticket(id):
     if error:
         return jsonify({"message": error}), 400 if "no encontrado" not in error else 404
 
-    # Emitir eventos WebSocket
+    # Emitir eventos WebSocket con ticket COMPLETO
     socketio = get_socketio()
     if socketio:
         from api.models import Analista
         analista = db.session.get(Analista, id_analista)
+        
+        # IMPORTANTE: Siempre incluir ticket completo serializado
         data = {
             'id': ticket.id,
             'ticket_id': ticket.id,
+            'ticket': ticket.serialize(),  # SIEMPRE incluir ticket completo
             'estado': ticket.estado,
             'titulo': ticket.titulo,
             'prioridad': ticket.prioridad,
@@ -284,23 +404,11 @@ def _parse_request_body():
 
 def _emit_new_ticket_events(ticket, user):
     """Emitir eventos WebSocket para nuevo ticket"""
-    socketio = get_socketio()
-    ticket_data = {
-        'ticket_id': ticket.id,
-        'ticket_estado': ticket.estado,
-        'ticket_titulo': ticket.titulo,
-        'ticket_prioridad': ticket.prioridad,
-        'cliente_id': ticket.id_cliente,
-        'tipo': 'creado',
-        'timestamp': datetime.now().isoformat()
-    }
-
-    if socketio:
-        rooms = [f'room_ticket_{ticket.id}', 'supervisores', 'administradores']
-        emit_ws_event(socketio, 'nuevo_ticket', ticket_data, rooms)
-        emit_ws_event(socketio, 'nuevo_ticket_disponible', ticket_data, ['supervisores', 'administradores'])
-
-    emit_critical_ticket_action(ticket.id, 'ticket_creado', user)
-    emit_websocket_to_ticket('nuevo_ticket', ticket_data, ticket.id, include_self=False)
-    emit_websocket_to_role('nuevo_ticket_disponible', ticket_data, 'supervisor', include_self=False)
-    emit_websocket_to_role('nuevo_ticket_disponible', ticket_data, 'administrador', include_self=False)
+    print(f"🔔 _emit_new_ticket_events llamado para ticket {ticket.id}")
+    
+    from api.utils import emit_ticket_created
+    
+    # Usar el helper centralizado que emite a global_tickets
+    # Esto garantiza que TODOS los roles (supervisor, analista, cliente, admin) reciban el evento
+    result = emit_ticket_created(ticket)
+    print(f"📤 emit_ticket_created retornó: {result}")

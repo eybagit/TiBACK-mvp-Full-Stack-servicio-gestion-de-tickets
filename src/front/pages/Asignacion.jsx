@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const Asignacion = () => {
     const { store, dispatch } = useGlobalReducer();
-    const navigate = useNavigate();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
@@ -16,17 +15,17 @@ export const Asignacion = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
     const listarTodasLasAsignaciones = () => {
@@ -60,13 +59,10 @@ export const Asignacion = () => {
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2 className="mb-0">Lista de Asignaciones</h2>
                 <div className="d-flex gap-2">
-                    <button className="btn btn-secondary" onClick={() => navigate(`/administrador`)}>Volver</button>
-                    <button
-                        className="btn btn-primary"
-                        onClick={() => navigate('/agregar-asignacion')}
-                    >
+                    <Link to="/administrador" className="btn btn-secondary">Volver</Link>
+                    <Link to="/agregar-asignacion" className="btn btn-primary">
                         <i className="fas fa-plus"></i> Agregar Asignación
-                    </button>
+                    </Link>
                 </div>
             </div>
 
@@ -108,20 +104,20 @@ export const Asignacion = () => {
                                                     <td>{asignacion.fecha_asignacion}</td>
                                                     <td>
                                                         <div className="d-flex gap-2" role="group">
-                                                            <button
+                                                            <Link
+                                                                to={`/actualizar-asignacion/${asignacion.id}`}
                                                                 className="btn btn-warning"
-                                                                onClick={() => navigate(`/actualizar-asignacion/${asignacion.id}`)}
                                                                 title="Actualizar Asignación"
                                                             >
                                                                 <i className="fas fa-edit"></i>
-                                                            </button>
-                                                            <button
+                                                            </Link>
+                                                            <Link
+                                                                to={`/ver-asignacion/${asignacion.id}`}
                                                                 className="btn btn-info"
-                                                                onClick={() => navigate(`/ver-asignacion/${asignacion.id}`)}
                                                                 title="Ver Asignación"
                                                             >
                                                                 <i className="fas fa-eye"></i>
-                                                            </button>
+                                                            </Link>
                                                             <button
                                                                 className="btn btn-danger"
                                                                 onClick={() => eliminarAsignacion(asignacion.id)}

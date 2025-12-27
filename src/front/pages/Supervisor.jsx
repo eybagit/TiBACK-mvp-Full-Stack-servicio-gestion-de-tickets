@@ -1,28 +1,27 @@
 import React, { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 // Utilidades de token seguras
 const tokenUtils = {
-  decodeToken: (token) => {
-    try {
-      if (!token) return null;
-      const parts = token.split('.');
-      if (parts.length !== 3) return null;
-      return JSON.parse(atob(parts[1]));
-    } catch (error) {
-      return null;
+    decodeToken: (token) => {
+        try {
+            if (!token) return null;
+            const parts = token.split('.');
+            if (parts.length !== 3) return null;
+            return JSON.parse(atob(parts[1]));
+        } catch (error) {
+            return null;
+        }
+    },
+    getRole: (token) => {
+        const payload = tokenUtils.decodeToken(token);
+        return payload ? payload.role : null;
     }
-  },
-  getRole: (token) => {
-    const payload = tokenUtils.decodeToken(token);
-    return payload ? payload.role : null;
-  }
 };
 
 export const Supervisor = () => {
     const { store, dispatch } = useGlobalReducer();
-    const navigate = useNavigate();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
@@ -34,17 +33,17 @@ export const Supervisor = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
     const eliminarSupervisor = (id) => {
@@ -71,16 +70,18 @@ export const Supervisor = () => {
     };
 
     useEffect(() => {
-          if (!store.supervisores || store.supervisores.length === 0) {
-                listarTodosLosSupervisores();
-          }
+        if (!store.supervisores || store.supervisores.length === 0) {
+            listarTodosLosSupervisores();
+        }
     }, []);
+
+    const userRole = tokenUtils.getRole(store.auth.token);
 
     return (
         <div className="container py-4">
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="mb-0">Gestión de Supervisores</h2>
-                <button className="btn btn-secondary" onClick={() => navigate(`/${tokenUtils.getRole(store.auth.token)}`)}>Volver</button>
+                <Link to={`/${userRole}`} className="btn btn-secondary">Volver</Link>
             </div>
 
             {store?.api?.error && (

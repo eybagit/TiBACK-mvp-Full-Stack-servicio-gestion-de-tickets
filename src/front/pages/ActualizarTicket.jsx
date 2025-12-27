@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useRef } from "react";
+import { useParams, Link, Navigate } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
-import ImageUpload from "../components/ImageUpload";
 
 export const ActualizarTicket = () => {
     const { store, dispatch } = useGlobalReducer();
     const { id } = useParams();
-    const navigate = useNavigate();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
-    const [ticket, setTicket] = useState(null);
-    const [imagenes, setImagenes] = useState([]); // URLs de Cloudinary
+    const formRef = useRef(null);
+
+    // Estado del store para navegación después de actualizar
+    const shouldRedirect = store.crud?.formSuccess;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -38,8 +38,7 @@ export const ActualizarTicket = () => {
         fetchJson(`${API}/tickets/${id}`)
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data.message);
-                setTicket(data);
-                setImagenes(Array.isArray(data.img_urls) ? data.img_urls : []);
+                dispatch({ type: "ticket_set_detail", payload: data });
             })
             .catch(setError)
             .finally(() => setLoading(false));
@@ -48,73 +47,50 @@ export const ActualizarTicket = () => {
     useEffect(() => {
         if (id && (!store.ticketDetail || store.ticketDetail.id !== parseInt(id))) {
             cargarTicket();
-        } else if (store.ticketDetail && store.ticketDetail.id === parseInt(id)) {
-            setTicket(store.ticketDetail);
         }
+        // Limpiar estado al desmontar
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
     }, [id]);
-
-    const controlCambio = (e) => {
-        const { name, value } = e.target;
-        setTicket((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleImageUpload = (imageUrl) => {
-        setTicket(prev => ({
-            ...prev,
-            url_imagen: imageUrl
-        }));
-    };
-
-    const handleImageRemove = () => {
-        setTicket(prev => ({
-            ...prev,
-            url_imagen: ""
-        }));
-    };
 
     const manejarEnvio = (e) => {
         e.preventDefault();
+
+        // Usar FormData para obtener valores del formulario
+        const formData = new FormData(e.target);
+        const ticketActualizado = {
+            titulo: formData.get('titulo'),
+            descripcion: formData.get('descripcion'),
+            url_imagen: formData.get('url_imagen') || '',
+            img_urls: store.ticketDetail?.img_urls || []
+        };
+
         setLoading(true);
+        dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: true });
+
         fetchJson(`${API}/tickets/${id}`, {
             method: "PUT",
-            body: JSON.stringify({ ...ticket, img_urls: imagenes })
+            body: JSON.stringify(ticketActualizado)
         })
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data.message);
                 dispatch({ type: "tickets_upsert", payload: data });
-                navigate(`/tickets`);
+                dispatch({ type: 'CRUD_SET_FORM_SUCCESS', payload: true });
             })
-            .catch(setError)
+            .catch(err => {
+                setError(err);
+                dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: false });
+            })
             .finally(() => setLoading(false));
     };
 
-    // Cloudinary widget
-    const openCloudinaryWidget = () => {
-        if (!window.cloudinary) {
-            alert('Cloudinary no está cargado');
-            return;
-        }
-        const widget = window.cloudinary.createUploadWidget({
-            cloudName: 'dda53mpsn', // Reemplaza por tu cloudName
-            uploadPreset: 'Ticket-TiBACK', // Reemplaza por tu uploadPreset
-            sources: ['local', 'url', 'camera'],
-            multiple: true,
-            maxFiles: 5,
-            cropping: false,
-            resourceType: 'image',
-            language: 'es',
-        }, (error, result) => {
-            if (!error && result && result.event === "success") {
-                setImagenes(prev => [...prev, result.info.secure_url]);
-            }
-        });
-        widget.open();
-    };
+    // Navegación declarativa después de actualizar
+    if (shouldRedirect) {
+        return <Navigate to="/tickets" replace />;
+    }
 
-    const eliminarImagen = (idx) => {
-        setImagenes(prev => prev.filter((_, i) => i !== idx));
-    };
-
+    const ticket = store.ticketDetail;
 
     if (store.api.error) return <div className="alert alert-danger">{store.api.error}</div>;
     if (!ticket) return <div className="alert alert-warning">Ticket no encontrado.</div>;
@@ -122,14 +98,13 @@ export const ActualizarTicket = () => {
     return (
         <div className="container py-4">
             <h2>Editar Ticket #{ticket.id}</h2>
-            <form onSubmit={manejarEnvio}>
+            <form ref={formRef} onSubmit={manejarEnvio}>
                 <div className="mb-3">
                     <label className="form-label">Título</label>
                     <input
                         className="form-control"
                         name="titulo"
-                        value={ticket.titulo}
-                        onChange={controlCambio}
+                        defaultValue={ticket.titulo}
                     />
                 </div>
                 <div className="mb-3">
@@ -138,19 +113,27 @@ export const ActualizarTicket = () => {
                         className="form-control"
                         name="descripcion"
                         rows="3"
-                        value={ticket.descripcion}
-                        onChange={controlCambio}
+                        defaultValue={ticket.descripcion}
                     />
                 </div>
                 <div className="mb-3">
-                    <ImageUpload
-                        onImageUpload={handleImageUpload}
-                        onImageRemove={handleImageRemove}
-                        currentImageUrl={ticket.url_imagen}
+                    <label className="form-label">URL Imagen</label>
+                    <input
+                        className="form-control"
+                        name="url_imagen"
+                        defaultValue={ticket.url_imagen || ''}
                     />
                 </div>
-                <button className="btn btn-primary me-2" type="submit">Actualizar</button>
-                <button className="btn btn-secondary" onClick={() => navigate(-1)}>Cancelar</button>
+                <button
+                    className="btn btn-primary me-2"
+                    type="submit"
+                    disabled={store.api.loading || store.crud?.formSubmitting}
+                >
+                    Actualizar
+                </button>
+                <Link to="/tickets" className="btn btn-secondary">
+                    Cancelar
+                </Link>
             </form>
         </div>
     );

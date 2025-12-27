@@ -11,15 +11,19 @@ from api.routes.utils_routes import get_socketio
 ticket_estado_bp = Blueprint('ticket_estado', __name__)
 
 
-def emit_websocket_event(socketio, event_name, data, rooms):
-    """Helper para emitir eventos WebSocket a múltiples rooms"""
+def emit_websocket_event(socketio, event_name, data, rooms=None):
+    """
+    Helper para emitir eventos WebSocket a múltiples rooms
+    SIMPLIFICADO: Ignora rooms específicas y SIEMPRE emite a global_tickets
+    """
     if not socketio:
         return
     try:
-        for room in rooms:
-            socketio.emit(event_name, data, room=room)
+        # SOLO global_tickets - TODOS escuchan TODO
+        socketio.emit(event_name, data, room='global_tickets')
     except Exception as e:
         print(f"Error enviando WebSocket {event_name}: {e}")
+
 
 
 @ticket_estado_bp.route('/tickets/<int:id>/estado', methods=['PUT'])
@@ -61,28 +65,22 @@ def cambiar_estado_ticket(id):
                 if result:
                     data = TicketEstadoService.build_ticket_event_data(ticket, 'cerrado')
                     data['calificacion'] = body.get('calificacion')
-                    emit_websocket_event(socketio, 'ticket_cerrado', data, 
-                        ['supervisores', 'administradores', ticket_room])
-                    emit_websocket_event(socketio, 'ticket_actualizado', data, 
-                        [ticket_room, 'supervisores'])
-                    emit_websocket_event(socketio, 'global_ticket_update', data, [''])
+                    # UNA sola emisión - global_tickets recibe todo
+                    emit_websocket_event(socketio, 'ticket_cerrado', data, None)
 
             elif nuevo_estado_lower == 'solicitud reapertura' and estado_actual == 'solucionado':
                 result, error = TicketEstadoService.cliente_solicitar_reapertura(ticket, user['id'])
                 if result:
                     data = TicketEstadoService.build_ticket_event_data(ticket, 'solicitud_reapertura')
-                    emit_websocket_event(socketio, 'solicitud_reapertura', data, 
-                        ['supervisores', 'administradores', ticket_room])
-                    emit_websocket_event(socketio, 'ticket_actualizado', data, 
-                        [ticket_room, 'supervisores'])
-                    emit_websocket_event(socketio, 'global_ticket_update', data, [''])
+                    # UNA sola emisión - global_tickets recibe todo
+                    emit_websocket_event(socketio, 'solicitud_reapertura', data, None)
 
             elif nuevo_estado_lower == 'reabierto' and estado_actual == 'cerrado':
                 result, error = TicketEstadoService.cliente_reabrir_ticket(ticket, user['id'])
                 if result:
                     data = TicketEstadoService.build_ticket_event_data(ticket, 'reabierto')
-                    emit_websocket_event(socketio, 'ticket_reabierto', data, 
-                        ['supervisores', 'administradores', ticket_room])
+                    # UNA sola emisión - global_tickets recibe todo
+                    emit_websocket_event(socketio, 'ticket_reabierto', data, None)
             else:
                 return jsonify({"message": "Transición de estado no válida para cliente"}), 400
 
@@ -92,38 +90,27 @@ def cambiar_estado_ticket(id):
                 result, error = TicketEstadoService.analista_iniciar_ticket(ticket, user['id'])
                 if result:
                     data = TicketEstadoService.build_ticket_event_data(ticket, 'en_proceso', user['id'], 'analista')
-                    emit_websocket_event(socketio, 'ticket_actualizado', data, 
-                        [ticket_room, 'supervisores', 'role_supervisor', 'administradores'])
-                    emit_websocket_event(socketio, 'ticket_estado_changed', data, [ticket_room])
-                    emit_websocket_event(socketio, 'global_ticket_update', data, [''])
+                    # UNA sola emisión - global_tickets recibe todo
+                    emit_websocket_event(socketio, 'ticket_iniciado', data, None)
 
             elif nuevo_estado_lower == 'solucionado' and estado_actual == 'en proceso':
                 result, error = TicketEstadoService.analista_solucionar_ticket(ticket, user['id'])
                 if result:
                     data = TicketEstadoService.build_ticket_event_data(ticket, 'solucionado', user['id'], 'analista')
-                    emit_websocket_event(socketio, 'ticket_solucionado', data, 
-                        [ticket_room, 'supervisores', 'role_supervisor', 'administradores'])
-                    emit_websocket_event(socketio, 'ticket_actualizado', data, 
-                        [ticket_room, 'role_supervisor'])
-                    emit_websocket_event(socketio, 'ticket_estado_changed', data, [ticket_room])
-                    emit_websocket_event(socketio, 'global_ticket_update', data, [''])
-                    if ticket.id_cliente:
-                        cliente_room = f'cliente_{ticket.id_cliente}'
-                        emit_websocket_event(socketio, 'ticket_solucionado', data, [cliente_room])
-                        emit_websocket_event(socketio, 'ticket_actualizado', data, [cliente_room])
+                    data['mensaje'] = 'El analista ha marcado el ticket como solucionado'
+                    # UNA sola emisión - global_tickets recibe todo
+                    emit_websocket_event(socketio, 'ticket_solucionado', data, None)
 
-            elif nuevo_estado_lower == 'en espera' and estado_actual in ['en espera', 'en proceso']:
+            elif nuevo_estado_lower == 'en espera' and estado_actual in ['en espera', 'en proceso', 'reabierto']:
                 result, error = TicketEstadoService.analista_escalar_ticket(ticket, user['id'])
                 if result:
-                    data = TicketEstadoService.build_ticket_event_data(ticket, 'escalado', user['id'], 'analista')
-                    emit_websocket_event(socketio, 'ticket_escalado', data, 
-                        ['supervisores', 'administradores', 'role_supervisor', ticket_room])
-                    emit_websocket_event(socketio, 'ticket_actualizado', data, 
-                        [ticket_room, 'supervisores', 'role_supervisor'])
-                    emit_websocket_event(socketio, 'ticket_estado_changed', data, [ticket_room])
-                    emit_websocket_event(socketio, 'global_ticket_update', data, [''])
-                    emit_websocket_event(socketio, 'nuevo_ticket_disponible', data, 
-                        ['supervisores', 'role_supervisor'])
+                    # IMPORTANTE: NO existe estado "escalado" - se mantiene en "en_espera"
+                    # El escalamiento se detecta por comentarios, no por estado
+                    data = TicketEstadoService.build_ticket_event_data(ticket, 'actualizado', user['id'], 'analista')
+                    data['mensaje'] = 'El analista ha escalado el ticket al supervisor'
+                    data['escalado'] = True  # Flag para indicar que fue escalado
+                    # UNA sola emisión - global_tickets recibe todo
+                    emit_websocket_event(socketio, 'ticket_escalado', data, None)
             else:
                 return jsonify({"message": "Transición de estado no válida para analista"}), 400
 
@@ -135,12 +122,8 @@ def cambiar_estado_ticket(id):
                     data = TicketEstadoService.build_ticket_event_data(
                         ticket, 'cerrado_por_supervisor', user['id'], 'supervisor', estado_actual
                     )
-                    emit_websocket_event(socketio, 'ticket_cerrado', data, 
-                        [ticket_room, 'supervisores', 'administradores'])
-                    emit_websocket_event(socketio, 'ticket_actualizado', data, 
-                        [ticket_room, 'supervisores'])
-                    emit_websocket_event(socketio, 'ticket_estado_changed', data, [ticket_room])
-                    emit_websocket_event(socketio, 'global_ticket_update', data, [''])
+                    # UNA sola emisión - global_tickets recibe todo
+                    emit_websocket_event(socketio, 'ticket_cerrado', data, None)
 
             elif nuevo_estado_lower == 'reabierto' and (estado_actual in ['cerrado', 'solucionado'] or estado_actual.startswith('cerrado')):
                 result, error = TicketEstadoService.supervisor_reabrir_ticket(ticket, user['id'])
@@ -148,16 +131,8 @@ def cambiar_estado_ticket(id):
                     data = TicketEstadoService.build_ticket_event_data(
                         ticket, 'reabierto_por_supervisor', user['id'], 'supervisor', estado_actual
                     )
-                    emit_websocket_event(socketio, 'ticket_reabierto', data, 
-                        [ticket_room, 'supervisores', 'administradores'])
-                    emit_websocket_event(socketio, 'ticket_actualizado', data, 
-                        [ticket_room, 'supervisores'])
-                    emit_websocket_event(socketio, 'ticket_estado_changed', data, [ticket_room])
-                    emit_websocket_event(socketio, 'global_ticket_update', data, [''])
-                    if ticket.id_cliente:
-                        cliente_room = f'cliente_{ticket.id_cliente}'
-                        emit_websocket_event(socketio, 'ticket_reabierto', data, [cliente_room])
-                        emit_websocket_event(socketio, 'ticket_actualizado', data, [cliente_room])
+                    # UNA sola emisión - global_tickets recibe todo
+                    emit_websocket_event(socketio, 'ticket_reabierto', data, None)
             else:
                 return jsonify({"message": "Transición de estado no válida para supervisor"}), 400
 
@@ -169,12 +144,12 @@ def cambiar_estado_ticket(id):
         if error:
             return jsonify({"message": error}), 400
 
-        # Emitir evento genérico de actualización
-        if socketio and result:
+        # Emitir evento genérico solo para administrador (otros roles ya emitieron evento específico)
+        if socketio and result and user['role'] == 'administrador':
             data = TicketEstadoService.build_ticket_event_data(ticket, 'estado_cambiado')
             data['nuevo_estado'] = nuevo_estado
             data['usuario'] = user['role']
-            emit_websocket_event(socketio, 'ticket_actualizado', data, [ticket_room])
+            emit_websocket_event(socketio, 'ticket_actualizado', data, None)
 
         return jsonify(ticket.serialize()), 200
 

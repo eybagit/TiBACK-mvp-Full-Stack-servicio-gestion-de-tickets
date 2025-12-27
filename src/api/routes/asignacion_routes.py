@@ -5,8 +5,9 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError
 
-from api.models import db, Asignacion
-from api.jwt_utils import require_role
+from api.models import db, Asignacion, Ticket
+from api.jwt_utils import require_role, get_user_from_token
+from api.routes.utils_routes import get_socketio
 
 asignacion_bp = Blueprint('asignaciones', __name__)
 
@@ -36,6 +37,15 @@ def create_asignacion():
         )
         db.session.add(asignacion)
         db.session.commit()
+        
+        # Emitir evento WebSocket a global_tickets
+        socketio = get_socketio()
+        if socketio:
+            ticket = db.session.get(Ticket, body["id_ticket"])
+            if ticket:
+                from api.utils.websocket_utils import emit_ticket_asignado
+                emit_ticket_asignado(ticket, body["id_analista"], es_reasignacion=False)
+        
         return jsonify(asignacion.serialize()), 201
     except IntegrityError:
         db.session.rollback()
@@ -62,13 +72,30 @@ def update_asignacion(id):
     if not asignacion:
         return jsonify({"message": "Asignación no encontrada"}), 404
     try:
+        # Detectar si cambia el analista para emitir reasignación
+        id_analista_anterior = asignacion.id_analista
+        cambio_analista = False
+        
         for field in ["id_ticket", "id_supervisor", "id_analista", "fecha_asignacion"]:
             if field in body:
                 value = body[field]
                 if field == "fecha_asignacion" and value:
                     value = datetime.fromisoformat(value)
+                if field == "id_analista" and value != id_analista_anterior:
+                    cambio_analista = True
                 setattr(asignacion, field, value)
+        
         db.session.commit()
+        
+        # Emitir WebSocket si cambió el analista
+        if cambio_analista:
+            socketio = get_socketio()
+            if socketio and asignacion.id_ticket:
+                ticket = db.session.get(Ticket, asignacion.id_ticket)
+                if ticket:
+                    from api.utils.websocket_utils import emit_ticket_asignado
+                    emit_ticket_asignado(ticket, asignacion.id_analista, es_reasignacion=True)
+        
         return jsonify(asignacion.serialize()), 200
     except IntegrityError:
         db.session.rollback()
@@ -85,8 +112,31 @@ def delete_asignacion(id):
     if not asignacion:
         return jsonify({"message": "Asignación no encontrada"}), 404
     try:
+        # Guardar info antes de eliminar para WebSocket
+        asignacion_info = {
+            'id': asignacion.id,
+            'id_ticket': asignacion.id_ticket,
+            'id_analista': asignacion.id_analista,
+            'id_supervisor': asignacion.id_supervisor
+        }
+        
         db.session.delete(asignacion)
         db.session.commit()
+        
+        # Emitir evento WebSocket a global_tickets
+        socketio = get_socketio()
+        if socketio:
+            user = get_user_from_token()
+            data = {
+                'asignacion_id': id,
+                'asignacion_info': asignacion_info,
+                'tipo': 'asignacion_eliminada',
+                'usuario': user['role'] if user else 'desconocido',
+                'timestamp': datetime.now().isoformat()
+            }
+            # SOLO global_tickets - TODOS escuchan TODO
+            socketio.emit('asignacion_eliminada', data, room='global_tickets')
+        
         return jsonify({"message": "Asignación eliminada"}), 200
     except Exception as e:
         db.session.rollback()

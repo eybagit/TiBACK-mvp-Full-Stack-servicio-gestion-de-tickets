@@ -1,15 +1,63 @@
 /**
- * WebSocket Actions - Acciones de WebSocket y sincronización
+ * @fileoverview WebSocket Actions - Acciones de WebSocket y sincronización
+ * 
+ * IMPORTANTE: Este archivo solo maneja conexión/desconexión y rooms.
+ * Los handlers de eventos van en los hooks de cada rol:
+ * - Supervisor: useWebSocketSync.js
+ * - Analista: useAnalistaWebSocket.js
+ * - Cliente: useClienteWebSocket.js
+ * 
+ * @module store/actions/websocketActions
  */
 
 import { io } from "socket.io-client";
+import { ReconnectionManager } from '../../utils/websocket-reconnect';
+import { wsDebugger } from '../../utils/websocket-debug';
+
+/**
+ * @typedef {Object} Socket
+ * @property {boolean} connected - Estado de conexión
+ * @property {Function} emit - Emitir evento
+ * @property {Function} on - Escuchar evento
+ * @property {Function} off - Dejar de escuchar evento
+ * @property {Function} disconnect - Desconectar
+ * @property {Function} removeAllListeners - Remover todos los listeners
+ */
+
+/**
+ * @typedef {Function} Dispatch
+ * @param {Object} action - Acción a dispatch
+ * @param {string} action.type - Tipo de acción
+ * @param {*} [action.payload] - Payload opcional
+ */
+
+/**
+ * @typedef {'supervisor' | 'analista' | 'cliente' | 'administrador'} UserRole
+ */
+
+/**
+ * Acciones de WebSocket para el sistema TiBack
+ * @namespace websocketActions
+ */
+// Gestor de reconexión (singleton)
+let reconnectionManager = null;
 
 export const websocketActions = {
-  // Conectar WebSocket
+  /**
+   * Conectar WebSocket al servidor
+   * @param {Dispatch} dispatch - Función dispatch del reducer
+   * @param {string} token - Token JWT de autenticación
+   * @returns {Socket|null} Socket conectado o null si falla
+   */
   connectWebSocket: (dispatch, token) => {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       if (!backendUrl) return null;
+
+      // Inicializar gestor de reconexión si no existe
+      if (!reconnectionManager) {
+        reconnectionManager = new ReconnectionManager(10);
+      }
 
       // Verificar si ya hay una conexión en progreso
       if (window.websocketConnecting) {
@@ -17,17 +65,11 @@ export const websocketActions = {
         return null;
       }
 
-      // Verificar rate limiting
-      const lastRetry = window.lastWebSocketRetry || 0;
-      const now = Date.now();
-      if (now - lastRetry < 5000) {
-        console.log("⏳ Esperando antes del siguiente intento de conexión...");
-        return null;
-      }
-      window.lastWebSocketRetry = now;
       window.websocketConnecting = true;
-
       dispatch({ type: "websocket_connecting" });
+
+      // Debug: Log inicio de conexión
+      wsDebugger.logConnection(backendUrl);
 
       const socket = io(backendUrl, {
         transports: ["polling"],
@@ -37,16 +79,48 @@ export const websocketActions = {
 
       socket.on("connect", () => {
         window.websocketConnecting = false;
-        console.log("🔌 WebSocket conectado exitosamente");
+        
+        // Debug: Log conexión exitosa
+        wsDebugger.logConnected();
+        
+        // Reset reconexión al conectar exitosamente
+        if (reconnectionManager) {
+          const wasReconnecting = reconnectionManager.getStatus().isReconnecting;
+          reconnectionManager.reset();
+          
+          if (wasReconnecting) {
+            wsDebugger.logReconnected(reconnectionManager.currentAttempt || 1);
+          }
+        }
+        
         dispatch({ type: "websocket_connected", payload: socket });
       });
 
       socket.on("disconnect", (reason) => {
         window.websocketConnecting = false;
-        if (reason !== "io client disconnect") {
-          console.warn("WebSocket desconectado:", reason);
-        }
+        
+        // Debug: Log desconexión
+        wsDebugger.logDisconnect(reason);
+        
         dispatch({ type: "websocket_disconnected" });
+        
+        // Reconexión automática (excepto si fue desconexión manual)
+        if (reason !== "io client disconnect") {
+          const reconnected = reconnectionManager.scheduleReconnect(
+            () => websocketActions.connectWebSocket(dispatch, token),
+            (attempt, delay) => {
+              wsDebugger.logReconnectAttempt(attempt, delay);
+              dispatch({ 
+                type: "websocket_reconnecting", 
+                payload: { attempt, delay } 
+              });
+            }
+          );
+          
+          if (!reconnected) {
+            wsDebugger.logReconnectFailed();
+          }
+        }
       });
 
       socket.on("connect_error", (error) => {
@@ -62,49 +136,15 @@ export const websocketActions = {
         }
       });
 
-      // Eventos de tickets
-      socket.on("nuevo_ticket", (data) => {
-        dispatch({ type: "websocket_notification", payload: data });
-        if (data.ticket) {
-          dispatch({ type: "tickets_upsert", payload: data.ticket });
-        }
-      });
+      // Debug: Log todos los eventos (solo dev)
+      if (import.meta.env.DEV) {
+        socket.onAny((eventName, ...args) => {
+          wsDebugger.logEvent(eventName, args[0]);
+        });
+      }
 
-      socket.on("ticket_actualizado", (data) => {
-        dispatch({ type: "websocket_notification", payload: data });
-        if (data.ticket) {
-          dispatch({ type: "tickets_upsert", payload: data.ticket });
-        }
-      });
-
-      socket.on("ticket_asignado", (data) => {
-        dispatch({ type: "websocket_notification", payload: data });
-        if (data.ticket) {
-          dispatch({ type: "tickets_upsert", payload: data.ticket });
-        }
-      });
-
-      socket.on("nuevo_comentario", (data) => {
-        dispatch({ type: "websocket_notification", payload: data });
-        if (data.comentario) {
-          dispatch({ type: "comentarios_add", payload: data.comentario });
-        }
-      });
-
-      socket.on("ticket_eliminado", (data) => {
-        dispatch({ type: "websocket_notification", payload: data });
-        dispatch({ type: "tickets_remove", payload: data.ticket_id });
-      });
-
-      socket.on("analista_creado", (data) => {
-        dispatch({ type: "websocket_notification", payload: data });
-        dispatch({ type: "analistas_add", payload: data.analista });
-      });
-
-      socket.on("analista_eliminado", (data) => {
-        dispatch({ type: "websocket_notification", payload: data });
-        dispatch({ type: "analistas_remove", payload: data.analista_id });
-      });
+      // NOTA: Los handlers de eventos van en los hooks de cada rol
+      // NO agregar handlers aquí para evitar duplicación
 
       return socket;
     } catch (error) {
@@ -115,66 +155,103 @@ export const websocketActions = {
     }
   },
 
-  // Desconectar WebSocket
+  /**
+   * Desconectar WebSocket del servidor
+   * @param {Dispatch} dispatch - Función dispatch del reducer
+   * @param {Socket} socket - Socket a desconectar
+   */
   disconnectWebSocket: (dispatch, socket) => {
     if (socket) {
+      // Cancelar reconexión automática al desconectar manualmente
+      if (reconnectionManager) {
+        reconnectionManager.cancel();
+      }
+      
       socket.removeAllListeners();
       socket.disconnect();
       dispatch({ type: "websocket_disconnected" });
     }
   },
 
-  // Unirse a room de ticket
+  /**
+   * Unirse a room específica de un ticket
+   * @param {Socket} socket - Socket conectado
+   * @param {number} ticketId - ID del ticket
+   */
   joinTicketRoom: (socket, ticketId) => {
     if (socket && ticketId) {
       socket.emit("join_ticket", { ticket_id: ticketId });
     }
   },
 
-  // Salir de room de ticket
+  /**
+   * Salir de room específica de un ticket
+   * @param {Socket} socket - Socket conectado
+   * @param {number} ticketId - ID del ticket
+   */
   leaveTicketRoom: (socket, ticketId) => {
     if (socket && ticketId) {
       socket.emit("leave_ticket", { ticket_id: ticketId });
     }
   },
 
-  // Unirse a room de rol
+  /**
+   * Unirse a la room global donde TODOS escuchan TODO
+   * @param {Socket} socket - Socket conectado
+   * @param {UserRole} role - Rol del usuario (para logging)
+   * @param {number} userId - ID del usuario (para logging)
+   */
   joinRoleRoom: (socket, role, userId) => {
     if (socket) {
-      if (role === "supervisor") {
-        socket.emit("join_room", "supervisores");
-      } else if (role === "administrador") {
-        socket.emit("join_room", "supervisores");
-        socket.emit("join_room", "administradores");
-      } else if (role === "analista") {
-        socket.emit("join_room", "analistas");
-        socket.emit("join_room", `analista_${userId}`);
-      } else if (role === "cliente") {
-        socket.emit("join_room", "clientes");
+      // SOLO global_tickets - TODOS escuchan TODO
+      // El frontend filtra con useMemo lo que necesita
+      socket.emit("join_room", "global_tickets");
+      
+      // Debug log (solo dev)
+      if (import.meta.env.DEV) {
+        console.log(`✅ [${role}:${userId}] Joined global_tickets - escuchando TODOS los eventos`);
       }
     }
   },
 
-  // Chat supervisor-analista
+  /**
+   * Unirse al chat supervisor-analista de un ticket
+   * @param {Socket} socket - Socket conectado
+   * @param {number} ticketId - ID del ticket
+   */
   joinChatSupervisorAnalista: (socket, ticketId) => {
     if (socket && ticketId) {
       socket.emit("join_chat_supervisor_analista", { ticket_id: ticketId });
     }
   },
 
+  /**
+   * Salir del chat supervisor-analista de un ticket
+   * @param {Socket} socket - Socket conectado
+   * @param {number} ticketId - ID del ticket
+   */
   leaveChatSupervisorAnalista: (socket, ticketId) => {
     if (socket && ticketId) {
       socket.emit("leave_chat_supervisor_analista", { ticket_id: ticketId });
     }
   },
 
-  // Chat analista-cliente
+  /**
+   * Unirse al chat analista-cliente de un ticket
+   * @param {Socket} socket - Socket conectado
+   * @param {number} ticketId - ID del ticket
+   */
   joinChatAnalistaCliente: (socket, ticketId) => {
     if (socket && ticketId) {
       socket.emit("join_chat_analista_cliente", { ticket_id: ticketId });
     }
   },
 
+  /**
+   * Salir del chat analista-cliente de un ticket
+   * @param {Socket} socket - Socket conectado
+   * @param {number} ticketId - ID del ticket
+   */
   leaveChatAnalistaCliente: (socket, ticketId) => {
     if (socket && ticketId) {
       socket.emit("leave_chat_analista_cliente", { ticket_id: ticketId });

@@ -1,28 +1,27 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import useGlobalReducer from "../../hooks/useGlobalReducer";
 
 export default function VerTicketCliente() {
     const { id } = useParams();
-    const { store } = useGlobalReducer();
-    const navigate = useNavigate();
-    const [ticket, setTicket] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+    const { store, dispatch } = useGlobalReducer();
+
+    // Usar crudSlice para loading/error
+    const loading = store.crud?.loading || false;
+    const error = store.crud?.error || null;
 
     useEffect(() => {
         // Buscar primero en el store
         const found = store.tickets?.find(t => String(t.id) === String(id));
         if (found) {
-            setTicket(found);
-            setLoading(false);
+            dispatch({ type: 'CRUD_SET_CURRENT_ITEM', payload: found });
             return;
         }
         // Si no está en el store, buscar en el backend
         const fetchTicket = async () => {
             try {
-                setLoading(true);
-                setError("");
+                dispatch({ type: 'CRUD_SET_LOADING', payload: true });
+                dispatch({ type: 'CRUD_SET_ERROR', payload: null });
                 const token = store.auth?.token;
                 const resp = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${id}`, {
                     headers: {
@@ -32,15 +31,24 @@ export default function VerTicketCliente() {
                 });
                 if (!resp.ok) throw new Error("No se pudo cargar el ticket");
                 const data = await resp.json();
-                setTicket(data);
+                dispatch({ type: 'CRUD_SET_CURRENT_ITEM', payload: data });
             } catch (err) {
-                setError("Ticket no encontrado o error de conexión.");
+                dispatch({ type: 'CRUD_SET_ERROR', payload: "Ticket no encontrado o error de conexión." });
             } finally {
-                setLoading(false);
+                dispatch({ type: 'CRUD_SET_LOADING', payload: false });
             }
         };
         fetchTicket();
-    }, [id, store.tickets, store.auth?.token]);
+    }, [id, store.tickets, store.auth?.token, dispatch]);
+
+    // Cleanup al desmontar
+    useEffect(() => {
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
+    }, [dispatch]);
+
+    const ticket = store.crud?.currentItem;
 
     if (loading) {
         return <div className="container py-4"><div>Cargando ticket...</div></div>;
@@ -49,7 +57,7 @@ export default function VerTicketCliente() {
         return (
             <div className="container py-4">
                 <div className="alert alert-warning">{error || "Ticket no encontrado."}</div>
-                <button className="btn btn-secondary" onClick={() => navigate(-1)}>Volver</button>
+                <Link to="/cliente" className="btn btn-secondary">Volver</Link>
             </div>
         );
     }
@@ -76,9 +84,9 @@ export default function VerTicketCliente() {
                     )}
                 </div>
             </div>
-            <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+            <Link to="/cliente" className="btn btn-secondary">
                 Volver
-            </button>
+            </Link>
         </div>
     );
 }

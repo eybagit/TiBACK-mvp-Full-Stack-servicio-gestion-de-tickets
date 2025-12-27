@@ -25,6 +25,7 @@ function SupervisorTicketsList({
     ticketsConRecomendaciones,
     getAvailableActions,
     asignarTicket,
+    reasignarTicket,
     setActiveView,
     changeView,
     navigate,
@@ -80,11 +81,12 @@ function SupervisorTicketsList({
                                             onChange={(e) => setFilterEstado(e.target.value)}
                                         >
                                             <option value="">Todos los estados</option>
-                                            <option value="activo">Activo</option>
-                                            <option value="en_progreso">En Progreso</option>
-                                            <option value="resuelto">Resuelto</option>
-                                            <option value="escalado">Escalado</option>
+                                            <option value="creado">Creado</option>
+                                            <option value="en_espera">En espera</option>
+                                            <option value="en_proceso">En proceso</option>
+                                            <option value="solucionado">Solucionado</option>
                                             <option value="cerrado">Cerrado</option>
+                                            <option value="reabierto">Reabierto</option>
                                         </select>
                                     </div>
                                 </li>
@@ -158,16 +160,19 @@ function SupervisorTicketsList({
                             <table className="table table-hover mb-0">
                                 <thead className="table-light">
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Ticket</th>
-                                        <th>Estado</th>
-                                        <th>Prioridad</th>
-                                        <th>Analista</th>
-                                        <th>Acciones</th>
+                                        <th className="text-center px-3">ID</th>
+                                        <th className="text-center px-4">Título</th>
+                                        <th className="text-center px-3">Estado</th>
+                                        <th className="text-center px-3">Prioridad</th>
+                                        <th className="text-center px-3">Analista</th>
+                                        <th className="text-center px-3">Fecha</th>
+                                        <th className="text-center px-3">Cliente</th>
+                                        <th className="text-center px-4">Acciones</th>
+                                        <th className="text-center px-2 th-expand">Expandir</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredTickets.map((ticket) => (
+                                    {Array.isArray(filteredTickets) && filteredTickets.map((ticket) => (
                                         <TicketRow
                                             key={ticket.id}
                                             ticket={ticket}
@@ -179,6 +184,7 @@ function SupervisorTicketsList({
                                             ticketsConRecomendaciones={ticketsConRecomendaciones}
                                             getAvailableActions={getAvailableActions}
                                             asignarTicket={asignarTicket}
+                                            reasignarTicket={reasignarTicket}
                                             analistasCombinados={analistasCombinados}
                                             setActiveView={setActiveView}
                                             changeView={changeView}

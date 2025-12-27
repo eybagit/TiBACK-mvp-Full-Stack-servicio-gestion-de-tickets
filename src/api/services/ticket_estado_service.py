@@ -230,9 +230,13 @@ class TicketEstadoService:
     # ==================== HELPERS PARA WEBSOCKET ====================
     @staticmethod
     def build_ticket_event_data(ticket, tipo, user_id=None, user_role=None, estado_anterior=None):
-        """Construir datos para evento WebSocket"""
+        """
+        Construir datos para evento WebSocket.
+        SIEMPRE incluye ticket completo para mantener consistencia.
+        """
         data = {
             'ticket_id': ticket.id,
+            'ticket': ticket.serialize(),  # SIEMPRE incluir ticket completo
             'ticket_estado': ticket.estado,
             'ticket_titulo': ticket.titulo,
             'ticket_prioridad': ticket.prioridad,

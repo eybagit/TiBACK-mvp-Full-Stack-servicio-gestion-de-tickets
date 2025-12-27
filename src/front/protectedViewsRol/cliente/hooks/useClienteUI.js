@@ -1,60 +1,44 @@
-import { useState } from 'react';
-
 /**
  * useClienteUI - Hook para manejar el estado de la interfaz de usuario
- * Incluye: sidebar, tema, búsqueda, filtros, vistas
+ * Refactorizado para usar el store global (clienteSlice)
+ * NO useState - arquitectura tiback-hello
  */
+
+import useGlobalReducer from '../../../hooks/useGlobalReducer';
+
 function useClienteUI() {
-    // Estado del sidebar
-    const [sidebarHidden, setSidebarHidden] = useState(false);
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const { store, dispatch } = useGlobalReducer();
     
-    // Estado de vista activa
-    const [activeView, setActiveView] = useState('dashboard');
-    const [selectedTicketId, setSelectedTicketId] = useState(null);
+    // Acceso al estado del cliente desde el store global
+    const clientePage = store.clientePage || {};
     
-    // Estado del dropdown de usuario
-    const [showUserDropdown, setShowUserDropdown] = useState(false);
-    
-    // Estado del tema
-    const [isDarkMode, setIsDarkMode] = useState(false);
-    
-    // Estado de búsqueda
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [showSearchResults, setShowSearchResults] = useState(false);
-    
-    // Estado de filtros
-    const [filterEstado, setFilterEstado] = useState('');
-    const [filterPrioridad, setFilterPrioridad] = useState('');
-    const [filterAsignado, setFilterAsignado] = useState('');
-    const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-    
-    // Estado de tickets expandidos
-    const [expandedTickets, setExpandedTickets] = useState(new Set());
+    // Estados del store
+    const sidebarHidden = clientePage.sidebarHidden || false;
+    const sidebarCollapsed = clientePage.sidebarCollapsed || false;
+    const activeView = clientePage.activeView || 'dashboard';
+    const selectedTicketId = clientePage.selectedTicketId || null;
+    const showUserDropdown = clientePage.showUserDropdown || false;
+    const isDarkMode = clientePage.isDarkMode || false;
+    const searchQuery = clientePage.searchQuery || '';
+    const searchResults = clientePage.searchResults || [];
+    const showSearchResults = clientePage.showSearchResults || false;
+    const filterEstado = clientePage.filterEstado || '';
+    const filterPrioridad = clientePage.filterPrioridad || '';
+    const filterAsignado = clientePage.filterAsignado || '';
+    const showFilterDropdown = clientePage.showFilterDropdown || false;
+    const expandedTickets = clientePage.expandedTickets || [];
     
     // Función para alternar sidebar
-    const toggleSidebar = () => {
-        setSidebarHidden(!sidebarHidden);
-    };
+    const toggleSidebar = () => dispatch({ type: 'CLIENTE_TOGGLE_SIDEBAR' });
     
     // Función para cambiar vista
-    const changeView = (view) => {
-        setActiveView(view);
-        if (view.startsWith('ticket-') || view.startsWith('comentarios-') || 
-            view.startsWith('chat-') || view.startsWith('recomendacion-') || 
-            view.startsWith('identificar-')) {
-            const ticketId = parseInt(view.split('-')[1]);
-            setSelectedTicketId(ticketId);
-        }
-    };
+    const changeView = (view) => dispatch({ type: 'CLIENTE_SET_ACTIVE_VIEW', payload: view });
     
     // Función para buscar tickets por título
     const handleSearch = (query, tickets) => {
-        setSearchQuery(query);
+        dispatch({ type: 'CLIENTE_SET_SEARCH_QUERY', payload: query });
         if (query.trim() === '') {
-            setSearchResults([]);
-            setShowSearchResults(false);
+            dispatch({ type: 'CLIENTE_CLOSE_SEARCH_RESULTS' });
             return;
         }
         const results = tickets.filter(ticket =>
@@ -62,53 +46,32 @@ function useClienteUI() {
             ticket.descripcion.toLowerCase().includes(query.toLowerCase()) ||
             ticket.id.toString().includes(query)
         );
-        setSearchResults(results);
-        setShowSearchResults(results.length > 0);
+        dispatch({ type: 'CLIENTE_SET_SEARCH_RESULTS', payload: results });
     };
     
     // Función para seleccionar un ticket de la búsqueda
     const selectTicketFromSearch = (ticket) => {
-        setSelectedTicketId(ticket.id);
-        setActiveView(`ticket-${ticket.id}`);
-        setShowSearchResults(false);
-        setSearchQuery('');
+        dispatch({ type: 'CLIENTE_SELECT_TICKET_FROM_SEARCH', payload: ticket.id });
     };
     
     // Función para cerrar resultados de búsqueda
-    const closeSearchResults = () => {
-        setShowSearchResults(false);
-    };
+    const closeSearchResults = () => dispatch({ type: 'CLIENTE_CLOSE_SEARCH_RESULTS' });
     
     // Función para alternar tema
     const toggleTheme = () => {
-        setIsDarkMode(!isDarkMode);
+        dispatch({ type: 'CLIENTE_TOGGLE_THEME' });
         document.body.classList.toggle('dark-theme');
     };
     
     // Función para aplicar filtros
-    const applyFilters = () => {
-        setShowFilterDropdown(false);
-    };
+    const applyFilters = () => dispatch({ type: 'CLIENTE_SET_SHOW_FILTER_DROPDOWN', payload: false });
     
     // Función para limpiar filtros
-    const clearFilters = () => {
-        setFilterEstado('');
-        setFilterPrioridad('');
-        setFilterAsignado('');
-        setShowFilterDropdown(false);
-    };
+    const clearFilters = () => dispatch({ type: 'CLIENTE_CLEAR_FILTERS' });
     
     // Función para alternar expansión de ticket
     const toggleTicketExpansion = (ticketId) => {
-        setExpandedTickets(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(ticketId)) {
-                newSet.delete(ticketId);
-            } else {
-                newSet.add(ticketId);
-            }
-            return newSet;
-        });
+        dispatch({ type: 'CLIENTE_TOGGLE_EXPANDED_TICKET', payload: ticketId });
     };
     
     // Función para obtener tickets filtrados
@@ -125,6 +88,22 @@ function useClienteUI() {
             return estadoMatch && prioridadMatch && asignadoMatch;
         });
     };
+
+    // Setters para compatibilidad
+    const setActiveView = (view) => dispatch({ type: 'CLIENTE_SET_ACTIVE_VIEW', payload: view });
+    const setSelectedTicketId = (id) => dispatch({ type: 'CLIENTE_SET_SELECTED_TICKET_ID', payload: id });
+    const setSidebarHidden = (v) => dispatch({ type: 'CLIENTE_SET_SIDEBAR_HIDDEN', payload: v });
+    const setSidebarCollapsed = (v) => dispatch({ type: 'CLIENTE_SET_SIDEBAR_COLLAPSED', payload: v });
+    const setShowUserDropdown = (v) => dispatch({ type: 'CLIENTE_SET_SHOW_USER_DROPDOWN', payload: v });
+    const setIsDarkMode = (v) => dispatch({ type: 'CLIENTE_SET_DARK_MODE', payload: v });
+    const setSearchQuery = (q) => dispatch({ type: 'CLIENTE_SET_SEARCH_QUERY', payload: q });
+    const setSearchResults = (r) => dispatch({ type: 'CLIENTE_SET_SEARCH_RESULTS', payload: r });
+    const setShowSearchResults = (v) => dispatch({ type: 'CLIENTE_SET_SHOW_SEARCH_RESULTS', payload: v });
+    const setFilterEstado = (v) => dispatch({ type: 'CLIENTE_SET_FILTER_ESTADO', payload: v });
+    const setFilterPrioridad = (v) => dispatch({ type: 'CLIENTE_SET_FILTER_PRIORIDAD', payload: v });
+    const setFilterAsignado = (v) => dispatch({ type: 'CLIENTE_SET_FILTER_ASIGNADO', payload: v });
+    const setShowFilterDropdown = (v) => dispatch({ type: 'CLIENTE_TOGGLE_FILTER_DROPDOWN' });
+    const setExpandedTickets = (v) => {}; // No direct set, use toggle
 
     return {
         // Sidebar
@@ -157,8 +136,8 @@ function useClienteUI() {
         showFilterDropdown, setShowFilterDropdown,
         applyFilters, clearFilters,
         
-        // Tickets expandidos
-        expandedTickets, setExpandedTickets,
+        // Tickets expandidos (convertir a Set para compatibilidad)
+        expandedTickets: new Set(expandedTickets), setExpandedTickets,
         toggleTicketExpansion,
         getFilteredTickets
     };

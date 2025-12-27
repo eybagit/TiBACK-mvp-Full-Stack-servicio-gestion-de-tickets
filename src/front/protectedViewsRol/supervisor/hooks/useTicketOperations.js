@@ -1,4 +1,5 @@
 import { tokenUtils } from '../../../store';
+import { fueEscaladoPorAnalista } from '../../../utils/ticketHelpers';
 
 /**
  * useTicketOperations - Operaciones CRUD sobre tickets
@@ -71,12 +72,13 @@ export function useTicketOperations({
                 }, ...prev]);
             }
 
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/cerrar`, {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ estado: 'cerrado' })
             });
 
             if (!response.ok) {
@@ -100,15 +102,16 @@ export function useTicketOperations({
     };
 
     // Función para reabrir ticket
-    const reabrirTicket = async (ticketId) => {
+    const reabrirTicket = async (ticketId) =>{
         try {
             const token = store.auth.token;
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/reabrir`, {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ estado: 'reabierto' })
             });
 
             if (response.ok) {
@@ -156,10 +159,23 @@ export function useTicketOperations({
     };
 
     // Función para determinar color del semáforo del ticket
-    const getSemaforoColor = (ticket, allTickets) => {
-        if (ticket.estado === 'escalado') return 'table-danger';
-        if (ticket.prioridad === 'critica' || ticket.prioridad === 'alta') return 'table-warning';
-        return 'table-success';
+    const getSemaforoColor = (ticket, tickets) => {
+        const estado = ticket.estado?.toLowerCase();
+        const prioridad = ticket.prioridad?.toLowerCase();
+        
+        // SOLO 6 estados oficiales: creado, en_espera, en_proceso, solucionado, cerrado, reabierto
+        // Prioridad alta siempre es rojo
+        if (prioridad === 'alta') return 'table-danger';
+        
+        // Tickets escalados (detectados por comentarios) son amarillos
+        if (fueEscaladoPorAnalista(ticket)) return 'table-warning';
+        
+        // Estados normales
+        if (estado === 'solucionado') return 'table-success';
+        if (estado === 'en_proceso' || estado === 'en proceso') return 'table-info';
+        if (estado === 'cerrado') return 'table-secondary';
+        
+        return '';
     };
 
     // Verificar si ticket tiene solicitud de reapertura
@@ -170,14 +186,7 @@ export function useTicketOperations({
                ));
     };
 
-    // Verificar si fue escalado por analista
-    const fueEscaladoPorAnalista = (ticket) => {
-        if (!ticket.comentarios || !Array.isArray(ticket.comentarios)) return false;
-        const tieneComentarioEscalacion = ticket.comentarios.some(c =>
-            c.texto && (c.texto.toLowerCase().includes('escalado') || c.texto.toLowerCase().includes('escalación'))
-        );
-        return ticket.estado === 'en_espera' && tieneComentarioEscalacion && !ticket.asignacion_actual?.analista;
-    };
+    // fueEscaladoPorAnalista importado de ticketHelpers (centralizado)
 
     // Función para determinar acciones disponibles
     const getAvailableActions = (ticket) => {
@@ -203,7 +212,6 @@ export function useTicketOperations({
                 break;
             case 'asignado':
             case 'en_progreso':
-            case 'escalado':
                 actions.canClose = true;
                 actions.canEscalate = true;
                 break;

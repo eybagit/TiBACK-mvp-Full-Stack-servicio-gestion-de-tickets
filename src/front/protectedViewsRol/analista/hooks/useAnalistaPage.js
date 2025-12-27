@@ -1,16 +1,25 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+/**
+ * useAnalistaPage - Hook principal orquestador del analista
+ * 
+ * REFACTORIZADO: Arquitectura tiback-hello
+ * - Eliminados todos los useState
+ * - Eliminado useNavigate
+ * - Usa store.analista como fuente de verdad
+ * - dispatch para modificar estado
+ */
+
+import { useEffect } from 'react';
 import useGlobalReducer from '../../../hooks/useGlobalReducer';
 import { useAnalistaData } from './useAnalistaData';
 import { useAnalistaTickets } from './useAnalistaTickets';
 import { useAnalistaWebSocket } from './useAnalistaWebSocket';
+import { analistaActions } from '../../../store';
 
 /**
- * useAnalistaPage - Hook principal orquestador del analista
+ * useAnalistaPage - Hook principal del analista
  * Centraliza toda la lógica de AnalistaPage para mantener el componente < 500 líneas
  */
 export function useAnalistaPage() {
-    const navigate = useNavigate();
     const globalReducer = useGlobalReducer();
     const { 
         store, dispatch, logout,
@@ -21,31 +30,36 @@ export function useAnalistaPage() {
         joinChatAnalistaCliente, joinChatSupervisorAnalista
     } = globalReducer;
 
-    // Estados UI
-    const [sidebarHidden, setSidebarHidden] = useState(false);
-    const [activeView, setActiveView] = useState('dashboard');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [showSearchResults, setShowSearchResults] = useState(false);
-    const [showUserDropdown, setShowUserDropdown] = useState(false);
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    // ==============================
+    // LEER DEL STORE (en lugar de useState)
+    // ==============================
+    const {
+        sidebarHidden,
+        activeView,
+        searchQuery,
+        searchResults,
+        showSearchResults,
+        showUserDropdown,
+        isDarkMode
+    } = store.analista;
 
     // Hook de datos
     const dataHook = useAnalistaData({ store, dispatch });
     const {
         tickets, setTickets,
-        loading, error, setError,
+        loading, error,
         ticketsSolicitudReapertura, setTicketsSolicitudReapertura,
         expandedTickets, toggleTicketExpansion,
         modalTicketId, setModalTicketId,
         userData, showInfoForm, setShowInfoForm,
         updatingInfo, infoData, setInfoData,
-        actualizarTickets, handleInfoChange, updateInfo
+        actualizarTickets, handleInfoChange, updateInfo,
+        setError
     } = dataHook;
 
     // Hook de operaciones de tickets
     const ticketsHook = useAnalistaTickets({
-        store, setError, actualizarTickets, emitCriticalTicketAction
+        store, dispatch, setError, actualizarTickets, emitCriticalTicketAction
     });
     const { iniciarTrabajo, marcarComoResuelto, escalarTicket, getEstadoColor } = ticketsHook;
 
@@ -53,37 +67,34 @@ export function useAnalistaPage() {
     useAnalistaWebSocket({
         store, connectWebSocket, disconnectWebSocket,
         joinRoom, joinTicketRoom, joinCriticalRooms, joinAllCriticalRooms,
-        tickets, setTickets, setTicketsSolicitudReapertura, actualizarTickets
+        tickets, setTickets, setTicketsSolicitudReapertura, actualizarTickets,
+        sincronizarSilenciosamente: dataHook.sincronizarSilenciosamente
     });
 
-    // Funciones UI
-    const toggleSidebar = () => setSidebarHidden(!sidebarHidden);
+    // ==============================
+    // FUNCIONES UI (dispatch)
+    // ==============================
+    const toggleSidebar = () => dispatch({ type: 'ANALISTA_TOGGLE_SIDEBAR' });
+    const setActiveView = (view) => dispatch({ type: 'ANALISTA_SET_ACTIVE_VIEW', payload: view });
+    const setSearchQuery = (value) => dispatch({ type: 'ANALISTA_SET_SEARCH_QUERY', payload: value });
+    const setSearchResults = (value) => dispatch({ type: 'ANALISTA_SET_SEARCH_RESULTS', payload: value });
+    const setShowSearchResults = (value) => dispatch({ type: 'ANALISTA_SET_SHOW_SEARCH_RESULTS', payload: value });
+    const setShowUserDropdown = (value) => dispatch({ type: 'ANALISTA_SET_SHOW_USER_DROPDOWN', payload: value });
     
     const toggleTheme = () => {
-        setIsDarkMode(!isDarkMode);
-        document.body.classList.toggle('dark-theme');
+        dispatch({ type: 'ANALISTA_TOGGLE_DARK_MODE' });
     };
 
     const handleSearch = (query) => {
-        setSearchQuery(query);
-        if (query.trim() === '') {
-            setSearchResults([]);
-            setShowSearchResults(false);
-            return;
-        }
-        const filtered = tickets.filter(ticket =>
-            ticket.titulo.toLowerCase().includes(query.toLowerCase()) ||
-            ticket.descripcion.toLowerCase().includes(query.toLowerCase())
-        );
-        setSearchResults(filtered);
-        setShowSearchResults(filtered.length > 0);
+        analistaActions.handleSearch(dispatch, query, tickets);
     };
 
-    const closeSearchResults = () => setShowSearchResults(false);
+    const closeSearchResults = () => {
+        dispatch({ type: 'ANALISTA_CLEAR_SEARCH' });
+    };
 
     const selectTicketFromSearch = (ticket) => {
-        setActiveView(`ticket-${ticket.id}`);
-        closeSearchResults();
+        analistaActions.selectTicketFromSearch(dispatch, ticket);
     };
 
     // Funciones para abrir vistas
@@ -125,19 +136,23 @@ export function useAnalistaPage() {
         setActiveView(`ticket-${ticketId}`);
     };
 
+    // ==============================
+    // EFFECTS
+    // ==============================
+
     // Click outside handlers
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (showUserDropdown && !event.target.closest('.dropdown')) {
-                setShowUserDropdown(false);
+                dispatch({ type: 'ANALISTA_SET_SHOW_USER_DROPDOWN', payload: false });
             }
             if (showSearchResults && !event.target.closest('.hyper-search')) {
-                setShowSearchResults(false);
+                dispatch({ type: 'ANALISTA_SET_SHOW_SEARCH_RESULTS', payload: false });
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [showUserDropdown, showSearchResults]);
+    }, [showUserDropdown, showSearchResults, dispatch]);
 
     // Aplicar tema
     useEffect(() => {
@@ -145,18 +160,21 @@ export function useAnalistaPage() {
         else document.body.classList.remove('dark-theme');
     }, [isDarkMode]);
 
+    // ==============================
+    // RETORNO (misma interfaz que antes)
+    // ==============================
     return {
-        // Core
-        store, navigate, logout,
-        // Estados UI
+        // Core (NO navigate - usar Link declarativo)
+        store, logout,
+        // Estados UI (del store)
         sidebarHidden, activeView, setActiveView,
         searchQuery, setSearchQuery,
         searchResults, setSearchResults,
         showSearchResults, setShowSearchResults,
         showUserDropdown, setShowUserDropdown,
         isDarkMode,
-        // Estados datos
-        tickets, loading, error, setError: dataHook.setError,
+        // Estados datos (del dataHook)
+        tickets, loading, error, setError,
         ticketsSolicitudReapertura, expandedTickets,
         modalTicketId, setModalTicketId,
         userData, showInfoForm, setShowInfoForm,

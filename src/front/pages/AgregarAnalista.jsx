@@ -1,20 +1,14 @@
 // Import necessary hooks and components from react-router-dom and other libraries.
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, Navigate } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const AgregarAnalista = () => {
-    const { store, dispatch } = useGlobalReducer(); 
-    const navigate = useNavigate();
+    const { store, dispatch } = useGlobalReducer();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
-    const [nuevoAnalista, setNuevoAnalista] = useState({
-        nombre: "",
-        apellido: "",
-        email: "",
-        contraseña_hash: "",
-        especialidad: "",
-    });
+    // Estado del store para navegación después de crear
+    const shouldRedirect = store.crud?.formSuccess;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -25,30 +19,39 @@ export const AgregarAnalista = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
-    const limpiarFormulario = () => {
-        setNuevoAnalista({
-            nombre: "",
-            apellido: "",
-            email: "",
-            contraseña_hash: "",
-            especialidad: "",
-        });
-    };
+    // Limpiar estado al desmontar
+    useEffect(() => {
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
+    }, []);
 
-    const crearAnalista = () => {
+    const crearAnalista = (e) => {
+        e.preventDefault();
+
+        // Usar FormData para obtener valores del formulario
+        const formData = new FormData(e.target);
+        const nuevoAnalista = {
+            nombre: formData.get('nombre'),
+            apellido: formData.get('apellido'),
+            email: formData.get('email'),
+            contraseña_hash: formData.get('contraseña_hash'),
+            especialidad: formData.get('especialidad')
+        };
+
         // Validación básica
         if (!nuevoAnalista.nombre || !nuevoAnalista.apellido || !nuevoAnalista.email || !nuevoAnalista.especialidad) {
             setError("Los campos nombre, apellido, especialidad e email son obligatorios");
@@ -56,20 +59,25 @@ export const AgregarAnalista = () => {
         }
 
         setLoading(true);
+        dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: true });
+
         fetchJson(`${API}/analistas`, {
             method: "POST",
             body: JSON.stringify(nuevoAnalista)
         }).then(({ ok, data }) => {
             if (!ok) throw new Error(data.message);
             dispatch({ type: "analistas_add", payload: data });
-            limpiarFormulario();
-            navigate('/analistas'); 
-        }).catch(setError).finally(() => setLoading(false));
+            dispatch({ type: 'CRUD_SET_FORM_SUCCESS', payload: true });
+        }).catch(err => {
+            setError(err);
+            dispatch({ type: 'CRUD_SET_FORM_SUBMITTING', payload: false });
+        }).finally(() => setLoading(false));
     };
 
-    const cancelar = () => {
-        navigate('/analistas');
-    };
+    // Navegación declarativa después de crear
+    if (shouldRedirect) {
+        return <Navigate to="/analistas" replace />;
+    }
 
     return (
         <div className="container py-4">
@@ -86,16 +94,15 @@ export const AgregarAnalista = () => {
                             {store.api.error && (
                                 <div className="alert alert-danger py-2">{String(store.api.error)}</div>
                             )}
-                            <form onSubmit={(e) => { e.preventDefault(); crearAnalista(); }}>
+                            <form onSubmit={crearAnalista}>
                                 <div className="row g-3">
                                     <div className="col-md-6">
                                         <label className="form-label">Nombre *</label>
                                         <input
                                             type="text"
+                                            name="nombre"
                                             className="form-control"
                                             placeholder="Ingrese el nombre"
-                                            value={nuevoAnalista.nombre}
-                                            onChange={e => setNuevoAnalista(s => ({ ...s, nombre: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -103,10 +110,9 @@ export const AgregarAnalista = () => {
                                         <label className="form-label">Apellido *</label>
                                         <input
                                             type="text"
+                                            name="apellido"
                                             className="form-control"
                                             placeholder="Ingrese el apellido"
-                                            value={nuevoAnalista.apellido}
-                                            onChange={e => setNuevoAnalista(s => ({ ...s, apellido: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -114,10 +120,9 @@ export const AgregarAnalista = () => {
                                         <label className="form-label">Email *</label>
                                         <input
                                             type="email"
+                                            name="email"
                                             className="form-control"
                                             placeholder="Ingrese el email"
-                                            value={nuevoAnalista.email}
-                                            onChange={e => setNuevoAnalista(s => ({ ...s, email: e.target.value }))}
                                             required
                                         />
                                     </div>
@@ -125,38 +130,35 @@ export const AgregarAnalista = () => {
                                         <label className="form-label">Contraseña</label>
                                         <input
                                             type="password"
+                                            name="contraseña_hash"
                                             className="form-control"
                                             placeholder="Ingrese la contraseña"
-                                            value={nuevoAnalista.contraseña_hash}
-                                            onChange={e => setNuevoAnalista(s => ({ ...s, contraseña_hash: e.target.value }))}
                                         />
                                     </div>
                                     <div className="col-12">
-                                        <label className="form-label">Especialidad</label>
+                                        <label className="form-label">Especialidad *</label>
                                         <input
                                             type="text"
+                                            name="especialidad"
                                             className="form-control"
                                             placeholder="Ingrese la especialidad"
-                                            value={nuevoAnalista.especialidad}
-                                            onChange={e => setNuevoAnalista(s => ({ ...s, especialidad: e.target.value }))}
+                                            required
                                         />
                                     </div>
                                 </div>
 
                                 <div className="d-flex gap-2 mt-4 justify-content-end">
-                                    <button
-                                        type="button"
+                                    <Link
+                                        to="/analistas"
                                         className="btn btn-secondary"
-                                        onClick={cancelar}
-                                        disabled={store.api.loading}
                                     >
                                         <i className="fas fa-times me-1"></i>
                                         Cancelar
-                                    </button>
+                                    </Link>
                                     <button
                                         type="submit"
                                         className="btn btn-primary"
-                                        disabled={store.api.loading}
+                                        disabled={store.api.loading || store.crud?.formSubmitting}
                                     >
                                         <i className="fas fa-save me-1"></i>
                                         {store.api.loading ? 'Guardando...' : 'Guardar Analista'}

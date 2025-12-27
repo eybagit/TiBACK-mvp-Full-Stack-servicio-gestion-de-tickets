@@ -1,19 +1,28 @@
-import { useState, useEffect } from 'react';
-import { tokenUtils } from '../../../store';
-
 /**
  * useClienteProfile - Hook para manejar el perfil del cliente
- * Incluye: datos del usuario, actualización de información, imagen de perfil
+ * Refactorizado para usar el store global (clienteSlice)
+ * NO useState - arquitectura tiback-hello
  */
-function useClienteProfile(store, dispatch) {
-    // Estados del usuario
-    const [userData, setUserData] = useState(null);
-    const [clienteImageUrl, setClienteImageUrl] = useState('');
-    const [showInfoForm, setShowInfoForm] = useState(false);
-    const [updatingInfo, setUpdatingInfo] = useState(false);
+
+import { tokenUtils } from '../../../store';
+import useGlobalReducer from '../../../hooks/useGlobalReducer';
+
+function useClienteProfile(passedStore, passedDispatch) {
+    const { store: globalStore, dispatch: globalDispatch } = useGlobalReducer();
     
-    // Estado del formulario de información
-    const [infoData, setInfoData] = useState({
+    // Usar store y dispatch pasados o globales
+    const store = passedStore || globalStore;
+    const dispatch = passedDispatch || globalDispatch;
+    
+    // Acceso al estado del cliente desde el store global
+    const clientePage = store.clientePage || {};
+    
+    // Estados del store
+    const userData = clientePage.userData || null;
+    const clienteImageUrl = clientePage.clienteImageUrl || '';
+    const showInfoForm = clientePage.showInfoForm || false;
+    const updatingInfo = clientePage.updatingInfo || false;
+    const infoData = clientePage.infoData || {
         nombre: '',
         apellido: '',
         email: '',
@@ -23,12 +32,15 @@ function useClienteProfile(store, dispatch) {
         lng: null,
         password: '',
         confirmPassword: ''
-    });
+    };
+
+    // Helpers
+    const setLoading = (v) => dispatch({ type: 'CLIENTE_SET_LOADING', payload: v });
 
     // Cargar datos del usuario
-    const cargarDatosUsuario = async (setLoading) => {
+    const cargarDatosUsuario = async (setLoadingFn) => {
         try {
-            setLoading(true);
+            (setLoadingFn || setLoading)(true);
             const token = store.auth.token;
             const userId = tokenUtils.getUserId(token);
 
@@ -41,30 +53,33 @@ function useClienteProfile(store, dispatch) {
 
             if (userResponse.ok) {
                 const data = await userResponse.json();
-                setUserData(data);
+                dispatch({ type: 'CLIENTE_SET_USER_DATA', payload: data });
 
                 dispatch({
                     type: 'SET_USER',
                     payload: data
                 });
 
-                setInfoData({
-                    nombre: data.nombre === 'Pendiente' ? '' : data.nombre || '',
-                    apellido: data.apellido === 'Pendiente' ? '' : data.apellido || '',
-                    email: data.email || '',
-                    telefono: data.telefono === '0000000000' ? '' : data.telefono || '',
-                    direccion: data.direccion === 'Pendiente' ? '' : data.direccion || '',
-                    lat: data.latitude || null,
-                    lng: data.longitude || null,
-                    password: '',
-                    confirmPassword: ''
+                dispatch({
+                    type: 'CLIENTE_SET_INFO_DATA',
+                    payload: {
+                        nombre: data.nombre === 'Pendiente' ? '' : data.nombre || '',
+                        apellido: data.apellido === 'Pendiente' ? '' : data.apellido || '',
+                        email: data.email || '',
+                        telefono: data.telefono === '0000000000' ? '' : data.telefono || '',
+                        direccion: data.direccion === 'Pendiente' ? '' : data.direccion || '',
+                        lat: data.latitude || null,
+                        lng: data.longitude || null,
+                        password: '',
+                        confirmPassword: ''
+                    }
                 });
-                setClienteImageUrl(data.url_imagen || '');
+                dispatch({ type: 'CLIENTE_SET_CLIENTE_IMAGE_URL', payload: data.url_imagen || '' });
             }
         } catch (err) {
             console.error('Error al cargar datos del usuario:', err);
         } finally {
-            setLoading(false);
+            (setLoadingFn || setLoading)(false);
         }
     };
 
@@ -75,7 +90,7 @@ function useClienteProfile(store, dispatch) {
             return;
         }
 
-        setUpdatingInfo(true);
+        dispatch({ type: 'CLIENTE_SET_UPDATING_INFO', payload: true });
         try {
             const token = store.auth.token;
             const userId = tokenUtils.getUserId(token);
@@ -108,65 +123,52 @@ function useClienteProfile(store, dispatch) {
             }
 
             const updatedData = await response.json();
-            setUserData(updatedData);
+            dispatch({ type: 'CLIENTE_SET_USER_DATA', payload: updatedData });
             dispatch({
                 type: 'SET_USER',
                 payload: updatedData
             });
 
-            setInfoData(prev => ({
-                ...prev,
-                password: '',
-                confirmPassword: ''
-            }));
+            dispatch({ type: 'CLIENTE_RESET_PASSWORD_FIELDS' });
 
             alert('Información actualizada correctamente');
         } catch (err) {
             console.error('Error al actualizar información:', err);
             alert('Error al actualizar información');
         } finally {
-            setUpdatingInfo(false);
+            dispatch({ type: 'CLIENTE_SET_UPDATING_INFO', payload: false });
         }
     };
 
     // Función para manejar cambios en el formulario
     const handleInfoChange = (e) => {
         const { name, value } = e.target;
-        setInfoData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        dispatch({ type: 'CLIENTE_UPDATE_INFO_FIELD', payload: { name, value } });
     };
 
     // Función para manejar cambios de ubicación
     const handleLocationChange = (location) => {
-        setInfoData(prev => ({
-            ...prev,
-            direccion: location.address || prev.direccion,
-            lat: location.lat,
-            lng: location.lng
-        }));
+        dispatch({ type: 'CLIENTE_SET_LOCATION', payload: location });
     };
 
     // Funciones para imagen del cliente
     const handleClienteImageUpload = (imageUrl) => {
-        setClienteImageUrl(imageUrl);
-        setUserData(prev => ({
-            ...prev,
-            url_imagen: imageUrl
-        }));
+        dispatch({ type: 'CLIENTE_SET_CLIENTE_IMAGE_URL', payload: imageUrl });
     };
 
     const handleClienteImageRemove = () => {
-        setClienteImageUrl('');
-        setUserData(prev => ({
-            ...prev,
-            url_imagen: null
-        }));
+        dispatch({ type: 'CLIENTE_SET_CLIENTE_IMAGE_URL', payload: '' });
     };
 
+    // Setters para compatibilidad
+    const setUserData = (data) => dispatch({ type: 'CLIENTE_SET_USER_DATA', payload: data });
+    const setClienteImageUrl = (url) => dispatch({ type: 'CLIENTE_SET_CLIENTE_IMAGE_URL', payload: url });
+    const setShowInfoForm = (v) => dispatch({ type: 'CLIENTE_SET_SHOW_INFO_FORM', payload: v });
+    const setUpdatingInfo = (v) => dispatch({ type: 'CLIENTE_SET_UPDATING_INFO', payload: v });
+    const setInfoData = (data) => dispatch({ type: 'CLIENTE_SET_INFO_DATA', payload: data });
+
     return {
-        // Estados
+        // Estados (desde store)
         userData, setUserData,
         clienteImageUrl, setClienteImageUrl,
         showInfoForm, setShowInfoForm,

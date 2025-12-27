@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useParams, Navigate } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
 export const VerGestion = () => {
     const { store, dispatch } = useGlobalReducer();
-    const navigate = useNavigate();
     const { id } = useParams();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
 
-    const [gestion, setgestion] = useState(null);
+    // Estado del store para navegación después de eliminar
+    const shouldRedirect = store.crud?.formSuccess;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -19,17 +19,17 @@ export const VerGestion = () => {
             'Content-Type': 'application/json',
             ...options.headers
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         return fetch(url, {
             ...options,
             headers
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .catch(err => ({ ok: false, data: { message: err.message } }));
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .catch(err => ({ ok: false, data: { message: err.message } }));
     };
 
     const cargarGestion = () => {
@@ -37,35 +37,38 @@ export const VerGestion = () => {
         fetchJson(`${API}/gestiones/${id}`)
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data.message);
-                setgestion(data);
+                dispatch({ type: "gestion_set_detail", payload: data });
             }).catch(setError).finally(() => setLoading(false));
     };
 
     const eliminarGestion = () => {
-        if (!window.confirm("¿Estás seguro de que quieres eliminar esta gestion?")) return;
+        if (!window.confirm("¿Estás seguro de que quieres eliminar esta gestión?")) return;
 
         setLoading(true);
         fetchJson(`${API}/gestiones/${id}`, { method: "DELETE" })
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data.message);
                 dispatch({ type: "gestiones_remove", payload: parseInt(id) });
-                navigate('/gestiones'); // Volver al home después de eliminar
+                dispatch({ type: 'CRUD_SET_FORM_SUCCESS', payload: true });
             }).catch(setError).finally(() => setLoading(false));
-    };
-
-    const volver = () => {
-        navigate('/gestiones');
-    };
-
-    const editar = () => {
-        navigate(`/actualizar-gestion/${id}`);
     };
 
     useEffect(() => {
         if (id) {
             cargarGestion();
         }
+        // Limpiar estado al desmontar
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
     }, [id]);
+
+    // Navegación declarativa después de eliminar
+    if (shouldRedirect) {
+        return <Navigate to="/gestiones" replace />;
+    }
+
+    const gestion = store.gestionDetail;
 
     if (!gestion && !store.api.loading) {
         return (
@@ -74,10 +77,10 @@ export const VerGestion = () => {
                     <div className="col-12 col-md-8 col-lg-6">
                         <div className="card">
                             <div className="card-body text-center">
-                                <h5>Gestion no encontrada</h5>
-                                <button className="btn btn-primary" onClick={volver}>
+                                <h5>Gestión no encontrada</h5>
+                                <Link to="/gestiones" className="btn btn-primary">
                                     Volver al inicio
-                                </button>
+                                </Link>
                             </div>
                         </div>
                     </div>
@@ -94,7 +97,7 @@ export const VerGestion = () => {
                         <div className="card-header">
                             <h4 className="mb-0">
                                 <i className="fas fa-user me-2"></i>
-                                Detalles de la gestion
+                                Detalles de la Gestión
                             </h4>
                         </div>
                         <div className="card-body">
@@ -120,24 +123,22 @@ export const VerGestion = () => {
                             )}
 
                             <div className="d-flex gap-2 mt-4 justify-content-between">
-                                <button
+                                <Link
+                                    to="/gestiones"
                                     className="btn btn-secondary"
-                                    onClick={volver}
-                                    disabled={store.api.loading}
                                 >
                                     <i className="fas fa-arrow-left me-1"></i>
                                     Volver
-                                </button>
+                                </Link>
 
                                 <div className="d-flex gap-2">
-                                    <button
+                                    <Link
+                                        to={`/actualizar-gestion/${id}`}
                                         className="btn btn-warning"
-                                        onClick={editar}
-                                        disabled={store.api.loading}
                                     >
                                         <i className="fas fa-edit me-1"></i>
                                         Editar
-                                    </button>
+                                    </Link>
                                     <button
                                         className="btn btn-danger"
                                         onClick={eliminarGestion}

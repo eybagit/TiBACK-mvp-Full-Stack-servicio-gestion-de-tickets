@@ -1,168 +1,153 @@
-import { useState, useEffect } from 'react';
-import { tokenUtils } from '../../../store';
-
 /**
  * useAnalistaData - Estados y carga de datos del analista
+ * 
+ * REFACTORIZADO: Arquitectura tiback-hello
+ * - Eliminados todos los useState
+ * - Usa store.analista como fuente de verdad
+ * - dispatch para modificar estado
+ */
+
+import { useEffect } from 'react';
+import { analistaActions } from '../../../store';
+
+/**
+ * useAnalistaData - Hook de datos del analista
+ * Lee del store global y usa dispatch para cambios
  */
 export function useAnalistaData({ store, dispatch }) {
-    const [tickets, setTickets] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [ticketsSolicitudReapertura, setTicketsSolicitudReapertura] = useState(new Set());
-    const [expandedTickets, setExpandedTickets] = useState(new Set());
-    const [modalTicketId, setModalTicketId] = useState(null);
-    const [userData, setUserData] = useState(null);
+    // ==============================
+    // LEER DEL STORE (en lugar de useState)
+    // ==============================
+    const {
+        tickets,
+        loading,
+        error,
+        ticketsSolicitudReapertura,
+        expandedTickets,
+        modalTicketId,
+        userData,
+        showInfoForm,
+        updatingInfo,
+        infoData
+    } = store.analista;
+
+    // ==============================
+    // FUNCIONES DE DISPATCH (en lugar de setters)
+    // ==============================
     
-    // Estados para perfil
-    const [showInfoForm, setShowInfoForm] = useState(false);
-    const [updatingInfo, setUpdatingInfo] = useState(false);
-    const [infoData, setInfoData] = useState({
-        nombre: '', apellido: '', email: '',
-        especialidad: '', password: '', confirmPassword: ''
-    });
+    const setError = (value) => dispatch({ type: 'ANALISTA_SET_ERROR', payload: value });
+    const setTicketsSolicitudReapertura = (value) => {
+        if (typeof value === 'function') {
+            // Si es una función, ejecutarla con el estado actual
+            const currentSet = store.analista.ticketsSolicitudReapertura;
+            const newValue = value(currentSet);
+            dispatch({ type: 'ANALISTA_SET_SOLICITUDES_REAPERTURA', payload: Array.from(newValue) });
+        } else if (value instanceof Set) {
+            dispatch({ type: 'ANALISTA_SET_SOLICITUDES_REAPERTURA', payload: Array.from(value) });
+        } else {
+            dispatch({ type: 'ANALISTA_SET_SOLICITUDES_REAPERTURA', payload: Array.isArray(value) ? value : [] });
+        }
+    };
+    const setModalTicketId = (value) => dispatch({ type: 'ANALISTA_SET_MODAL_TICKET_ID', payload: value });
+    const setShowInfoForm = (value) => dispatch({ type: 'ANALISTA_SET_SHOW_INFO_FORM', payload: value });
+    const setInfoData = (value) => dispatch({ type: 'ANALISTA_SET_INFO_DATA', payload: value });
+    const setTickets = (valueOrFn) => {
+        if (typeof valueOrFn === 'function') {
+            // CRÍTICO: Usar estado actual del store, no del closure
+            const currentTickets = store.analista.tickets || [];
+            const newValue = valueOrFn(currentTickets);
+            dispatch({ type: 'ANALISTA_SET_TICKETS', payload: newValue });
+        } else {
+            dispatch({ type: 'ANALISTA_SET_TICKETS', payload: valueOrFn });
+        }
+    };
 
     // Toggle expansión de ticket
     const toggleTicketExpansion = (ticketId) => {
-        setExpandedTickets(prev => {
-            const copy = new Set(prev);
-            if (copy.has(ticketId)) copy.delete(ticketId);
-            else copy.add(ticketId);
-            return copy;
-        });
+        dispatch({ type: 'ANALISTA_TOGGLE_EXPANDED_TICKET', payload: ticketId });
     };
 
-    // Actualizar lista de tickets
+    // ==============================
+    // FUNCIONES ASYNC (usan analistaActions)
+    // ==============================
+
+    // Actualizar lista de tickets (con loading visible)
     const actualizarTickets = async () => {
-        try {
-            const token = store.auth.token;
-            if (!token) return;
-            const resp = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/analista`, {
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-            });
-            if (!resp.ok) {
-                setError(`Error cargando tickets: ${resp.status}`);
-                return;
-            }
-            const data = await resp.json();
-            setTickets(data);
-        } catch (e) {
-            console.error('Error actualizando tickets:', e);
-        }
+        await analistaActions.loadTickets(dispatch, store.auth.token);
     };
 
-    // Cargar datos iniciales
-    useEffect(() => {
-        const load = async () => {
-            setLoading(true);
-            await actualizarTickets();
-            setLoading(false);
-        };
-        load();
-    }, [store.auth.token]);
-
-    // Cargar datos del usuario
-    useEffect(() => {
-        const cargarDatosUsuario = async () => {
-            try {
-                const token = store.auth.token;
-                const userId = tokenUtils.getUserId(token);
-
-                if (userId) {
-                    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/analistas/${userId}`, {
-                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        setUserData(data);
-                        dispatch({ type: 'SET_USER', payload: data });
-                        setInfoData({
-                            nombre: data.nombre === 'Pendiente' ? '' : data.nombre || '',
-                            apellido: data.apellido === 'Pendiente' ? '' : data.apellido || '',
-                            email: data.email || '',
-                            especialidad: data.especialidad || '',
-                            password: '', confirmPassword: ''
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error('Error cargando datos del usuario:', error);
-            }
-        };
-
-        if (store.auth.isAuthenticated && store.auth.token) {
-            cargarDatosUsuario();
-        }
-    }, [store.auth.isAuthenticated, store.auth.token]);
+    // Sincronización silenciosa (sin loading, sin flasheo)
+    const sincronizarSilenciosamente = async () => {
+        await analistaActions.loadTicketsSilent(dispatch, store.auth.token, tickets);
+    };
 
     // Manejar cambios en formulario
     const handleInfoChange = (e) => {
-        const { name, value } = e.target;
-        setInfoData(prev => ({ ...prev, [name]: value }));
+        analistaActions.handleInfoChange(dispatch, e);
     };
 
     // Actualizar información del analista
     const updateInfo = async () => {
-        try {
-            if (infoData.password && infoData.password !== infoData.confirmPassword) {
-                setError('Las contraseñas no coinciden');
-                return;
-            }
-            if (infoData.password && infoData.password.length < 6) {
-                setError('La contraseña debe tener al menos 6 caracteres');
-                return;
-            }
-
-            setUpdatingInfo(true);
-            const token = store.auth.token;
-            const userId = tokenUtils.getUserId(token);
-
-            const updateData = {
-                nombre: infoData.nombre,
-                apellido: infoData.apellido,
-                email: infoData.email,
-                especialidad: infoData.especialidad
-            };
-            if (infoData.password) updateData.password = infoData.password;
-
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/analistas/${userId}`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(updateData)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Error al actualizar información');
-            }
-
-            const updatedUserData = { ...userData, ...updateData };
-            setUserData(updatedUserData);
-            dispatch({ type: 'SET_USER', payload: updatedUserData });
-            dispatch({ type: 'analistas_upsert', payload: updatedUserData });
-
+        const result = await analistaActions.updateProfile(dispatch, store.auth.token, infoData);
+        if (result.success) {
             alert('Información actualizada exitosamente');
-            setShowInfoForm(false);
-            setError('');
-            setInfoData(prev => ({ ...prev, password: '', confirmPassword: '' }));
-
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setUpdatingInfo(false);
         }
+        return result;
     };
 
+    // ==============================
+    // EFFECTS (cargar datos)
+    // ==============================
+
+    // Cargar datos iniciales
+    useEffect(() => {
+        const load = async () => {
+            dispatch({ type: 'ANALISTA_SET_LOADING', payload: true });
+            await actualizarTickets();
+            dispatch({ type: 'ANALISTA_SET_LOADING', payload: false });
+        };
+        if (store.auth.token) {
+            load();
+        }
+    }, [store.auth.token]);
+
+    // Cargar datos del usuario
+    useEffect(() => {
+        if (store.auth.isAuthenticated && store.auth.token) {
+            analistaActions.loadUserData(dispatch, store.auth.token);
+        }
+    }, [store.auth.isAuthenticated, store.auth.token, dispatch]);
+
+    // ==============================
+    // RETORNO (misma interfaz que antes)
+    // ==============================
     return {
-        tickets, setTickets,
-        loading, error, setError,
-        ticketsSolicitudReapertura, setTicketsSolicitudReapertura,
-        expandedTickets, toggleTicketExpansion,
-        modalTicketId, setModalTicketId,
-        userData, setUserData,
-        showInfoForm, setShowInfoForm,
-        updatingInfo, infoData, setInfoData,
-        actualizarTickets, handleInfoChange, updateInfo
+        // Datos (del store)
+        tickets,
+        loading,
+        error,
+        ticketsSolicitudReapertura,
+        expandedTickets,
+        modalTicketId,
+        userData,
+        showInfoForm,
+        updatingInfo,
+        infoData,
+        
+        // Setters (dispatch wrappers)
+        setTickets,
+        setError,
+        setTicketsSolicitudReapertura,
+        setModalTicketId,
+        setShowInfoForm,
+        setInfoData,
+        
+        // Funciones
+        toggleTicketExpansion,
+        actualizarTickets,
+        sincronizarSilenciosamente,
+        handleInfoChange,
+        updateInfo
     };
 }
 

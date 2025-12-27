@@ -46,7 +46,7 @@ function ClientePage() {
 
         // Funciones de tickets
         actualizarTickets, crearTicket, cerrarTicket,
-        solicitarReapertura,
+        solicitarReapertura, generarRecomendacion,
         toggleTicketForm, showTicketForm,
         getFilteredTickets,
 
@@ -75,6 +75,14 @@ function ClientePage() {
         // Funciones UI
         toggleSidebar, changeView, toggleTheme,
         handleSearch, selectTicketFromSearch, closeSearchResults,
+
+        // Filtros
+        filterEstado, setFilterEstado,
+        filterPrioridad, setFilterPrioridad,
+        filterAsignado, setFilterAsignado,
+        showFilterDropdown, setShowFilterDropdown,
+        applyFilters, clearFilters,
+        expandedTickets, toggleTicketExpansion,
 
         // Ticket seleccionado
         selectedTicketId, setSelectedTicketId,
@@ -144,24 +152,31 @@ function ClientePage() {
                     {activeView === 'tickets' && (
                         <ClienteTicketsList
                             tickets={tickets}
+                            loading={loading}
+                            filterEstado={filterEstado}
+                            filterAsignado={filterAsignado}
+                            filterPrioridad={filterPrioridad}
+                            showFilterDropdown={showFilterDropdown}
+                            setShowFilterDropdown={setShowFilterDropdown}
+                            setFilterEstado={setFilterEstado}
+                            setFilterAsignado={setFilterAsignado}
+                            setFilterPrioridad={setFilterPrioridad}
+                            applyFilters={applyFilters}
+                            clearFilters={clearFilters}
                             getFilteredTickets={getFilteredTickets}
-                            toggleTicketForm={toggleTicketForm}
-                            showTicketForm={showTicketForm}
+                            expandedTickets={expandedTickets}
+                            toggleTicketExpansion={toggleTicketExpansion}
+                            solicitudesReapertura={solicitudesReapertura}
+                            ticketsConRecomendaciones={ticketsConRecomendaciones}
+                            selectedTicketId={selectedTicketId}
                             changeView={changeView}
                             setSelectedTicketId={setSelectedTicketId}
                             tieneAnalistaAsignado={tieneAnalistaAsignado}
                             getAnalistaAsignado={getAnalistaAsignado}
-                            getFechaAsignacion={getFechaAsignacion}
-                            getEstadoColor={getEstadoColor}
-                            getPrioridadColor={getPrioridadColor}
-                            setSelectedTicketImages={setSelectedTicketImages}
-                            setSelectedImageIndex={setSelectedImageIndex}
-                            crearTicket={crearTicket}
-                            ticketImageUrl={ticketImageUrl}
-                            setTicketImageUrl={setTicketImageUrl}
-                            handleImageUpload={handleImageUpload}
-                            handleImageRemove={handleImageRemove}
-                            ticketsConRecomendaciones={ticketsConRecomendaciones}
+                            generarRecomendacion={generarRecomendacion}
+                            cerrarTicket={cerrarTicket}
+                            solicitarReapertura={solicitarReapertura}
+                            navigate={navigate}
                         />
                     )}
 

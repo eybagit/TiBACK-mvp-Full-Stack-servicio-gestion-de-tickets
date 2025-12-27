@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import useGlobalReducer from "../../hooks/useGlobalReducer";
 
 const VerTicketAnalista = () => {
     const { store, dispatch } = useGlobalReducer();
     const { id } = useParams();
-    const navigate = useNavigate();
     const API = import.meta.env.VITE_BACKEND_URL + "/api";
-    const [ticket, setTicket] = useState(null);
-    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+    // Usar crudSlice para estado de UI
+    const selectedImageIndex = store.crud?.selectedImageIndex || 0;
 
     const setLoading = (v) => dispatch({ type: "api_loading", payload: v });
     const setError = (e) => dispatch({ type: "api_error", payload: e?.message || e });
@@ -30,11 +30,21 @@ const VerTicketAnalista = () => {
         fetchJson(`${API}/tickets/${id}`)
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data.message);
-                setTicket(data);
+                dispatch({ type: 'CRUD_SET_CURRENT_ITEM', payload: data });
             })
             .catch(setError)
             .finally(() => setLoading(false));
+
+        return () => {
+            dispatch({ type: 'CRUD_RESET_FORM' });
+        };
     }, [id]);
+
+    const ticket = store.crud?.currentItem;
+
+    const setSelectedImageIndex = (idx) => {
+        dispatch({ type: 'CRUD_SET_SELECTED_IMAGE_INDEX', payload: idx });
+    };
 
     if (store.api.error) return <div className="alert alert-danger">{store.api.error}</div>;
     if (!ticket) return <div className="alert alert-warning">Ticket no encontrado.</div>;
@@ -94,9 +104,9 @@ const VerTicketAnalista = () => {
             )}
 
             <div className="mt-3">
-                <button className="btn btn-secondary me-2" onClick={() => navigate("/analista")}>
+                <Link to="/analista" className="btn btn-secondary me-2">
                     <i className="fas fa-arrow-left"></i> Volver
-                </button>
+                </Link>
             </div>
         </div>
     );
