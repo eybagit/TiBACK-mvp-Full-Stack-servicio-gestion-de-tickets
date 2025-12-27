@@ -192,27 +192,25 @@ def solicitar_reapertura_ticket(ticket_id):
         comentario = Comentarios(
             id_ticket=ticket_id,
             id_cliente=user['id'],
-            texto=f"Solicitud de reapertura: {motivo}",
+            texto="Cliente solicitó reapertura del ticket - Pendiente de decisión del supervisor",
             fecha_comentario=datetime.now()
         )
         db.session.add(comentario)
         db.session.commit()
         
-        # Emitir evento WebSocket
+        
+        # CRÍTICO: Refrescar ticket para que serialize() incluya el nuevo comentario
+        db.session.refresh(ticket)
+        
+        # Emitir evento WebSocket con ticket completo
         socketio = get_socketio()
         if socketio:
-            data = {
-                'ticket_id': ticket_id,
-                'ticket_estado': ticket.estado,
-                'tipo': 'solicitud_reapertura',
-                'motivo': motivo,
-                'cliente_id': user['id'],
-                'timestamp': datetime.now().isoformat()
-            }
-            emit_ws_event(socketio, 'solicitud_reapertura', data, 
-                ['supervisores', 'administradores', f'ticket_{ticket_id}'])
-            emit_ws_event(socketio, 'ticket_actualizado', data, 
-                [f'ticket_{ticket_id}', 'supervisores'])
+            from api.services.ticket_estado_service import TicketEstadoService
+            # Usar build_ticket_event_data para incluir ticket completo
+            data = TicketEstadoService.build_ticket_event_data(ticket, 'solicitud_reapertura')
+            data['motivo'] = motivo  # Agregar motivo adicional
+            # UNA sola emisión - global_tickets recibe todo
+            emit_ws_event(socketio, 'solicitud_reapertura', data, None)
         
         return jsonify({
             'message': 'Solicitud de reapertura enviada',
@@ -370,12 +368,8 @@ def asignar_ticket(id):
             'timestamp': datetime.now().isoformat()
         }
 
-        rooms_asignado = [f'analista_{id_analista}', 'role_analista', f'room_ticket_{ticket.id}',
-                         'supervisores', 'administradores']
-        emit_ws_event(socketio, 'ticket_asignado_a_mi', data, [f'analista_{id_analista}', 'role_analista'])
-        emit_ws_event(socketio, 'ticket_asignado', data, rooms_asignado)
-        emit_ws_event(socketio, 'ticket_actualizado', data, [f'room_ticket_{ticket.id}', 'role_analista'])
-        emit_ws_event(socketio, 'global_ticket_update', data, [''])
+        # UNA sola emisión - global_tickets recibe todo
+        emit_ws_event(socketio, 'ticket_asignado', data, None)
 
     accion = "reasignado" if es_reasignacion else "asignado"
     return jsonify({

@@ -227,6 +227,10 @@ class Ticket(db.Model):
                         "Supervisor aprobó solicitud de reapertura" in c.texto]
                     tiene_solicitud_pendiente = len(decision_supervisor) == 0
         
+        # DEBUG: Log para verificar cálculo
+        if tiene_solicitud_pendiente:
+            print(f"[DEBUG] Ticket {self.id} tiene solicitud de reapertura pendiente: {tiene_solicitud_pendiente}")
+        
         return {
             "id": self.id,
             "id_cliente": self.id_cliente,
