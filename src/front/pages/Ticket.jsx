@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { TICKET_STATES } from '../constants/ticketEnums';
 import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 
@@ -162,7 +163,7 @@ export const Ticket = () => {
             console.log('🔔 TICKETS - Notificación recibida:', lastNotification);
 
             // Si es un evento relacionado con tickets, recargar la lista
-            if (lastNotification.tipo === 'creado' ||
+            if (lastNotification.tipo === TICKET_STATES.CREADO ||
                 lastNotification.tipo === 'actualizado' ||
                 lastNotification.tipo === 'asignado' ||
                 lastNotification.tipo === 'eliminado' ||

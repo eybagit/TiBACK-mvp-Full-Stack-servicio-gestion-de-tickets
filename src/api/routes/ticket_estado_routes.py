@@ -7,6 +7,9 @@ from flask import Blueprint, request, jsonify
 from api.jwt_utils import require_role, get_user_from_token
 from api.services import TicketEstadoService
 from api.routes.utils_routes import get_socketio
+from api.constants.ticket_enums import TicketState, TicketEvent
+from api.utils.normalize import normalize_to_backend, states_match
+from api.models import db
 
 ticket_estado_bp = Blueprint('ticket_estado', __name__)
 
@@ -56,7 +59,7 @@ def cambiar_estado_ticket(id):
 
         # ==================== CLIENTE ====================
         if user['role'] == 'cliente':
-            if nuevo_estado_lower == 'cerrado' and estado_actual == 'solucionado':
+            if nuevo_estado_lower == TicketState.CERRADO.value and estado_actual == TicketState.SOLUCIONADO.value:
                 result, error = TicketEstadoService.cliente_cerrar_ticket(
                     ticket, user['id'], 
                     body.get('calificacion'), 
@@ -66,9 +69,9 @@ def cambiar_estado_ticket(id):
                     data = TicketEstadoService.build_ticket_event_data(ticket, 'cerrado')
                     data['calificacion'] = body.get('calificacion')
                     # UNA sola emisión - global_tickets recibe todo
-                    emit_websocket_event(socketio, 'ticket_cerrado', data, None)
+                    emit_websocket_event(socketio, TicketEvent.CERRADO.value, data, None)
 
-            elif nuevo_estado_lower == 'solicitud reapertura' and estado_actual == 'solucionado':
+            elif nuevo_estado_lower == 'solicitud reapertura' and estado_actual == TicketState.SOLUCIONADO.value:
                 result, error = TicketEstadoService.cliente_solicitar_reapertura(ticket, user['id'])
                 if result:
                     # CRÍTICO: Refrescar ticket para que serialize() incluya el nuevo comentario
@@ -77,64 +80,121 @@ def cambiar_estado_ticket(id):
                     # UNA sola emisión - global_tickets recibe todo
                     emit_websocket_event(socketio, 'solicitud_reapertura', data, None)
 
-            elif nuevo_estado_lower == 'reabierto' and estado_actual == 'cerrado':
+            elif nuevo_estado_lower == TicketState.REABIERTO.value and estado_actual == TicketState.CERRADO.value:
                 result, error = TicketEstadoService.cliente_reabrir_ticket(ticket, user['id'])
                 if result:
                     data = TicketEstadoService.build_ticket_event_data(ticket, 'reabierto')
                     # UNA sola emisión - global_tickets recibe todo
-                    emit_websocket_event(socketio, 'ticket_reabierto', data, None)
+                    emit_websocket_event(socketio, TicketEvent.REABIERTO.value, data, None)
             else:
                 return jsonify({"message": "Transición de estado no válida para cliente"}), 400
 
         # ==================== ANALISTA ====================
         elif user['role'] == 'analista':
-            if nuevo_estado_lower == 'en proceso' and estado_actual == 'en espera':
+            if nuevo_estado_lower == TicketState.EN_PROCESO.value and estado_actual == TicketState.EN_ESPERA.value:
                 result, error = TicketEstadoService.analista_iniciar_ticket(ticket, user['id'])
                 if result:
                     data = TicketEstadoService.build_ticket_event_data(ticket, 'en_proceso', user['id'], 'analista')
                     # UNA sola emisión - global_tickets recibe todo
-                    emit_websocket_event(socketio, 'ticket_iniciado', data, None)
+                    emit_websocket_event(socketio, TicketEvent.INICIADO.value, data, None)
+                    # IMPORTANTE: Retornar inmediatamente para evitar error 500
+                    return jsonify(ticket.serialize()), 200
+                else:
+                    return jsonify({"message": error}), 400
 
-            elif nuevo_estado_lower == 'solucionado' and estado_actual == 'en proceso':
+            elif nuevo_estado_lower == TicketState.SOLUCIONADO.value and estado_actual == TicketState.EN_PROCESO.value:
                 result, error = TicketEstadoService.analista_solucionar_ticket(ticket, user['id'])
                 if result:
                     data = TicketEstadoService.build_ticket_event_data(ticket, 'solucionado', user['id'], 'analista')
                     data['mensaje'] = 'El analista ha marcado el ticket como solucionado'
                     # UNA sola emisión - global_tickets recibe todo
-                    emit_websocket_event(socketio, 'ticket_solucionado', data, None)
+                    emit_websocket_event(socketio, TicketEvent.SOLUCIONADO.value, data, None)
+                    # IMPORTANTE: Retornar inmediatamente para evitar error 500
+                    return jsonify(ticket.serialize()), 200
+                else:
+                    return jsonify({"message": error}), 400
 
-            elif nuevo_estado_lower == 'en espera' and estado_actual in ['en espera', 'en proceso', 'reabierto']:
+            elif nuevo_estado_lower == TicketState.EN_ESPERA.value and estado_actual in [TicketState.EN_ESPERA.value, TicketState.EN_PROCESO.value, TicketState.REABIERTO.value]:
+                print(f"[DEBUG] 🚀 Iniciando escalamiento - ticket_id: {ticket.id}, user_id: {user['id']}")
+                print(f"[DEBUG] 📊 Estado actual: {estado_actual}, Nuevo estado: {nuevo_estado_lower}")
+                
                 result, error = TicketEstadoService.analista_escalar_ticket(ticket, user['id'])
+                
+                print(f"[DEBUG] ✅ Servicio retornó - result: {result is not None}, error: {error}")
+                
                 if result:
+                    print(f"[DEBUG] 📤 Preparando emisión WebSocket para escalamiento")
                     # IMPORTANTE: NO existe estado "escalado" - se mantiene en "en_espera"
                     # El escalamiento se detecta por comentarios, no por estado
-                    data = TicketEstadoService.build_ticket_event_data(ticket, 'actualizado', user['id'], 'analista')
-                    data['mensaje'] = 'El analista ha escalado el ticket al supervisor'
-                    data['escalado'] = True  # Flag para indicar que fue escalado
-                    # UNA sola emisión - global_tickets recibe todo
-                    emit_websocket_event(socketio, 'ticket_escalado', data, None)
+                    
+                    try:
+                        print(f"[DEBUG] 🔧 Construyendo data del evento...")
+                        data = TicketEstadoService.build_ticket_event_data(ticket, 'actualizado', user['id'], 'analista')
+                        print(f"[DEBUG] ✅ Data construida exitosamente")
+                        
+                        data['mensaje'] = 'El analista ha escalado el ticket al supervisor'
+                        data['escalado'] = True  # Flag para indicar que fue escalado
+                        
+                        print(f"[DEBUG] 🔔 Emitiendo evento: {TicketEvent.ESCALADO.value}")
+                        # UNA sola emisión - global_tickets recibe todo
+                        emit_websocket_event(socketio, TicketEvent.ESCALADO.value, data, None)
+                        
+                        print(f"[DEBUG] ✅ Evento emitido, serializando ticket para respuesta...")
+                        serialized = ticket.serialize()
+                        print(f"[DEBUG] ✅ Ticket serializado exitosamente")
+                        
+                        print(f"[DEBUG] ✅ Retornando respuesta exitosa")
+                        # IMPORTANTE: Retornar inmediatamente para evitar error 500
+                        return jsonify(serialized), 200
+                    except Exception as e:
+                        print(f"[DEBUG] 💥 ERROR en emisión/serialización: {type(e).__name__}: {str(e)}")
+                        import traceback
+                        traceback.print_exc()
+                        raise
+                else:
+                    print(f"[DEBUG] ❌ Error del servicio: {error}")
+                    return jsonify({"message": error}), 400
             else:
                 return jsonify({"message": "Transición de estado no válida para analista"}), 400
 
         # ==================== SUPERVISOR ====================
         elif user['role'] == 'supervisor':
-            if nuevo_estado_lower == 'cerrado' and estado_actual in ['solucionado', 'reabierto']:
+            if nuevo_estado_lower == TicketState.CERRADO.value and estado_actual in [TicketState.SOLUCIONADO.value, TicketState.REABIERTO.value]:
+                print(f"[DEBUG] 🔒 Supervisor cierra ticket {ticket.id}")
                 result, error = TicketEstadoService.supervisor_cerrar_ticket(ticket, user['id'])
+                
                 if result:
+                    print(f"[DEBUG] ✅ Ticket cerrado exitosamente")
                     data = TicketEstadoService.build_ticket_event_data(
                         ticket, 'cerrado_por_supervisor', user['id'], 'supervisor', estado_actual
                     )
+                    print(f"[DEBUG] 📤 Emitiendo evento ticket_cerrado para ticket {ticket.id}")
+                    print(f"[DEBUG] 📊 Data: ticket_id={data.get('ticket_id')}, id_cliente={ticket.id_cliente}")
+                    
                     # UNA sola emisión - global_tickets recibe todo
-                    emit_websocket_event(socketio, 'ticket_cerrado', data, None)
+                    emit_websocket_event(socketio, TicketEvent.CERRADO.value, data, None)
+                    
+                    print(f"[DEBUG] ✅ Evento ticket_cerrado emitido a global_tickets")
+                    # IMPORTANTE: Retornar inmediatamente para evitar error 500
+                    return jsonify(ticket.serialize()), 200
+                else:
+                    print(f"[DEBUG] ❌ Error al cerrar ticket: {error}")
+                    return jsonify({"message": error}), 400
 
-            elif nuevo_estado_lower == 'reabierto' and (estado_actual in ['cerrado', 'solucionado'] or estado_actual.startswith('cerrado')):
+            elif nuevo_estado_lower == TicketState.REABIERTO.value and (estado_actual in [TicketState.CERRADO.value, TicketState.SOLUCIONADO.value] or estado_actual.startswith('cerrado')):
                 result, error = TicketEstadoService.supervisor_reabrir_ticket(ticket, user['id'])
                 if result:
+                    # CRÍTICO: Refrescar ticket para que serialize() incluya el comentario de aprobación
+                    db.session.refresh(ticket)
                     data = TicketEstadoService.build_ticket_event_data(
                         ticket, 'reabierto_por_supervisor', user['id'], 'supervisor', estado_actual
                     )
                     # UNA sola emisión - global_tickets recibe todo
-                    emit_websocket_event(socketio, 'ticket_reabierto', data, None)
+                    emit_websocket_event(socketio, TicketEvent.REABIERTO.value, data, None)
+                    # IMPORTANTE: Retornar inmediatamente para evitar error 500
+                    return jsonify(ticket.serialize()), 200
+                else:
+                    return jsonify({"message": error}), 400
             else:
                 return jsonify({"message": "Transición de estado no válida para supervisor"}), 400
 

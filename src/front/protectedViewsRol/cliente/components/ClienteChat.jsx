@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
 
 /**
  * ClienteChat - Vista de chat con analistas
@@ -83,7 +85,7 @@ function ClienteChat({
                                                         <img
                                                             key={idx}
                                                             src={url}
-                                                            alt={`ticket-${ticket.id}-img-${idx}`}
+                                                            alt={`ticket - ${ticket.id} -img - ${idx} `}
                                                             className="img-thumbnail img-thumb-sm cursor-pointer"
                                                             onClick={() => { setSelectedTicketImages(ticket.img_urls); setSelectedImageIndex(idx); }}
                                                         />
@@ -100,7 +102,7 @@ function ClienteChat({
                                                 {tieneAnalistaAsignado(ticket) && (
                                                     <span
                                                         className="badge bg-success"
-                                                        title={`Asignado a ${getAnalistaAsignado(ticket)}`}
+                                                        title={`Asignado a ${getAnalistaAsignado(ticket)} `}
                                                     >
                                                         <i className="fas fa-user-tie me-1"></i>
                                                         Analista
@@ -140,7 +142,7 @@ function ClienteChat({
                                                     [...Array(5)].map((_, i) => (
                                                         <i
                                                             key={i}
-                                                            className={`fas fa-star ${i < ticket.calificacion ? 'text-warning' : 'text-muted'}`}
+                                                            className={`fas fa - star ${i < ticket.calificacion ? 'text-warning' : 'text-muted'} `}
                                                         ></i>
                                                     ))
                                                 ) : (
@@ -148,7 +150,7 @@ function ClienteChat({
                                                 )}
                                                 <button
                                                     className="btn btn-info btn-sm ms-2"
-                                                    onClick={() => window.location.href = `/cliente/ver-ticket/${ticket.id}`}
+                                                    onClick={() => window.location.href = `/ cliente / ver - ticket / ${ticket.id} `}
                                                 >
                                                     <i className="fas fa-eye"></i> Ver
                                                 </button>
@@ -156,7 +158,7 @@ function ClienteChat({
                                         </td>
                                         <td>
                                             <div className="btn-group" role="group">
-                                                {ticket.estado && ticket.estado.toLowerCase() === 'solucionado' && !solicitudesReapertura.has(ticket.id) && (
+                                                {normalizeFromBackend(ticket.estado) === TICKET_STATES.SOLUCIONADO && !solicitudesReapertura.has(ticket.id) && (
                                                     <>
                                                         <button
                                                             className="btn btn-success btn-sm"
@@ -174,7 +176,7 @@ function ClienteChat({
                                                         </button>
                                                     </>
                                                 )}
-                                                {ticket.estado && ticket.estado.toLowerCase() === 'solucionado' && solicitudesReapertura.has(ticket.id) && (
+                                                {normalizeFromBackend(ticket.estado) === TICKET_STATES.SOLUCIONADO && solicitudesReapertura.has(ticket.id) && (
                                                     <div className="alert alert-warning py-2 px-3 mb-0" role="alert">
                                                         <i className="fas fa-clock me-1"></i>
                                                         <strong>Solicitud enviada</strong>

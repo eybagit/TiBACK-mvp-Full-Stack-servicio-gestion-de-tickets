@@ -3,6 +3,8 @@ from sqlalchemy import String, Boolean, ForeignKey, DateTime, Text, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from typing import List
+from api.utils.normalize import normalize_to_backend
+from api.constants.ticket_enums import TicketState
 
 db = SQLAlchemy()
 
@@ -210,7 +212,8 @@ class Ticket(db.Model):
         
         # Verificar si tiene solicitud de reapertura pendiente
         tiene_solicitud_pendiente = False
-        if self.estado.lower() == 'solucionado':
+        estado_normalizado = normalize_to_backend(self.estado)
+        if estado_normalizado == TicketState.SOLUCIONADO.value:
             # Importar la función helper
             try:
                 from api.routes import tiene_solicitud_reapertura_pendiente
@@ -220,9 +223,12 @@ class Ticket(db.Model):
                 solicitud_reapertura = [c for c in self.comentarios if 
                     c.texto == "Cliente solicitó reapertura del ticket - Pendiente de decisión del supervisor"]
                 if solicitud_reapertura:
-                    # Verificar si hay decisión del supervisor después
+                    # IMPORTANTE: Tomar la ÚLTIMA solicitud (puede haber múltiples en ciclos repetidos)
+                    ultima_solicitud = max(solicitud_reapertura, key=lambda c: c.fecha_comentario)
+                    
+                    # Verificar si hay decisión del supervisor después de la ÚLTIMA solicitud
                     decision_supervisor = [c for c in self.comentarios if 
-                        c.fecha_comentario > solicitud_reapertura[0].fecha_comentario and
+                        c.fecha_comentario > ultima_solicitud.fecha_comentario and
                         c.id_supervisor is not None and
                         "Supervisor aprobó solicitud de reapertura" in c.texto]
                     tiene_solicitud_pendiente = len(decision_supervisor) == 0

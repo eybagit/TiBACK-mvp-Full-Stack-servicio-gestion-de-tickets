@@ -4,6 +4,9 @@
  */
 
 import { tokenUtils } from '../utils/tokenUtils.js';
+import { TICKET_STATES } from '../../constants/ticketEnums';
+import { normalizeFromBackend, statesMatch } from '../../utils/normalize';
+
 
 /**
  * Acciones del Supervisor
@@ -376,8 +379,8 @@ export const supervisorActions = {
     // FILTRO BASE: Excluir tickets cerrados de "Gestión de Tickets"
     // Los tickets cerrados solo aparecen en la vista "Tickets Cerrados"
     let filtered = tickets.filter(t => {
-      const estado = t.estado?.toLowerCase();
-      return estado !== 'cerrado';
+      const estado = normalizeFromBackend(t.estado);
+      return estado !== TICKET_STATES.CERRADO;
     });
     
     if (filterEstado) {
@@ -422,18 +425,21 @@ export const supervisorActions = {
     }
     const stats = {
       total: tickets.length,
-      abiertos: tickets.filter(t => t.estado === 'creado' || t.estado === 'en_espera').length,
-      enProceso: tickets.filter(t => t.estado === 'en_proceso' || t.estado === 'en proceso').length,
+      abiertos: tickets.filter(t => {
+        const estado = normalizeFromBackend(t.estado);
+        return estado === TICKET_STATES.CREADO || estado === TICKET_STATES.EN_ESPERA;
+      }).length,
+      enProceso: tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.EN_PROCESO).length,
       escalados: 0, // Se calcula en el componente usando fueEscaladoPorAnalista()
-      solucionados: tickets.filter(t => t.estado === 'solucionado').length,
-      cerrados: tickets.filter(t => t.estado === 'cerrado').length,
-      reabiertos: tickets.filter(t => t.estado === 'reabierto').length
+      solucionados: tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.SOLUCIONADO).length,
+      cerrados: tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.CERRADO).length,
+      reabiertos: tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.REABIERTO).length
     };
 
     // Calcular escalados por comentarios, no por estado
     stats.escalados = tickets.filter(t => {
-      const estado = t.estado?.toLowerCase();
-      const estaEnEspera = estado === 'en_espera' || estado === 'en espera';
+      const estado = normalizeFromBackend(t.estado);
+      const estaEnEspera = estado === TICKET_STATES.EN_ESPERA;
       const tieneComentarioEscalamiento = t.comentarios?.some(c => 
         c.id_analista && 
         c.texto && 

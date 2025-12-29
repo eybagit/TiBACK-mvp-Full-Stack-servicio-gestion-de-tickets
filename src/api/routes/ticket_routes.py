@@ -198,7 +198,6 @@ def solicitar_reapertura_ticket(ticket_id):
         db.session.add(comentario)
         db.session.commit()
         
-        
         # CRÍTICO: Refrescar ticket para que serialize() incluya el nuevo comentario
         db.session.refresh(ticket)
         
@@ -372,6 +371,11 @@ def asignar_ticket(id):
         emit_ws_event(socketio, 'ticket_asignado', data, None)
 
     accion = "reasignado" if es_reasignacion else "asignado"
+    
+    # IMPORTANTE: Refrescar asignacion desde DB para evitar ObjectDeletedError
+    # En reasignaciones, la asignación vieja se elimina y se crea una nueva
+    db.session.refresh(asignacion)
+    
     return jsonify({
         "message": f"Ticket {accion} exitosamente",
         "ticket": ticket.serialize(),

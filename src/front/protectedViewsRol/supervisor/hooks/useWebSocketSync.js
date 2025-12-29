@@ -7,7 +7,9 @@
  * @module protectedViewsRol/supervisor/hooks/useWebSocketSync
  */
 
-import { useEffect } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
 import { tokenUtils } from '../../../store';
 import { useWebSocketEvents } from '../../../hooks/useWebSocketEvents';
 
@@ -120,7 +122,7 @@ export function useWebSocketSync({
         const ticket = currentTicketsCerrados.find(t => t.id === ticketId);
         if (ticket) {
             let nuevoEstado = 'en_espera';
-            if (ticket.estado === 'solucionado') nuevoEstado = 'reabierto';
+            if (normalizeFromBackend(ticket.estado) === TICKET_STATES.SOLUCIONADO) nuevoEstado = TICKET_STATES.REABIERTO;
             
             setTicketsCerrados(prev => {
                 if (!Array.isArray(prev)) return prev;

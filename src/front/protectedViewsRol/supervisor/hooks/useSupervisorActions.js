@@ -3,6 +3,10 @@
  * Asignar tickets, reabrir, escalar, aprobar reapertura
  */
 
+import { useContext, useState, useCallback } from 'react';
+import { TICKET_STATES, TICKET_PROPS } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
+import { fueEscaladoPorAnalista } from '../../../utils/ticketHelpers';
 import useGlobalReducer from '../../../hooks/useGlobalReducer';
 
 export function useSupervisorActions({ 
@@ -25,12 +29,10 @@ export function useSupervisorActions({
 
       if (!response.ok) throw new Error('Error al asignar ticket');
 
-      // WebSocket se encarga de la actualización local
-      if (store.websocket.socket) {
-        emitCriticalTicketAction(store.websocket.socket, ticketId, 'ticket_asignado', store.auth.user);
-      }
+      // ✅ Backend emite 'ticket_asignado' automáticamente (ticket_routes.py:372)
+      // ✅ WebSocket handler actualiza localmente cuando recibe el evento
+      // ❌ NO emitir desde aquí - causaría duplicación de eventos
 
-      // NO hacer fetch - WebSocket actualiza localmente
       return { success: true };
     } catch (err) {
       setError(err.message);
@@ -51,12 +53,9 @@ export function useSupervisorActions({
 
       if (!response.ok) throw new Error('Error al reasignar ticket');
 
-      // WebSocket se encarga de la actualización local
-      if (store.websocket.socket) {
-        emitCriticalTicketAction(store.websocket.socket, ticketId, 'ticket_reasignado', store.auth.user);
-      }
+      // ✅ Backend emite 'ticket_asignado' automáticamente (ticket_routes.py:372)
+      // ✅ WebSocket handler actualiza localmente cuando recibe el evento
 
-      // NO hacer fetch - WebSocket actualiza localmente
       return { success: true };
     } catch (err) {
       setError(err.message);
@@ -129,15 +128,16 @@ export function useSupervisorActions({
 
   // Helper: Acciones disponibles según estado
   const getAvailableActions = (ticket) => {
-    const estado = ticket.estado?.toLowerCase();
+    const estado = normalizeFromBackend(ticket.estado);
     const tieneAnalista = ticket.asignaciones?.length > 0;
+    const tieneSolicitudReapertura = ticket[TICKET_PROPS.SOLICITUD_PENDIENTE];
     
     const actions = {
-      canAssign: estado === 'abierto' && !tieneAnalista,
-      canReassign: tieneAnalista && ['abierto', 'en_progreso', 'escalado'].includes(estado),
-      canReopen: estado === 'pendiente_reapertura' || estado === 'solucionado',
-      canClose: estado === 'solucionado',
-      canEscalate: ['abierto', 'en_progreso'].includes(estado)
+      canAssign: estado === TICKET_STATES.CREADO && !tieneAnalista,
+      canReassign: tieneAnalista && (fueEscaladoPorAnalista(ticket) || estado === TICKET_STATES.EN_PROCESO),
+      canReopen: tieneSolicitudReapertura || estado === TICKET_STATES.SOLUCIONADO,
+      canClose: estado === TICKET_STATES.SOLUCIONADO,
+      canEscalate: estado === TICKET_STATES.EN_PROCESO || estado === TICKET_STATES.EN_ESPERA
     };
     
     return actions;

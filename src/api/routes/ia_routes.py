@@ -9,6 +9,7 @@ from flask import Blueprint, request, jsonify
 from api.models import Ticket
 from api.jwt_utils import require_auth, get_user_from_token
 from api.services import IAService
+from api.constants.ticket_enums import TicketState
 
 ia_bp = Blueprint('ia', __name__)
 
@@ -35,7 +36,7 @@ def obtener_tickets_similares(ticket_id):
         
         # Obtener tickets cerrados para comparación
         tickets_cerrados = Ticket.query.filter(
-            Ticket.estado == 'cerrado',
+            Ticket.estado == TicketState.CERRADO.value,
             Ticket.id != ticket_id,
             Ticket.titulo.isnot(None),
             Ticket.descripcion.isnot(None),

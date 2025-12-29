@@ -1,4 +1,7 @@
 import React from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
+import { getEstadoDotClass } from '../../../utils/cssHelpers';
 
 /**
  * ClienteDashboard - Vista de dashboard del cliente
@@ -118,7 +121,7 @@ function ClienteDashboard({ tickets, changeView }) {
                                             <i className="fas fa-plus-circle fa-2x text-primary"></i>
                                         </div>
                                         <h4 className="text-primary mb-1">
-                                            {tickets.filter(t => t.estado.toLowerCase() === 'creado').length}
+                                            {tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.CREADO).length}
                                         </h4>
                                         <p className="text-muted mb-0 small">Creados</p>
                                     </div>
@@ -129,7 +132,7 @@ function ClienteDashboard({ tickets, changeView }) {
                                             <i className="fas fa-pause-circle fa-2x text-warning"></i>
                                         </div>
                                         <h4 className="text-warning mb-1">
-                                            {tickets.filter(t => t.estado.toLowerCase() === 'en_espera').length}
+                                            {tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.EN_ESPERA).length}
                                         </h4>
                                         <p className="text-muted mb-0 small">En Espera</p>
                                     </div>
@@ -140,7 +143,7 @@ function ClienteDashboard({ tickets, changeView }) {
                                             <i className="fas fa-cog fa-2x text-info"></i>
                                         </div>
                                         <h4 className="text-info mb-1">
-                                            {tickets.filter(t => t.estado.toLowerCase() === 'en_proceso').length}
+                                            {tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.EN_PROCESO).length}
                                         </h4>
                                         <p className="text-muted mb-0 small">En Proceso</p>
                                     </div>
@@ -207,9 +210,7 @@ function ClienteDashboard({ tickets, changeView }) {
                                                     <td className="text-center">
                                                         <span className="d-flex align-items-center justify-content-center gap-2">
                                                             <span
-                                                                className={`rounded-circle d-inline-block ${ticket.estado && ticket.estado.toLowerCase() === 'solucionado' ? 'dot-estado-solucionado' :
-                                                                    ticket.estado && ticket.estado.toLowerCase() === 'en_proceso' ? 'dot-estado-en-proceso' :
-                                                                        'dot-ct-blue'
+                                                                className={`rounded-circle d-inline-block ${getEstadoDotClass(ticket.estado)}
                                                                     }`}
                                                             ></span>
                                                             <span className="text-dark dark-theme:text-white">

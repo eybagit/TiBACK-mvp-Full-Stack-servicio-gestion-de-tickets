@@ -7,7 +7,8 @@
  * @module protectedViewsRol/cliente/hooks/useClienteWebSocket
  */
 
-import { useEffect } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
 import { tokenUtils } from '../../../store';
 import { useWebSocketEvents } from '../../../hooks/useWebSocketEvents';
 
@@ -137,26 +138,61 @@ function useClienteWebSocket({
 
             /** @param {TicketWebSocketEvent} data */
             const handleTicketCerrado = (data) => {
+                console.log('🔔 [Cliente] Evento ticket_cerrado recibido:', data);
+                console.log('🔔 [Cliente] ticket_id:', data.ticket_id);
+                console.log('🔔 [Cliente] Tickets actuales:', tickets.length);
+                
                 if (data.ticket_id) {
-                    setTickets(prev => Array.isArray(prev) 
-                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'cerrado' } : t)
-                        : prev
-                    );
-                }
-            };
-
-            /** @param {TicketWebSocketEvent} data */
-            const handleTicketReabierto = (data) => {
-                if (data.ticket_id) {
-                    setTickets(prev => Array.isArray(prev) 
-                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: data.estado || 'en_espera' } : t)
-                        : prev
-                    );
+                    // IMPORTANTE: Los tickets cerrados se ELIMINAN de la vista del cliente
+                    // El cliente solo debe ver tickets activos (en espera, en proceso, solucionado)
+                    setTickets(prev => {
+                        const filtered = Array.isArray(prev) 
+                            ? prev.filter(t => t.id !== data.ticket_id)
+                            : prev;
+                        
+                        console.log(`🗑️ [Cliente] Ticket ${data.ticket_id} cerrado - removido de la vista`);
+                        console.log(`📊 [Cliente] Tickets antes: ${Array.isArray(prev) ? prev.length : 0}, después: ${Array.isArray(filtered) ? filtered.length : 0}`);
+                        
+                        return filtered;
+                    });
+                    
+                    // También limpiar de solicitudes de reapertura si existía
                     setSolicitudesReapertura(prev => {
                         const newSet = new Set(prev);
                         newSet.delete(data.ticket_id);
                         return newSet;
                     });
+                } else {
+                    console.warn('⚠️ [Cliente] Evento ticket_cerrado sin ticket_id:', data);
+                }
+            };
+
+            /** @param {TicketWebSocketEvent} data */
+            const handleTicketReabierto = (data) => {
+                console.log('🔔 [Cliente] Evento ticket_reabierto recibido:', data);
+                
+                try {
+                    if (data.ticket_id) {
+                        console.log('🔔 [Cliente] ✅ Actualizando ticket reabierto');
+                        
+                        setTickets(prev => {
+                            return Array.isArray(prev) 
+                                ? prev.map(t => t.id === data.ticket_id 
+                                    ? { ...t, estado: data.ticket?.estado || 'reabierto' } 
+                                    : t)
+                                : prev;
+                        });
+                        
+                        // Limpiar solicitudes de reapertura
+                        setSolicitudesReapertura(prev => {
+                            const newSet = new Set(prev);
+                            newSet.delete(data.ticket_id);
+                            console.log(`🗑️ [Cliente] Ticket ${data.ticket_id} reabierto - solicitud limpiada`);
+                            return newSet;
+                        });
+                    }
+                } catch (error) {
+                    console.error('🔔 [Cliente] 💥 ERROR en handleTicketReabierto:', error);
                 }
             };
 
@@ -274,7 +310,7 @@ function useClienteWebSocket({
                 return;
             }
 
-            if (lastNotification.tipo === 'solucionado') {
+            if (lastNotification.tipo === TICKET_STATES.SOLUCIONADO) {
                 if (lastNotification.ticket_id) {
                     setTickets(prev => Array.isArray(prev) 
                         ? prev.map(t => t.id === lastNotification.ticket_id ? { ...t, estado: 'solucionado' } : t)

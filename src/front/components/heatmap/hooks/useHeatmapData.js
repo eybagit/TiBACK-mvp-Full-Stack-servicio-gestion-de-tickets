@@ -5,6 +5,8 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
 
 /**
  * Hook para manejo de datos del heatmap
@@ -111,9 +113,9 @@ export const useHeatmapData = (store) => {
     // Estadísticas calculadas
     const stats = useMemo(() => ({
         total: rawData.length,
-        enProceso: rawData.filter(t => t.ticket_estado?.toLowerCase() === 'en_proceso').length,
-        solucionados: rawData.filter(t => t.ticket_estado?.toLowerCase() === 'solucionado').length,
-        cerrados: rawData.filter(t => t.ticket_estado?.toLowerCase() === 'cerrado').length
+        enProceso: rawData.filter(t => normalizeFromBackend(t.ticket_estado) === TICKET_STATES.EN_PROCESO).length,
+        solucionados: rawData.filter(t => normalizeFromBackend(t.ticket_estado) === TICKET_STATES.SOLUCIONADO).length,
+        cerrados: rawData.filter(t => normalizeFromBackend(t.ticket_estado) === TICKET_STATES.CERRADO).length
     }), [rawData]);
 
     return {

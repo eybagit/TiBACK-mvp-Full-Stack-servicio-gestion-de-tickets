@@ -7,6 +7,7 @@ from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 
 from api.models import db, Ticket, Analista, Asignacion, Comentarios, Gestion
+from api.constants.ticket_enums import TicketState
 
 
 class TicketService:
@@ -49,7 +50,7 @@ class TicketService:
         """Crear ticket para un cliente"""
         ticket = Ticket(
             id_cliente=cliente_id,
-            estado="en espera",
+            estado=TicketState.EN_ESPERA.value,
             titulo=titulo,
             descripcion=descripcion,
             fecha_creacion=datetime.now(),
@@ -193,7 +194,7 @@ class TicketService:
         if not analista:
             return None, None, "Analista no encontrado"
 
-        estados_validos = ['en espera', 'reabierto']
+        estados_validos = [TicketState.EN_ESPERA.value, TicketState.REABIERTO.value]
         estado_normalizado = ticket.estado.lower().replace('_', ' ')
         if estado_normalizado not in estados_validos:
             return None, None, f"El ticket no puede ser asignado en estado '{ticket.estado}'"
@@ -208,7 +209,7 @@ class TicketService:
             id_analista=analista_id,
             fecha_asignacion=datetime.now()
         )
-        ticket.estado = 'en espera'
+        ticket.estado = TicketState.EN_ESPERA.value
         db.session.add(asignacion)
 
         # Agregar comentario de asignación

@@ -9,6 +9,7 @@ from api.jwt_utils import (
     generate_token, require_role, refresh_token, get_user_from_token
 )
 from api.routes.utils_routes import handle_general_error
+from api.constants.ticket_enums import TicketState
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -197,7 +198,7 @@ def get_cliente_tickets():
 
         tickets = Ticket.query.filter(
             Ticket.id_cliente == user['id'],
-            Ticket.estado != 'cerrado'
+            Ticket.estado != TicketState.CERRADO.value
         ).all()
 
         return jsonify([t.serialize() for t in tickets]), 200
@@ -245,7 +246,7 @@ def get_analista_tickets():
 
         tickets = Ticket.query.filter(
             Ticket.id.in_(ticket_ids),
-            Ticket.estado != 'cerrado'
+            Ticket.estado != TicketState.CERRADO.value
         ).all()
 
         tickets_filtrados = []
@@ -268,7 +269,7 @@ def get_analista_tickets():
                     continue
 
             estado_ticket_normalizado = ticket.estado.lower().replace('_', ' ')
-            if estado_ticket_normalizado not in ['en espera', 'en proceso']:
+            if estado_ticket_normalizado not in [TicketState.EN_ESPERA.value, TicketState.EN_PROCESO.value]:
                 continue
 
             tickets_filtrados.append(ticket)
@@ -285,7 +286,7 @@ def get_supervisor_tickets():
     """Obtener todos los tickets activos para el supervisor"""
     try:
         tickets = Ticket.query.filter(
-            Ticket.estado != 'cerrado'
+            Ticket.estado != TicketState.CERRADO.value
         ).all()
         return jsonify([t.serialize() for t in tickets]), 200
 
@@ -299,7 +300,7 @@ def get_supervisor_closed_tickets():
     """Obtener tickets cerrados para el supervisor"""
     try:
         tickets = Ticket.query.filter(
-            Ticket.estado == 'cerrado'
+            Ticket.estado == TicketState.CERRADO.value
         ).all()
         return jsonify([t.serialize() for t in tickets]), 200
 

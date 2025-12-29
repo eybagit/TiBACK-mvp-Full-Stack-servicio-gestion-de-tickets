@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { TICKET_STATES } from '../constants/ticketEnums';
+import { normalizeFromBackend } from '../utils/normalize';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import useGlobalReducer from '../hooks/useGlobalReducer';
 import { SideBarCentral } from '../components/SideBarCentral';
@@ -340,7 +342,7 @@ const RecomendacionesSimilares = () => {
                                 <h6 className="card-title">{ticketActual.titulo}</h6>
                                 <p className="card-text">{ticketActual.descripcion}</p>
                                 <div className="d-flex justify-content-between align-items-center">
-                                    <span className={`badge ${ticketActual.estado === 'cerrado' ? 'bg-success' : 'bg-warning'}`}>
+                                    <span className={`badge ${normalizeFromBackend(ticketActual.estado) === TICKET_STATES.CERRADO ? 'bg-success' : 'bg-warning'}`}>
                                         {ticketActual.estado}
                                     </span>
                                     <small className="text-muted">

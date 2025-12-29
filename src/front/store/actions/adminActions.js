@@ -4,6 +4,8 @@
  */
 
 import { tokenUtils } from '../utils/tokenUtils.js';
+import { TICKET_STATES } from '../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../utils/normalize';
 
 /**
  * Acciones del Administrador
@@ -27,10 +29,10 @@ export const adminActions = {
         dispatch({ type: 'ADMIN_SET_TICKETS', payload: tickets });
         
         // Calcular estadísticas
-        const ticketsCreados = tickets.filter(t => t.estado?.toLowerCase() === 'creado').length;
-        const ticketsEnProceso = tickets.filter(t => t.estado?.toLowerCase() === 'en_proceso').length;
-        const ticketsSolucionados = tickets.filter(t => t.estado?.toLowerCase() === 'solucionado').length;
-        const ticketsCerrados = tickets.filter(t => t.estado?.toLowerCase() === 'cerrado').length;
+        const ticketsCreados = tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.CREADO).length;
+        const ticketsEnProceso = tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.EN_PROCESO).length;
+        const ticketsSolucionados = tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.SOLUCIONADO).length;
+        const ticketsCerrados = tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.CERRADO).length;
         
         dispatch({
           type: 'ADMIN_UPDATE_STATS',

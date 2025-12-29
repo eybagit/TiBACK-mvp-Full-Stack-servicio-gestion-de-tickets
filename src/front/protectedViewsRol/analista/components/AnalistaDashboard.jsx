@@ -1,4 +1,7 @@
 import React from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
+import { getEstadoBadgeClass } from '../../../utils/cssHelpers';
 
 /**
  * AnalistaDashboard - Componente de presentación para el dashboard del analista
@@ -35,7 +38,7 @@ function AnalistaDashboard({ tickets, setActiveView }) {
                                 <h6 className="card-title text-muted mb-2">En Espera</h6>
                                 <div className="d-flex align-items-center justify-content-center mb-2">
                                     <h3 className="mb-0 text-warning me-2">
-                                        {tickets.filter(t => t.estado.toLowerCase() === 'en_espera').length}
+                                        {tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.EN_ESPERA).length}
                                     </h3>
                                     <div className="bg-warning bg-opacity-10 rounded-circle p-2">
                                         <i className="fas fa-clock text-warning"></i>
@@ -54,7 +57,7 @@ function AnalistaDashboard({ tickets, setActiveView }) {
                                 <h6 className="card-title text-muted mb-2">En Proceso</h6>
                                 <div className="d-flex align-items-center justify-content-center mb-2">
                                     <h3 className="mb-0 text-info me-2">
-                                        {tickets.filter(t => t.estado.toLowerCase() === 'en_proceso').length}
+                                        {tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.EN_PROCESO).length}
                                     </h3>
                                     <div className="bg-info bg-opacity-10 rounded-circle p-2">
                                         <i className="fas fa-cog text-info"></i>
@@ -176,11 +179,7 @@ function AnalistaDashboard({ tickets, setActiveView }) {
                                                         </small>
                                                     </td>
                                                     <td>
-                                                        <span className={`badge ${ticket.estado.toLowerCase() === 'solucionado' ? 'bg-success' :
-                                                            ticket.estado.toLowerCase() === 'en_proceso' ? 'bg-info' :
-                                                                ticket.estado.toLowerCase() === 'en_espera' ? 'bg-warning' :
-                                                                    'bg-secondary'
-                                                            }`}>
+                                                        <span className={`badge ${getEstadoBadgeClass(ticket.estado)}`}>
                                                             {ticket.estado}
                                                         </span>
                                                     </td>

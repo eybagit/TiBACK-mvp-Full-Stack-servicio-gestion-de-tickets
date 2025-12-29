@@ -4,6 +4,9 @@
  * NO useState - arquitectura tiback-hello
  */
 
+import { useState, useEffect } from 'react';
+import { TICKET_STATES } from '../../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../../utils/normalize';
 import { tokenUtils } from '../../../store';
 import useGlobalReducer from '../../../hooks/useGlobalReducer';
 import {
@@ -70,7 +73,7 @@ function useClienteTickets(passedStore, passedDispatch, joinTicketRoom, emitCrit
 
                 // Limpiar solicitudes de reapertura para tickets que ya NO están en estado 'solucionado'
                 ticketsData.forEach(ticket => {
-                    if (ticket.estado && ticket.estado.toLowerCase() !== 'solucionado' && solicitudesReapertura.includes(ticket.id)) {
+                    if (normalizeFromBackend(ticket.estado) !== TICKET_STATES.SOLUCIONADO && solicitudesReapertura.includes(ticket.id)) {
                         dispatch({ type: 'CLIENTE_REMOVE_SOLICITUD_REAPERTURA', payload: ticket.id });
                     }
                 });
@@ -248,7 +251,20 @@ function useClienteTickets(passedStore, passedDispatch, joinTicketRoom, emitCrit
         }
     };
     const setTicketsConRecomendaciones = (t) => dispatch({ type: 'CLIENTE_SET_TICKETS_CON_RECOMENDACIONES', payload: Array.from(t) });
-    const setSolicitudesReapertura = () => {}; // Use add/remove instead
+    const setSolicitudesReapertura = (sOrFn) => {
+        if (typeof sOrFn === 'function') {
+            // CRÍTICO: Usar estado actual del store, no del closure
+            const currentSolicitudes = store.clientePage?.solicitudesReapertura || [];
+            const currentSet = new Set(currentSolicitudes);
+            const newSet = sOrFn(currentSet);
+            const newArray = Array.from(newSet);
+            dispatch({ type: 'CLIENTE_SET_SOLICITUDES_REAPERTURA', payload: newArray });
+        } else {
+            // sOrFn es un Set
+            const newArray = Array.from(sOrFn);
+            dispatch({ type: 'CLIENTE_SET_SOLICITUDES_REAPERTURA', payload: newArray });
+        }
+    };
     const setShowTicketForm = (v) => dispatch({ type: 'CLIENTE_SET_SHOW_TICKET_FORM', payload: v });
     const setTicketImageUrl = (v) => dispatch({ type: 'CLIENTE_SET_TICKET_IMAGE_URL', payload: v });
 

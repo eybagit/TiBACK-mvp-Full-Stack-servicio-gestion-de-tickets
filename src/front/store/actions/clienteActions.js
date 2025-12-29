@@ -4,6 +4,9 @@
  * PROHIBIDO llamar fetch directamente en componentes
  */
 
+import { TICKET_STATES } from '../../constants/ticketEnums';
+import { normalizeFromBackend } from '../../utils/normalize';
+
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 /**
@@ -412,7 +415,7 @@ export const clienteActions = {
    */
   limpiarSolicitudesReapertura: (dispatch, tickets, solicitudesActuales) => {
     const ticketsSolucionados = new Set(
-      tickets.filter(t => t.estado?.toLowerCase() === 'solucionado').map(t => t.id)
+      tickets.filter(t => normalizeFromBackend(t.estado) === TICKET_STATES.SOLUCIONADO).map(t => t.id)
     );
     
     solicitudesActuales.forEach(ticketId => {
