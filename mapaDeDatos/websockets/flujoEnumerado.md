@@ -93,12 +93,12 @@ crearTicket: async (dispatch, token, ticketData, socketDispatch) => {
 
 **Ruta:** `src/api/routes/ticket_routes.py`
 ```python
-# Función: create_ticket (L48-67)
-@ticket_bp.route('', methods=['POST'])
-@require_role(['cliente'])
+# Función: create_ticket (L48-80)
+@ticket_bp.route('/tickets', methods=['POST'])
+@require_role(['cliente', 'administrador'])
 def create_ticket():
     # Crea ticket con TicketService.create_ticket_for_cliente()
-    # Emite evento via emit_ticket_created()
+    # Emite evento via _emit_new_ticket_events() que llama a emit_ticket_created()
 ```
 
 **Servicio:** `src/api/services/ticket_service.py`
@@ -117,23 +117,31 @@ def create_ticket_for_cliente(cliente_id, titulo, descripcion, prioridad, url_im
 
 **Emisión WebSocket:** `src/api/utils/websocket_utils.py`
 ```python
-# Función: emit_ticket_created (L85-94)
-def emit_ticket_created(socketio, ticket, cliente):
-    socketio.emit('ticket_created', data, room='global_tickets')  # L93
+# Función: emit_ticket_created (L95-105)
+def emit_ticket_created(ticket):
+    # Emite evento 'ticket_created' a global_tickets
+    # Incluye ticket completo serializado
+    return emit_ticket_event(
+        event='ticket_created',
+        ticket=ticket,
+        action='creado',
+        extra_data={'id_cliente': ticket.id_cliente}
+    )
 ```
 
 #### Frontend Handler
 
 **Handler:** `src/front/hooks/useWebSocketEvents.js`
 ```javascript
-// Función: handleTicketCreated (L102-136)
+// Función: handleTicketCreated (L103-149)
 const handleTicketCreated = useCallback((data) => {
     // Valida evento
-    // Filtra por rol
+    // Filtra por rol (analistas solo ven tickets asignados)
     // Agrega ticket a lista si es del usuario
+    // Evita duplicados
 }, [role, store, setTickets]);
 
-// Registro del listener (L237)
+// Registro del listener (L238)
 socket.on('ticket_created', handleTicketCreated);
 ```
 
@@ -167,22 +175,25 @@ const asignarTicket = async (ticketId, analistaId, comentario) => {
 **Ruta:** `src/api/routes/ticket_routes.py`
 ```python
 # Función: asignar_ticket (L325-385)
-@ticket_bp.route('/<int:id>/asignar', methods=['POST'])
-@require_role(['supervisor'])
+@ticket_bp.route('/tickets/<int:id>/asignar', methods=['POST'])
+@require_role(['supervisor', 'administrador'])
 def asignar_ticket(id):
-    # L346-359: Elimina asignaciones anteriores
-    # L361-369: Crea nueva asignación
-    # L371: Agrega comentario
-    # L374-379: Prepara data y emite ticket_asignado
+    # L346-359: Elimina asignaciones anteriores (en TicketService)
+    # L361-369: Crea nueva asignación (en TicketService)
+    # L371: Agrega comentario (en TicketService)
+    # L374-379: Prepara data y emite ticket_asignado via emit_ws_event()
     
     data = {
-        'id': asignacion.id,
-        'ticket_id': ticket_id,
-        'ticket': ticket.serialize(),  # L375-377
+        'id': ticket.id,
+        'ticket_id': ticket.id,
+        'ticket': ticket.serialize(),  # SIEMPRE incluir ticket completo
+        'id_analista': id_analista,
+        'analista_nombre': f"{analista.nombre} {analista.apellido}",
+        'tipo': 'asignado',
         ...
     }
-    emit_websocket_event(socketio, 'ticket_asignado', data, None)  # L379
-    db.session.refresh(asignacion)  # L374
+    emit_ws_event(socketio, 'ticket_asignado', data, None)  # Emite a global_tickets
+    db.session.refresh(asignacion)  # Refrescar para evitar ObjectDeletedError
     return jsonify(asignacion.serialize()), 200
 ```
 
@@ -196,7 +207,8 @@ def asignar_ticket(ticket_id, supervisor_id, analista_id, comentario, es_reasign
     # L204-210: Crea nueva asignación
     # L211: Cambia estado a EN_ESPERA
     ticket.estado = TicketState.EN_ESPERA.value
-    # L214-222: Agrega comentarios
+    # L214-222: Agrega comentarios (asignación + comentario opcional)
+    # L233: time.sleep(0.1) para evitar race conditions
 ```
 
 #### Frontend Handler
@@ -205,16 +217,17 @@ def asignar_ticket(ticket_id, supervisor_id, analista_id, comentario, es_reasign
 ```javascript
 // Función: handleTicketUpdate (L34-100)
 const handleTicketUpdate = useCallback((data, eventName) => {
-    // L52-71: Filtro para analistas (agregar si es para mí)
-    // L73-100: Actualizar o agregar ticket
+    // L52-71: Filtro para analistas (eliminar si ya no está asignado a mí)
+    // L73-90: Filtro para clientes (eliminar si está cerrado)
+    // L92-100: Actualizar o agregar ticket
     
     // Caso especial para analistas (L78-84)
     if (!ticketExists && data.tipo === 'asignado' && data.ticket) {
-        return [data.ticket, ...prev];  // Agregar ticket
+        return [data.ticket, ...prev];  // Agregar ticket recién asignado
     }
 }, [role, store, setTickets]);
 
-// Registro del listener (L251)
+// Registro del listener (L252)
 socket.on('ticket_asignado', handleTicketUpdate);
 ```
 
@@ -237,11 +250,12 @@ socket.on('ticket_asignado', handleTicketUpdate);
 
 **Acción:** `src/front/protectedViewsRol/analista/hooks/useAnalistaActions.js`
 ```javascript
-// Función: iniciarTicket (L60-78)
+// Función: iniciarTicket (L13-32)
 const iniciarTicket = async (ticketId) => {
     // PUT /api/tickets/${ticketId}/estado
-    // Body: { estado: 'en proceso' }
-    // Backend emite evento
+    // Body: { estado: 'en_proceso' }  // Estado válido según enums
+    // Backend emite evento automáticamente
+    // NO emitir desde frontend - causaría duplicación
 };
 ```
 
@@ -267,8 +281,8 @@ elif user['role'] == 'analista':
         result, error = TicketEstadoService.analista_iniciar_ticket(ticket, user['id'])  # L95
         if result:
             data = TicketEstadoService.build_ticket_event_data(ticket, 'en_proceso', user['id'], 'analista')  # L97
-            emit_websocket_event(socketio, TicketEvent.INICIADO.value, data, None)  # L99
-            return jsonify(ticket.serialize()), 200  # L101
+            emit_websocket_event(socketio, TicketEvent.INICIADO.value, data, None)  # L99 - Emite a global_tickets
+            return jsonify(ticket.serialize()), 200  # L101 - Return inmediato para evitar 500
 ```
 
 **Servicio:** `src/api/services/ticket_estado_service.py`
@@ -289,7 +303,8 @@ def analista_iniciar_ticket(ticket, user_id):
     )
     
     db.session.commit()
-    return True, None
+    time.sleep(0.1)  # Evitar race conditions
+    return ticket, None
 ```
 
 #### Frontend Handler
@@ -297,7 +312,7 @@ def analista_iniciar_ticket(ticket, user_id):
 **Handler:** `src/front/hooks/useWebSocketEvents.js`
 ```javascript
 // handleTicketUpdate (L34-100)
-// Registrado en L253
+// Registrado en L254
 socket.on('ticket_iniciado', handleTicketUpdate);
 ```
 
@@ -310,7 +325,10 @@ const handleTicketIniciado = (data) => {
             ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'en_proceso' } : t)
             : prev
         );  // L192-195
-        console.log(`🎯 Ticket ${data.ticket_id} iniciado`);  // L198
+        // Log para desarrollo
+        if (import.meta.env.DEV) {
+            console.log(`🎯 Ticket ${data.ticket_id} iniciado - Analista trabajando en él`);
+        }
     }
 };
 
@@ -337,10 +355,12 @@ socket.on('ticket_iniciado', handleTicketIniciado);
 
 **Acción:** `src/front/protectedViewsRol/analista/hooks/useAnalistaActions.js`
 ```javascript
-// Función: solucionarTicket (L80-97)
+// Función: solucionarTicket (L35-52)
 const solucionarTicket = async (ticketId) => {
     // PUT /api/tickets/${ticketId}/estado
     // Body: { estado: 'solucionado' }
+    // Backend emite 'ticket_solucionado' automáticamente
+    // NO emitir desde frontend - causaría duplicación
 };
 ```
 
@@ -354,8 +374,8 @@ elif nuevo_estado_lower == TicketState.SOLUCIONADO.value and estado_actual == Ti
     if result:
         data = TicketEstadoService.build_ticket_event_data(ticket, 'solucionado', user['id'], 'analista')  # L107
         data['mensaje'] = 'El analista ha marcado el ticket como solucionado'  # L108
-        emit_websocket_event(socketio, TicketEvent.SOLUCIONADO.value, data, None)  # L110
-        return jsonify(ticket.serialize()), 200  # L112
+        emit_websocket_event(socketio, TicketEvent.SOLUCIONADO.value, data, None)  # L110 - Emite a global_tickets
+        return jsonify(ticket.serialize()), 200  # L112 - Return inmediato para evitar 500
 ```
 
 **Servicio:** `src/api/services/ticket_estado_service.py`
@@ -374,6 +394,10 @@ def analista_solucionar_ticket(ticket, user_id):
     TicketEstadoService.crear_comentario(
         ticket.id, "Ticket solucionado por analista", id_analista=user_id
     )
+    
+    db.session.commit()
+    time.sleep(0.1)  # Evitar race conditions
+    return ticket, None
 ```
 
 #### Frontend Handler
@@ -529,30 +553,31 @@ socket.on('ticket_cerrado', handleTicketUpdate);
 **Ruta:** `src/api/routes/ticket_routes.py`
 ```python
 # Función: solicitar_reapertura_ticket (L169-221)
-@ticket_bp.route('/<int:id>/solicitar-reapertura', methods=['PUT'])
+@ticket_bp.route('/tickets/<int:ticket_id>/solicitar-reapertura', methods=['POST'])
 @require_role(['cliente'])
-def solicitar_reapertura_ticket(id):
+def solicitar_reapertura_ticket(ticket_id):
     # L192-199: Crea comentario específico de solicitud
     comentario_reapertura = Comentarios(
-        id_ticket=id,
+        id_ticket=ticket_id,
         id_cliente=user['id'],
-        texto="El cliente solicita la reapertura del ticket",
+        texto="Cliente solicitó reapertura del ticket - Pendiente de decisión del supervisor",
         fecha_comentario=datetime.now()
     )
     db.session.add(comentario_reapertura)
     
+    # CRÍTICO: Marcar que hay solicitud de reapertura pendiente
+    ticket.tiene_solicitud_reapertura_pendiente = True
+    db.session.commit()
+    
     # L203: Refresh para que serialize() detecte la solicitud
     db.session.refresh(ticket)
     
-    # L205-212: Prepara data con el campo calculado
-    data = {
-        'ticket_id': id,
-        'ticket': ticket.serialize(),  # L207 - incluye tiene_solicitud_reapertura_pendiente
-        ...
-    }
+    # L205-212: Prepara data con el campo calculado usando build_ticket_event_data
+    data = TicketEstadoService.build_ticket_event_data(ticket, 'solicitud_reapertura')
+    data['motivo'] = motivo  # Agregar motivo adicional
     
-    # L213: Emite evento
-    emit_websocket_event(socketio, 'solicitud_reapertura', data, None)
+    # L213: Emite evento a global_tickets
+    emit_ws_event(socketio, 'solicitud_reapertura', data, None)
 ```
 
 **Modelo:** `src/api/models.py`
@@ -584,12 +609,12 @@ if self.estado == 'solucionado':  # L241
 elif nuevo_estado_lower == TicketState.REABIERTO.value and (estado_actual in [TicketState.CERRADO.value, TicketState.SOLUCIONADO.value] or estado_actual.startswith('cerrado')):
     result, error = TicketEstadoService.supervisor_reabrir_ticket(ticket, user['id'])  # L185
     if result:
-        db.session.refresh(ticket)  # L187 - CRÍTICO para incluir comentario
+        db.session.refresh(ticket)  # L187 - CRÍTICO para incluir comentario de aprobación
         data = TicketEstadoService.build_ticket_event_data(
             ticket, 'reabierto_por_supervisor', user['id'], 'supervisor', estado_actual
         )  # L188-190
-        emit_websocket_event(socketio, TicketEvent.REABIERTO.value, data, None)  # L192
-        return jsonify(ticket.serialize()), 200  # L194
+        emit_websocket_event(socketio, TicketEvent.REABIERTO.value, data, None)  # L192 - Emite a global_tickets
+        return jsonify(ticket.serialize()), 200  # L194 - Return inmediato para evitar 500
 ```
 
 **Servicio:** `src/api/services/ticket_estado_service.py`
@@ -606,14 +631,20 @@ def supervisor_reabrir_ticket(ticket, user_id):
     ticket.estado = TicketState.EN_ESPERA.value
     ticket.fecha_cierre = None  # L204
     
+    # CRÍTICO: Limpiar el flag de solicitud de reapertura
+    ticket.tiene_solicitud_reapertura_pendiente = False
+    
     # L206-216: Elimina asignaciones anteriores si estaba solucionado
-    if estado_normalizado == 'solucionado':
-        Asignacion.query.filter_by(id_ticket=ticket.id).delete()  # L207
-        TicketEstadoService.crear_comentario(
-            ticket.id, 
-            "Ticket reabierto por supervisor - Asignaciones anteriores eliminadas",
-            id_supervisor=user_id
-        )  # L208-212
+    if estado_normalizado == TicketState.SOLUCIONADO.value:
+        asignaciones_anteriores = Asignacion.query.filter_by(id_ticket=ticket.id).all()
+        for asignacion in asignaciones_anteriores:
+            db.session.delete(asignacion)
+        
+        texto = "Supervisor aprobó solicitud de reapertura - Asignaciones anteriores eliminadas, listo para nueva asignación"
+    else:
+        texto = "Ticket reabierto por supervisor - Listo para nueva asignación"
+    
+    TicketEstadoService.crear_comentario(ticket.id, texto, id_supervisor=user_id)
 ```
 
 ---
@@ -632,12 +663,13 @@ def supervisor_reabrir_ticket(ticket, user_id):
 
 **Acción:** `src/front/protectedViewsRol/analista/hooks/useAnalistaActions.js`
 ```javascript
-// Función: escalarTicket (L99-126)
+// Función: escalarTicket (L55-145)
 const escalarTicket = async (ticketId) => {
     // PUT /api/tickets/${ticketId}/estado
-    // Body: { estado: 'en_espera' }  // L107 - NO 'escalado'
+    // Body: { estado: 'en_espera' }  // L107 - Estado válido (NO 'escalado')
     
     // IMPORTANTE: El estado enviado es 'en_espera', no 'escalado'
+    // El escalamiento se detecta por: estado='en_espera' + sin analista + comentario
     const response = await fetch(`${VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`, {
         method: 'PUT',
         headers: {
@@ -646,6 +678,9 @@ const escalarTicket = async (ticketId) => {
         },
         body: JSON.stringify({ estado: 'en_espera' })  // L107
     });
+    
+    // Backend emite 'ticket_escalado' automáticamente
+    // NO emitir desde frontend - causaría duplicación
 };
 ```
 
@@ -725,9 +760,12 @@ def analista_escalar_ticket(ticket, user_id):
             db.session.delete(asignacion)  # L163
     
     # L165-166: Crea comentario
-    TicketEstadoService.crear_comentario(
-        ticket.id, "Ticket escalado al supervisor", id_analista=user_id
-    )
+    texto = "Ticket escalado al supervisor" if estado_actual == TicketState.EN_ESPERA.value else "Ticket escalado al supervisor - Analista no pudo resolver"
+    TicketEstadoService.crear_comentario(ticket.id, texto, id_analista=user_id)
+    
+    db.session.commit()
+    time.sleep(0.1)  # Evitar race conditions
+    return ticket, None
 ```
 
 #### Frontend Handler - Analista
@@ -743,7 +781,9 @@ if (role === 'analista') {
     
     if (!esParaMi) {
         // Ticket escalado/reasignado - ELIMINARLO de mi lista
-        console.log(`[${role}] 🗑️ Ticket ${data.ticket_id} ya no asignado, eliminando`);  // L63
+        if (import.meta.env.DEV) {
+            console.log(`[${role}] 🗑️ Ticket ${data.ticket_id} ya no asignado a mí, eliminando de lista`);
+        }
         setTickets(prev => {
             if (!Array.isArray(prev)) return prev;
             return prev.filter(t => t.id !== data.ticket_id);  // L67
@@ -752,7 +792,7 @@ if (role === 'analista') {
     }
 }
 
-// Registro (L270)
+// Registro (L271)
 socket.on('ticket_escalado', handleTicketUpdate);
 ```
 
@@ -895,25 +935,49 @@ def normalizar_estado(estado):
 **Archivo:** `src/api/utils/websocket_utils.py`
 
 ```python
-# emit_websocket_event (L42-57)
+# emit_websocket_event (L42-57) - DEPRECADO, usar emit_ticket_event
 def emit_websocket_event(socketio, event_name, data, room='global_tickets'):
     # Emite evento WebSocket
     # Siempre a room global_tickets
     socketio.emit(event_name, data, room=room)  # L54
     print(f"[WebSocket] Emitido: {event_name} a room {room}")  # L56
+
+# emit_ticket_event (L30-75) - RECOMENDADO
+def emit_ticket_event(event, ticket, action=None, extra_data=None):
+    # Emite evento de ticket a global_tickets
+    # SIEMPRE incluye ticket completo serializado
+    data = {
+        'ticket_id': ticket.id,
+        'ticket': ticket.serialize(),  # SIEMPRE completo
+        'action': action,
+        'estado': ticket.estado,
+        'timestamp': datetime.now().isoformat(),
+    }
+    socketio.emit(event, data, room='global_tickets')
+    return True
+
+# emit_ticket_created (L95-105)
+def emit_ticket_created(ticket):
+    return emit_ticket_event(
+        event='ticket_created',
+        ticket=ticket,
+        action='creado',
+        extra_data={'id_cliente': ticket.id_cliente}
+    )
 ```
 
 ### Frontend
 
 **Archivo:** `src/front/hooks/useWebSocketEvents.js`
 
-```python
-# validateTicketEvent (L20-30)
-const validateTicketEvent = (data) => {
-    // Valida estructura de evento
-    // Verifica ticket_id y tipos
-    return data && data.ticket_id && typeof data.ticket_id === 'number';  # L29
-};
+```javascript
+// validateTicketEvent - Importado desde utils
+import { validateTicketEvent, logValidationError } from '../utils/websocket-validators';
+
+// La función validateTicketEvent ahora está en src/front/utils/websocket-validators.js
+// Valida estructura de evento
+// Verifica ticket_id y tipos
+// return data && data.ticket_id && typeof data.ticket_id === 'number';
 ```
 
 ---
@@ -938,3 +1002,23 @@ const validateTicketEvent = (data) => {
 
 **Última actualización:** 2025-12-29  
 **Mantenido por:** Equipo de desarrollo TiBACK
+
+---
+
+## 🔄 Historial de Actualizaciones
+
+### 2025-12-29 - Actualización Quirúrgica
+- ✅ Actualizado `create_ticket` route: ahora soporta rol 'administrador' además de 'cliente'
+- ✅ Actualizado `asignar_ticket` route: ahora soporta rol 'administrador' además de 'supervisor'
+- ✅ Corregidas referencias de líneas de código según implementación actual
+- ✅ Agregados comentarios sobre `time.sleep(0.1)` para evitar race conditions
+- ✅ Actualizada función `emit_ticket_created` con nueva firma (sin socketio/cliente params)
+- ✅ Agregada documentación de `emit_ticket_event` como función recomendada
+- ✅ Actualizado `solicitar_reapertura_ticket`: ahora usa POST en lugar de PUT
+- ✅ Agregado flag `tiene_solicitud_reapertura_pendiente` en flujo de reapertura
+- ✅ Actualizado `supervisor_reabrir_ticket`: ahora limpia el flag de solicitud pendiente
+- ✅ Corregidos números de línea en handlers de frontend
+- ✅ Agregados comentarios sobre "Return inmediato para evitar 500" en rutas críticas
+- ✅ Actualizada función `validateTicketEvent`: ahora importada desde utils/websocket-validators
+- ✅ Mejorados comentarios en `escalarTicket` sobre detección de escalamiento
+- ✅ Agregados logs condicionales con `import.meta.env.DEV` en handlers de cliente
