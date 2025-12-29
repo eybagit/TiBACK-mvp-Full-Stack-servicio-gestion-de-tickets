@@ -99,22 +99,7 @@ def enviar_mensaje_supervisor_analista():
 
         socketio = get_socketio()
         if socketio:
-            # FASE 1: EMISIÓN DUAL (room específica + global_tickets)
-            
-            # 1. Emisión a room específica (MANTENER por ahora para compatibilidad)
-            chat_room = f'chat_supervisor_analista_{ticket_id}'
-            socketio.emit('nuevo_mensaje_chat_supervisor_analista', {
-                'ticket_id': ticket_id,
-                'mensaje': mensaje,
-                'autor': {
-                    'id': user_info['id'],
-                    'nombre': user_info.get('nombre', 'Usuario'),
-                    'rol': user_info['role']
-                },
-                'fecha': datetime.now().isoformat()
-            }, room=chat_room)
-
-            # 2. NUEVA emisión a global_tickets
+            # FASE 3: Solo emisión a global_tickets (código limpio)
             from api.routes.utils_routes import emit_to_global
             emit_to_global('nuevo_mensaje_chat', {
                 'tipo': 'chat_supervisor_analista',
@@ -230,22 +215,7 @@ def enviar_mensaje_analista_cliente():
 
         socketio = get_socketio()
         if socketio:
-            # FASE 1: EMISIÓN DUAL (room específica + global_tickets)
-            
-            # 1. Emisión a room específica (MANTENER por ahora para compatibilidad)
-            chat_room = f'chat_analista_cliente_{ticket_id}'
-            socketio.emit('nuevo_mensaje_chat_analista_cliente', {
-                'ticket_id': ticket_id,
-                'mensaje': mensaje,
-                'autor': {
-                    'id': user_info['id'],
-                    'nombre': user_info.get('nombre', 'Usuario'),
-                    'rol': user_info['role']
-                },
-                'fecha': datetime.now().isoformat()
-            }, room=chat_room)
-
-            # 2. NUEVA emisión a global_tickets
+            # FASE 3: Solo emisión a global_tickets (código limpio)
             from api.routes.utils_routes import emit_to_global
             emit_to_global('nuevo_mensaje_chat', {
                 'tipo': 'chat_analista_cliente',
