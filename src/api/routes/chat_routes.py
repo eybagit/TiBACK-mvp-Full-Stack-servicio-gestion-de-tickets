@@ -99,8 +99,10 @@ def enviar_mensaje_supervisor_analista():
 
         socketio = get_socketio()
         if socketio:
-            chat_room = f'chat_supervisor_analista_{ticket_id}'
+            # FASE 1: EMISIÓN DUAL (room específica + global_tickets)
             
+            # 1. Emisión a room específica (MANTENER por ahora para compatibilidad)
+            chat_room = f'chat_supervisor_analista_{ticket_id}'
             socketio.emit('nuevo_mensaje_chat_supervisor_analista', {
                 'ticket_id': ticket_id,
                 'mensaje': mensaje,
@@ -112,18 +114,23 @@ def enviar_mensaje_supervisor_analista():
                 'fecha': datetime.now().isoformat()
             }, room=chat_room)
 
-            general_room = f'room_ticket_{ticket_id}'
-            socketio.emit('nuevo_mensaje_chat', {
-                'ticket_id': ticket_id,
+            # 2. NUEVA emisión a global_tickets
+            from api.routes.utils_routes import emit_to_global
+            emit_to_global('nuevo_mensaje_chat', {
                 'tipo': 'chat_supervisor_analista',
+                'ticket_id': ticket_id,
                 'mensaje': mensaje,
                 'autor': {
                     'id': user_info['id'],
                     'nombre': user_info.get('nombre', 'Usuario'),
                     'rol': user_info['role']
                 },
+                'participantes': {
+                    'supervisor_id': ticket.asignacion_actual.id_supervisor if ticket.asignacion_actual else None,
+                    'analista_id': ticket.asignacion_actual.id_analista if ticket.asignacion_actual else None
+                },
                 'fecha': datetime.now().isoformat()
-            }, room=general_room)
+            })
         
         return jsonify({
             "message": "Mensaje enviado exitosamente",
@@ -223,8 +230,10 @@ def enviar_mensaje_analista_cliente():
 
         socketio = get_socketio()
         if socketio:
-            chat_room = f'chat_analista_cliente_{ticket_id}'
+            # FASE 1: EMISIÓN DUAL (room específica + global_tickets)
             
+            # 1. Emisión a room específica (MANTENER por ahora para compatibilidad)
+            chat_room = f'chat_analista_cliente_{ticket_id}'
             socketio.emit('nuevo_mensaje_chat_analista_cliente', {
                 'ticket_id': ticket_id,
                 'mensaje': mensaje,
@@ -236,18 +245,23 @@ def enviar_mensaje_analista_cliente():
                 'fecha': datetime.now().isoformat()
             }, room=chat_room)
 
-            general_room = f'room_ticket_{ticket_id}'
-            socketio.emit('nuevo_mensaje_chat', {
-                'ticket_id': ticket_id,
+            # 2. NUEVA emisión a global_tickets
+            from api.routes.utils_routes import emit_to_global
+            emit_to_global('nuevo_mensaje_chat', {
                 'tipo': 'chat_analista_cliente',
+                'ticket_id': ticket_id,
                 'mensaje': mensaje,
                 'autor': {
                     'id': user_info['id'],
                     'nombre': user_info.get('nombre', 'Usuario'),
                     'rol': user_info['role']
                 },
+                'participantes': {
+                    'cliente_id': ticket.id_cliente,
+                    'analista_id': ticket.asignacion_actual.id_analista if ticket.asignacion_actual else None
+                },
                 'fecha': datetime.now().isoformat()
-            }, room=general_room)
+            })
         
         return jsonify({
             "message": "Mensaje enviado exitosamente",
