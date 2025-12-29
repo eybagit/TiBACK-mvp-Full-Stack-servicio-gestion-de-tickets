@@ -3,6 +3,7 @@
 // ============================================
 
 /**
+ * go
  * Estados del Ticket (formato frontend con guion bajo)
  * Backend usa espacios, Frontend usa guiones bajos
  */
