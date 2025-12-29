@@ -198,11 +198,7 @@ def solicitar_reapertura_ticket(ticket_id):
         db.session.add(comentario)
         db.session.commit()
         
-        # CRÍTICO: Marcar que hay solicitud de reapertura pendiente
-        ticket.tiene_solicitud_reapertura_pendiente = True
-        db.session.commit()
-        
-        # CRÍTICO: Refrescar ticket para que serialize() incluya el nuevo comentario Y el flag
+        # CRÍTICO: Refrescar ticket para que serialize() incluya el nuevo comentario
         db.session.refresh(ticket)
         
         # Emitir evento WebSocket con ticket completo

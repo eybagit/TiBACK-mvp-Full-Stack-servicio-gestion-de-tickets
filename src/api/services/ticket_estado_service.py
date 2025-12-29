@@ -94,7 +94,7 @@ class TicketEstadoService:
         if estado_actual != 'cerrado':
             return None, "Solo se pueden reabrir tickets cerrados"
         
-        ticket.estado = TicketState.EN_ESPERA.value
+        ticket.estado = TicketState.REABIERTO.value
         ticket.fecha_cierre = None
         
         TicketEstadoService.crear_comentario(
