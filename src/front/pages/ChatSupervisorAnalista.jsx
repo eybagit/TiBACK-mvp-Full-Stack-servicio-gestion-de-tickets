@@ -149,44 +149,56 @@ function ChatSupervisorAnalista() {
         }
     }, [store.auth.isAuthenticated, store.auth.token, store.auth.user, dispatch]);
 
-    // Efecto para unirse al room del chat
+    // FASE 2: Efecto para unirse al room del chat (ahora solo global_tickets)
     useEffect(() => {
         if (ticketId && store.websocket.socket && store.websocket.connected) {
-            console.log('🔍 DEBUG: Uniéndose a rooms para ticket', ticketId);
+            console.log('🔍 DEBUG: Uniéndose a global_tickets para ticket', ticketId);
 
-            // Unirse al room general del ticket
+            // Solo unirse al room general
             joinTicketRoom(store.websocket.socket, parseInt(ticketId));
-            // Unirse al room específico del chat supervisor-analista
-            joinChatSupervisorAnalista(store.websocket.socket, parseInt(ticketId));
 
             // Configurar listeners para el room del chat
             const socket = store.websocket.socket;
 
-            // Escuchar nuevos mensajes del chat específico
+            // FASE 2: Escuchar evento genérico de chat desde global_tickets
             const handleNuevoMensaje = (data) => {
-                console.log('💬 NUEVO MENSAJE EN CHAT SUPERVISOR-ANALISTA:', data);
-                if (data.ticket_id === parseInt(ticketId)) {
-                    setSincronizando(true);
-                    cargarMensajes(false).finally(() => setSincronizando(false));
+                console.log('💬 NUEVO MENSAJE EN GLOBAL_TICKETS:', data);
+
+                // Filtrar por tipo y ticket_id
+                if (data.tipo === 'chat_supervisor_analista' && data.ticket_id === parseInt(ticketId)) {
+                    // Validar permisos
+                    const userRole = store.auth.user?.role || tokenUtils.getRole(store.auth.token);
+                    const userId = store.auth.user?.id || tokenUtils.getUserId(store.auth.token);
+
+                    const esParticipante = (
+                        (userRole === 'supervisor' && data.participantes?.supervisor_id === userId) ||
+                        (userRole === 'analista' && data.participantes?.analista_id === userId) ||
+                        userRole === 'administrador'
+                    );
+
+                    if (esParticipante) {
+                        console.log('✅ Usuario es participante, recargando mensajes');
+                        setSincronizando(true);
+                        cargarMensajes(false).finally(() => setSincronizando(false));
+                    } else {
+                        console.log('⚠️ Usuario NO es participante, ignorando mensaje');
+                    }
                 }
             };
 
-            // Agregar listener específico del chat
-            socket.on('nuevo_mensaje_chat_supervisor_analista', handleNuevoMensaje);
-            console.log('🔍 DEBUG: Listener agregado para nuevo_mensaje_chat_supervisor_analista');
+            socket.on('nuevo_mensaje_chat', handleNuevoMensaje);
+            console.log('🔍 DEBUG: Listener agregado para nuevo_mensaje_chat desde global_tickets');
 
             // Cleanup al desmontar
             return () => {
                 console.log('🔍 DEBUG: Limpiando listeners y saliendo de rooms');
-                socket.off('nuevo_mensaje_chat_supervisor_analista', handleNuevoMensaje);
-                // Salir de ambos rooms
+                socket.off('nuevo_mensaje_chat', handleNuevoMensaje);
                 leaveTicketRoom(socket, parseInt(ticketId));
-                leaveChatSupervisorAnalista(socket, parseInt(ticketId));
             };
         } else {
             console.log('🔍 DEBUG: No se puede unir a rooms - socket:', !!store.websocket.socket, 'connected:', store.websocket.connected);
         }
-    }, [ticketId, store.websocket.socket, store.websocket.connected, joinTicketRoom, leaveTicketRoom, joinChatSupervisorAnalista, leaveChatSupervisorAnalista]);
+    }, [ticketId, store.websocket.socket, store.websocket.connected, joinTicketRoom, leaveTicketRoom]);
 
     const cargarMensajes = async (showLoading = true) => {
         try {
