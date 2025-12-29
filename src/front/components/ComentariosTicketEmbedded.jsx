@@ -28,6 +28,9 @@ import ComentariosList from '../pages/comentarios/components/ComentariosList';
 const ComentariosTicketEmbedded = ({ ticketId, onBack }) => {
     const { store, dispatch, joinTicketRoom, leaveTicketRoom } = useGlobalReducer();
 
+    // Debug: Log cuando el componente se monta
+    console.log('🔍 ComentariosTicketEmbedded montado con ticketId:', ticketId);
+
     // Hook de datos
     const {
         comentarios,
@@ -130,6 +133,7 @@ const ComentariosTicketEmbedded = ({ ticketId, onBack }) => {
 
     // Loading state
     if (loading) {
+        console.log('⏳ ComentariosTicketEmbedded: Cargando datos...');
         return (
             <div className="container mt-4">
                 <div className="d-flex justify-content-center">
@@ -140,6 +144,12 @@ const ComentariosTicketEmbedded = ({ ticketId, onBack }) => {
             </div>
         );
     }
+
+    console.log('✅ ComentariosTicketEmbedded: Renderizando contenido', {
+        comentarios: comentarios.length,
+        historialTicket: historialTicket.length,
+        ticketId
+    });
 
     return (
         <div className="container-fluid py-4">

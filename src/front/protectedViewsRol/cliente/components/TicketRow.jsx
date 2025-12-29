@@ -21,7 +21,9 @@ function TicketRow({
     generarRecomendacion,
     cerrarTicket,
     solicitarReapertura,
-    navigate
+    navigate,
+    openComments,
+    openChat
 }) {
     // ====== LÓGICA DINÁMICA REACTIVA A WEBSOCKET ======
 
@@ -301,10 +303,7 @@ function TicketRow({
                                         <button
                                             className="btn btn-sidebar-accent flex-fill btn-action-min"
                                             title="Ver y agregar comentarios"
-                                            onClick={() => {
-                                                setSelectedTicketId(ticket.id);
-                                                changeView(`comentarios-${ticket.id}`);
-                                            }}
+                                            onClick={() => openComments(ticket.id)}
                                         >
                                             <i className="fas fa-comments me-2"></i>
                                             Comentarios
@@ -312,10 +311,7 @@ function TicketRow({
                                         <button
                                             className="btn btn-sidebar-secondary flex-fill btn-action-min"
                                             title={tieneAnalistaAsignado(ticket) ? `Chat con ${getAnalistaAsignado(ticket)}` : "Chat con analista"}
-                                            onClick={() => {
-                                                setSelectedTicketId(ticket.id);
-                                                changeView(`chat-${ticket.id}`);
-                                            }}
+                                            onClick={() => openChat(ticket.id)}
                                         >
                                             <i className={`fas ${tieneAnalistaAsignado(ticket) ? 'fa-signal' : 'fa-comments'} me-2`}></i>
                                             Chat
