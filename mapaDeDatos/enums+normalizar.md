@@ -1,7 +1,8 @@
 # 🎯 Migración Completa a Enums + Normalización
 
 **Estado:** ✅ **100% COMPLETADO** (Backend + Frontend)  
-**Fecha:** 27 de diciembre de 2025
+**Fecha:** 27 de diciembre de 2025  
+**Última actualización:** 29 de diciembre de 2025
 
 ---
 
@@ -53,23 +54,43 @@ class TicketEvent(Enum):
 **Ubicación:** `src/api/utils/normalize.py`
 
 ```python
-from api.constants.ticket_enums import TicketState
+from api.constants.ticket_enums import TicketState, TicketEvent
 
-def normalize_to_backend(estado_raw):
-    """Normaliza cualquier variación de estado al formato backend"""
-    if not estado_raw:
-        return TicketState.CREADO.value
-    
-    estado_lower = str(estado_raw).lower().strip()
-    estado_normalizado = estado_lower.replace(' ', '_')
-    
-    valid_states = [state.value for state in TicketState]
-    return estado_normalizado if estado_normalizado in valid_states else TicketState.CREADO.value
+def normalize_to_frontend(estado: str) -> str:
+    """Normaliza estado del backend (espacios) al frontend (guiones bajos)"""
+    if not estado:
+        return ""
+    return estado.lower().strip().replace(' ', '_')
 
-def states_match(estado1, estado2):
-    """Compara dos estados ignorando formato"""
+def normalize_to_backend(estado: str) -> str:
+    """Normaliza estado del frontend (guiones bajos) al backend (espacios)"""
+    if not estado:
+        return ""
+    return estado.lower().strip().replace('_', ' ')
+
+def is_valid_state(estado: str) -> bool:
+    """Valida si un estado es válido"""
+    normalized = normalize_to_backend(estado)
+    return normalized in TicketState.values()
+
+def states_match(estado1: str, estado2: str) -> bool:
+    """Compara dos estados (ignora formato espacios/guiones)"""
     return normalize_to_backend(estado1) == normalize_to_backend(estado2)
+
+def get_state_enum(estado: str) -> TicketState:
+    """Obtiene el enum de estado a partir de un string"""
+    normalized = normalize_to_backend(estado)
+    try:
+        return TicketState(normalized)
+    except ValueError:
+        return None
 ```
+
+**Funciones Adicionales:**
+- `normalize_to_frontend()` - Convierte espacios a guiones bajos
+- `is_valid_state()` - Valida si un estado existe en el enum
+- `is_valid_event()` - Valida si un evento existe en el enum
+- `get_state_enum()` - Retorna el enum TicketState correspondiente
 
 ---
 
@@ -100,33 +121,78 @@ export const SYSTEM_EVENTS = {
     TICKET_REABIERTO: 'ticket_reabierto',
     TICKET_ESCALADO: 'ticket_escalado',
     SOLICITUD_REAPERTURA: 'solicitud_reapertura',
-    TICKET_ELIMINADO: 'ticket_eliminado'
+    TICKET_ELIMINADO: 'ticket_eliminado',
+    ASIGNACION_ELIMINADA: 'asignacion_eliminada'
 };
 
 export const TICKET_PROPS = {
     SOLICITUD_PENDIENTE: 'tiene_solicitud_reapertura_pendiente'
 };
+
+export const EVENT_TO_STATE = {
+    [SYSTEM_EVENTS.TICKET_CREATED]: TICKET_STATES.CREADO,
+    [SYSTEM_EVENTS.TICKET_ASIGNADO]: TICKET_STATES.EN_ESPERA,
+    [SYSTEM_EVENTS.TICKET_INICIADO]: TICKET_STATES.EN_PROCESO,
+    [SYSTEM_EVENTS.TICKET_SOLUCIONADO]: TICKET_STATES.SOLUCIONADO,
+    [SYSTEM_EVENTS.TICKET_CERRADO]: TICKET_STATES.CERRADO,
+    [SYSTEM_EVENTS.TICKET_REABIERTO]: TICKET_STATES.REABIERTO,
+    [SYSTEM_EVENTS.ASIGNACION_ELIMINADA]: TICKET_STATES.CREADO
+};
+
+export const VALID_STATES = Object.values(TICKET_STATES);
+export const VALID_EVENTS = Object.values(SYSTEM_EVENTS);
+
+export const ACTIVE_STATES = [
+    TICKET_STATES.CREADO,
+    TICKET_STATES.EN_ESPERA,
+    TICKET_STATES.EN_PROCESO,
+    TICKET_STATES.SOLUCIONADO,
+    TICKET_STATES.REABIERTO
+];
+
+export const ESCALATION_STATES = [
+    TICKET_STATES.EN_ESPERA,
+    TICKET_STATES.EN_PROCESO,
+    TICKET_STATES.REABIERTO
+];
 ```
+
+**Constantes Adicionales:**
+- `EVENT_TO_STATE` - Mapeo de eventos WebSocket a estados resultantes
+- `VALID_STATES` - Array de todos los estados válidos
+- `VALID_EVENTS` - Array de todos los eventos válidos
+- `ACTIVE_STATES` - Estados que indican ticket activo (no cerrado)
+- `ESCALATION_STATES` - Estados que permiten escalamiento
 
 **Ubicación:** `src/front/utils/normalize.js`
 
 ```javascript
-import { TICKET_STATES } from '../constants/ticketEnums';
+import { VALID_STATES, VALID_EVENTS } from '../constants/ticketEnums';
 
-export function normalizeFromBackend(estadoRaw) {
-    if (!estadoRaw) return TICKET_STATES.CREADO;
-    
-    const estadoLower = estadoRaw.toString().toLowerCase().trim();
-    const normalized = estadoLower.replace(/\s+/g, '_');
-    
-    const validStates = Object.values(TICKET_STATES);
-    return validStates.includes(normalized) ? normalized : TICKET_STATES.CREADO;
-}
+export const normalizeFromBackend = (estado) => 
+    estado?.toLowerCase().trim().replace(/ /g, '_') || '';
 
-export function statesMatch(estado1, estado2) {
-    return normalizeFromBackend(estado1) === normalizeFromBackend(estado2);
-}
+export const normalizeToBackend = (estado) => 
+    estado?.toLowerCase().trim().replace(/_/g, ' ') || '';
+
+export const isValidState = (estado) => 
+    VALID_STATES.includes(normalizeFromBackend(estado));
+
+export const isValidEvent = (evento) => 
+    VALID_EVENTS.includes(evento);
+
+export const statesMatch = (estado1, estado2) => 
+    normalizeFromBackend(estado1) === normalizeFromBackend(estado2);
+
+export const getTicketState = (ticket) => 
+    normalizeFromBackend(ticket?.estado);
 ```
+
+**Funciones Adicionales:**
+- `normalizeToBackend()` - Convierte guiones bajos a espacios
+- `isValidState()` - Valida si un estado existe en el enum
+- `isValidEvent()` - Valida si un evento existe en el enum
+- `getTicketState()` - Obtiene estado normalizado de un ticket
 
 **Ubicación:** `src/front/utils/cssHelpers.js`
 
@@ -280,8 +346,8 @@ Los siguientes "estados" se usaban en el código pero **NO EXISTEN** en el enum:
 
 ### Backend Format (espacios)
 1. `creado`
-2. `en espera` → normalizado a `en_espera`
-3. `en proceso` → normalizado a `en_proceso`
+2. `en espera`
+3. `en proceso`
 4. `solucionado`
 5. `cerrado`
 6. `reabierto`
@@ -294,7 +360,9 @@ Los siguientes "estados" se usaban en el código pero **NO EXISTEN** en el enum:
 5. `cerrado`
 6. `reabierto`
 
-**Normalización:** Las funciones `normalize_to_backend()` y `normalizeFromBackend()` convierten automáticamente entre formatos.
+**Normalización:** 
+- `normalize_to_backend()` / `normalizeToBackend()` - Convierte guiones bajos a espacios
+- `normalize_to_frontend()` / `normalizeFromBackend()` - Convierte espacios a guiones bajos
 
 ---
 
@@ -329,6 +397,25 @@ import { normalizeFromBackend } from '../utils/normalize';
 if (normalizeFromBackend(ticket.estado) === TICKET_STATES.SOLUCIONADO) { ... }
 ```
 
+### Validar Estados
+```javascript
+// Validar si un estado es válido
+import { isValidState } from '../utils/normalize';
+
+if (isValidState(ticket.estado)) {
+    // Estado válido
+}
+```
+
+### Mapear Eventos a Estados
+```javascript
+// Obtener estado resultante de un evento
+import { EVENT_TO_STATE, SYSTEM_EVENTS } from '../constants/ticketEnums';
+
+const nuevoEstado = EVENT_TO_STATE[SYSTEM_EVENTS.TICKET_ASIGNADO];
+// nuevoEstado = 'en_espera'
+```
+
 ### CSS Classes
 ```jsx
 // ❌ ANTES (5 líneas)
@@ -351,6 +438,15 @@ if (ticket.estado === 'escalado') { ... }
 // ✅ DESPUÉS
 import { fueEscaladoPorAnalista } from '../utils/ticketHelpers';
 if (fueEscaladoPorAnalista(ticket)) { ... }
+```
+
+### Verificar Estados Activos
+```javascript
+// Verificar si un ticket está activo (no cerrado)
+import { ACTIVE_STATES } from '../constants/ticketEnums';
+import { normalizeFromBackend } from '../utils/normalize';
+
+const isActive = ACTIVE_STATES.includes(normalizeFromBackend(ticket.estado));
 ```
 
 ---
@@ -379,14 +475,27 @@ if (fueEscaladoPorAnalista(ticket)) { ... }
 ## 📚 Archivos de Referencia
 
 ### Backend
-- `src/api/constants/ticket_enums.py` - Enums centrales
-- `src/api/utils/normalize.py` - Funciones normalización
+- `src/api/constants/ticket_enums.py` - Enums centrales (TicketState, TicketEvent, TicketFields)
+- `src/api/utils/normalize.py` - Funciones normalización y validación
 
 ### Frontend
-- `src/front/constants/ticketEnums.js` - Enums JavaScript
-- `src/front/utils/normalize.js` - Normalización
-- `src/front/utils/cssHelpers.js` - Helpers CSS
-- `src/front/utils/ticketHelpers.js` - Detección escalamiento
+- `src/front/constants/ticketEnums.js` - Enums JavaScript (TICKET_STATES, SYSTEM_EVENTS, TICKET_PROPS)
+- `src/front/utils/normalize.js` - Normalización y validación
+- `src/front/utils/cssHelpers.js` - Helpers CSS para estados
+- `src/front/utils/ticketHelpers.js` - Detección escalamiento y helpers
+
+### Constantes Adicionales
+**Backend:**
+- `EVENT_TO_STATE` - Mapeo evento → estado resultante
+- `ESCALATION_STATES` - Estados que permiten escalamiento
+- `ACTIVE_STATES` - Estados activos (no cerrados)
+
+**Frontend:**
+- `EVENT_TO_STATE` - Mapeo evento → estado resultante
+- `VALID_STATES` - Array de estados válidos
+- `VALID_EVENTS` - Array de eventos válidos
+- `ACTIVE_STATES` - Estados activos
+- `ESCALATION_STATES` - Estados que permiten escalamiento
 
 ---
 
