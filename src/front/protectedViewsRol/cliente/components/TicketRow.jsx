@@ -184,20 +184,14 @@ function TicketRow({
                             <button
                                 className="btn btn-sidebar-accent btn-sm"
                                 title="Ver y agregar comentarios"
-                                onClick={() => {
-                                    setSelectedTicketId(ticket.id);
-                                    changeView(`comentarios - ${ticket.id} `);
-                                }}
+                                onClick={() => openComments(ticket.id)}
                             >
                                 <i className="fas fa-users"></i>
                             </button>
                             <button
                                 className="btn btn-sidebar-secondary btn-sm"
                                 title={tieneAnalistaAsignado(ticket) ? `Chat con ${getAnalistaAsignado(ticket)} ` : "Chat con analista"}
-                                onClick={() => {
-                                    setSelectedTicketId(ticket.id);
-                                    changeView(`chat - ${ticket.id} `);
-                                }}
+                                onClick={() => openChat(ticket.id)}
                             >
                                 <i className={`fas ${tieneAnalistaAsignado(ticket) ? 'fa-signal' : 'fa-comments'} `}></i>
                             </button>

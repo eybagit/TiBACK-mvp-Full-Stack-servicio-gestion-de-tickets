@@ -99,6 +99,16 @@ def enviar_mensaje_supervisor_analista():
 
         socketio = get_socketio()
         if socketio:
+            # Obtener la asignación más reciente
+            asignacion_actual = None
+            supervisor_id = None
+            analista_id = None
+            
+            if ticket.asignaciones:
+                asignacion_mas_reciente = max(ticket.asignaciones, key=lambda x: x.fecha_asignacion)
+                supervisor_id = asignacion_mas_reciente.id_supervisor
+                analista_id = asignacion_mas_reciente.id_analista
+            
             # FASE 3: Solo emisión a global_tickets (código limpio)
             from api.routes.utils_routes import emit_to_global
             emit_to_global('nuevo_mensaje_chat', {
@@ -111,8 +121,8 @@ def enviar_mensaje_supervisor_analista():
                     'rol': user_info['role']
                 },
                 'participantes': {
-                    'supervisor_id': ticket.asignacion_actual.id_supervisor if ticket.asignacion_actual else None,
-                    'analista_id': ticket.asignacion_actual.id_analista if ticket.asignacion_actual else None
+                    'supervisor_id': supervisor_id,
+                    'analista_id': analista_id
                 },
                 'fecha': datetime.now().isoformat()
             })
@@ -215,9 +225,17 @@ def enviar_mensaje_analista_cliente():
 
         socketio = get_socketio()
         if socketio:
+            # Obtener la asignación más reciente
+            analista_id = None
+            
+            if ticket.asignaciones:
+                asignacion_mas_reciente = max(ticket.asignaciones, key=lambda x: x.fecha_asignacion)
+                analista_id = asignacion_mas_reciente.id_analista
+            
             # FASE 3: Solo emisión a global_tickets (código limpio)
             from api.routes.utils_routes import emit_to_global
-            emit_to_global('nuevo_mensaje_chat', {
+            
+            payload = {
                 'tipo': 'chat_analista_cliente',
                 'ticket_id': ticket_id,
                 'mensaje': mensaje,
@@ -228,10 +246,17 @@ def enviar_mensaje_analista_cliente():
                 },
                 'participantes': {
                     'cliente_id': ticket.id_cliente,
-                    'analista_id': ticket.asignacion_actual.id_analista if ticket.asignacion_actual else None
+                    'analista_id': analista_id
                 },
                 'fecha': datetime.now().isoformat()
-            })
+            }
+            
+            print(f"🔔 [chat_routes] Emitiendo evento nuevo_mensaje_chat a global_tickets:")
+            print(f"   Tipo: {payload['tipo']}")
+            print(f"   Ticket ID: {payload['ticket_id']}")
+            print(f"   Participantes: {payload['participantes']}")
+            
+            emit_to_global('nuevo_mensaje_chat', payload)
         
         return jsonify({
             "message": "Mensaje enviado exitosamente",

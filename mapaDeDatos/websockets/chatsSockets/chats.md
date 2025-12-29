@@ -714,9 +714,59 @@ socket.on('nuevo_mensaje_chat', (data) => {
 - Validar permisos en backend antes de emitir
 - Auditoría de accesos con logs
 
+### Patrón de Navegación Atómica (Fix 29/12/2025)
+
+**Problema:** Condición de carrera al abrir componentes embebidos (ComentariosTicketEmbedded, ChatEmbedded, etc.)
+
+**Síntoma:** Pantalla en blanco porque el componente se monta antes de unirse al room WebSocket
+
+**Solución:** Funciones de navegación atómicas que hacen 3 cosas en orden:
+
+```javascript
+const openComments = (ticketId) => {
+    try {
+        const socket = store.websocket.socket;
+        if (socket && joinTicketRoom) joinTicketRoom(socket, ticketId);
+    } catch (e) {
+        console.error('Error joining ticket room:', e);
+    }
+    // Establecer ticketId si es necesario
+    setSelectedTicketId(ticketId);
+    // Cambiar vista
+    changeView(`comentarios-${ticketId}`);
+};
+```
+
+**Implementado en:**
+- ✅ Cliente: `src/front/protectedViewsRol/cliente/hooks/useClientePage.js`
+- ✅ Analista: `src/front/protectedViewsRol/analista/hooks/useAnalistaPage.js`
+- ✅ Supervisor: `src/front/protectedViewsRol/supervisor/hooks/useSupervisorPage.js`
+
+**Funciones disponibles:**
+- `openComments(ticketId)` - Abre comentarios
+- `openChat(ticketId)` - Abre chat
+- `openVerHD(ticketId)` - Abre detalles del ticket
+- `openRecomendacion(ticketId)` - Abre recomendaciones IA
+- `openIdentificar(ticketId)` - Abre análisis de imagen
+
+**Regla:** Siempre usar estas funciones en lugar de `changeView()` directamente cuando se navega a componentes que necesitan WebSocket.
+
 ---
 
 ## 🔄 Historial de Actualizaciones
+
+### 2025-12-29 - ✅ FIX: ComentariosTicketEmbedded para Cliente y Supervisor
+- ✅ **Problema resuelto:** Pantalla en blanco al abrir comentarios desde cliente y supervisor
+- ✅ **Causa:** Condición de carrera - componente se montaba antes de unirse al room WebSocket
+- ✅ **Solución:** Implementadas funciones de navegación atómicas (patrón del analista)
+- ✅ **Archivos modificados:**
+  - `src/front/protectedViewsRol/supervisor/hooks/useSupervisorPage.js` - Agregadas 5 funciones atómicas
+  - `src/front/protectedViewsRol/supervisor/SupervisorPage.jsx` - Exportadas funciones
+  - `src/front/protectedViewsRol/supervisor/components/SupervisorTicketsList.jsx` - Pasadas a TicketRow
+  - `src/front/protectedViewsRol/supervisor/components/TicketRow.jsx` - Usadas en botones
+  - `src/front/protectedViewsRol/cliente/components/TicketRow.jsx` - Usadas en botones compactos
+- ✅ **Funciones atómicas:** `openComments()`, `openChat()`, `openVerHD()`, `openRecomendacion()`, `openIdentificar()`
+- ✅ **Resultado:** Cliente, Supervisor y Analista pueden ver comentarios sin problemas
 
 ### 2025-12-29 - ✅ MIGRACIÓN COMPLETADA
 - ✅ **Migración a `global_tickets` completada** (~35 minutos)
@@ -744,8 +794,8 @@ socket.on('nuevo_mensaje_chat', (data) => {
 
 ---
 
-**Última actualización:** 2025-12-29 (Migración Completada)  
+**Última actualización:** 2025-12-29 (Fix ComentariosTicketEmbedded)  
 **Mantenido por:** Equipo de desarrollo TiBACK  
 **Chats documentados:** 3 (Comentarios 3 Roles, Analista-Cliente, Supervisor-Analista)  
-**Estado:** ✅ TODOS los chats migrados a `global_tickets`
+**Estado:** ✅ TODOS los chats migrados a `global_tickets` + Fix de navegación completado
 

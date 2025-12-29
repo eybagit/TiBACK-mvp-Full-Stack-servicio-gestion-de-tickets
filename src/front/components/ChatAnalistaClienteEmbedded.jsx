@@ -107,11 +107,18 @@ const ChatAnalistaClienteEmbedded = ({ ticketId, onBack }) => {
 
             // FASE 2: Escuchar evento genérico de chat desde global_tickets
             const handleNuevoMensaje = (data) => {
+                console.log('🔔 [ChatAnalistaClienteEmbedded] Evento recibido:', data);
+
                 // Filtrar por tipo y ticket_id
                 if (data.tipo === 'chat_analista_cliente' && data.ticket_id === parseInt(ticketId)) {
+                    console.log('✅ [ChatAnalistaClienteEmbedded] Mensaje es para este chat');
+
                     // Validar permisos (filtrado en frontend)
                     const userRole = store.auth.user?.role || tokenUtils.getRole(store.auth.token);
                     const userId = store.auth.user?.id || tokenUtils.getUserId(store.auth.token);
+
+                    console.log('👤 [ChatAnalistaClienteEmbedded] Usuario:', { userRole, userId });
+                    console.log('👥 [ChatAnalistaClienteEmbedded] Participantes:', data.participantes);
 
                     // Solo mostrar si el usuario es participante
                     const esParticipante = (
@@ -120,10 +127,19 @@ const ChatAnalistaClienteEmbedded = ({ ticketId, onBack }) => {
                         userRole === 'administrador'
                     );
 
+                    console.log('🔐 [ChatAnalistaClienteEmbedded] Es participante:', esParticipante);
+
                     if (esParticipante) {
+                        console.log('🔄 [ChatAnalistaClienteEmbedded] Recargando mensajes...');
                         setSincronizando(true);
                         cargarMensajes(false).finally(() => setSincronizando(false));
                     }
+                } else {
+                    console.log('❌ [ChatAnalistaClienteEmbedded] Mensaje no es para este chat:', {
+                        tipo: data.tipo,
+                        ticket_id: data.ticket_id,
+                        esperado: { tipo: 'chat_analista_cliente', ticket_id: parseInt(ticketId) }
+                    });
                 }
             };
 

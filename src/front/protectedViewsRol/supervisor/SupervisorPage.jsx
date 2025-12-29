@@ -86,7 +86,12 @@ export function SupervisorPage() {
         updatingInfo,
         actualizarInformacion,
         setSelectedTicketImages,
-        setSelectedImageIndex
+        setSelectedImageIndex,
+        openComments,
+        openChat,
+        openVerHD,
+        openRecomendacion,
+        openIdentificar
     } = useSupervisorPage();
 
     if (loading) {
@@ -187,6 +192,11 @@ export function SupervisorPage() {
                             cargarTicketsCerrados={cargarTicketsCerrados}
                             getEstadoColor={getEstadoColor}
                             getPrioridadColor={getPrioridadColor}
+                            openComments={openComments}
+                            openChat={openChat}
+                            openVerHD={openVerHD}
+                            openRecomendacion={openRecomendacion}
+                            openIdentificar={openIdentificar}
                         />
                     )}
 

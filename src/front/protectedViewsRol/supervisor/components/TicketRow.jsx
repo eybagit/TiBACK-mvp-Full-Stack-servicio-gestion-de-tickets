@@ -24,7 +24,12 @@ function TicketRow({
     changeView,
     cerrarTicket,
     reabrirTicket,
-    generarRecomendacion
+    generarRecomendacion,
+    openComments,
+    openChat,
+    openVerHD,
+    openRecomendacion,
+    openIdentificar
 }) {
     const isExpanded = expandedTickets.has(ticket.id);
     const tieneSolicitud = tieneSolicitudReapertura ? tieneSolicitudReapertura(ticket) : false;
@@ -222,21 +227,21 @@ function TicketRow({
                             <button
                                 className="btn btn-sidebar-teal btn-sm"
                                 title="Ver detalles"
-                                onClick={() => setActiveView(`ticket - ${ticket.id} `)}
+                                onClick={() => openVerHD(ticket.id)}
                             >
                                 <i className="fas fa-eye"></i>
                             </button>
                             <button
                                 className="btn btn-sidebar-accent btn-sm"
                                 title="Ver y agregar comentarios"
-                                onClick={() => changeView(`comentarios - ${ticket.id} `)}
+                                onClick={() => openComments(ticket.id)}
                             >
                                 <i className="fas fa-users"></i>
                             </button>
                             <button
                                 className="btn btn-sidebar-secondary btn-sm"
                                 title="Chat con analista asignado"
-                                onClick={() => changeView(`supervisor - chat - ${ticket.id} `)}
+                                onClick={() => openChat(ticket.id)}
                             >
                                 <i className="fas fa-user-tie"></i>
                             </button>
@@ -267,7 +272,7 @@ function TicketRow({
                                     <li>
                                         <button
                                             className="dropdown-item"
-                                            onClick={() => changeView(`identificar - ${ticket.id} `)}
+                                            onClick={() => openIdentificar(ticket.id)}
                                         >
                                             <i className="fas fa-camera me-2"></i>
                                             Analizar Imagen
@@ -356,7 +361,7 @@ function TicketRow({
                                     <button
                                         className="btn btn-sidebar-teal flex-fill btn-action-min"
                                         title="Ver detalles del ticket"
-                                        onClick={() => setActiveView(`ticket - ${ticket.id} `)}
+                                        onClick={() => openVerHD(ticket.id)}
                                     >
                                         <i className="fas fa-eye me-2"></i>
                                         Ver Detalles
@@ -364,7 +369,7 @@ function TicketRow({
                                     <button
                                         className="btn btn-sidebar-accent flex-fill btn-action-min"
                                         title="Ver y agregar comentarios"
-                                        onClick={() => changeView(`comentarios - ${ticket.id} `)}
+                                        onClick={() => openComments(ticket.id)}
                                     >
                                         <i className="fas fa-comments me-2"></i>
                                         Comentarios
@@ -372,7 +377,7 @@ function TicketRow({
                                     <button
                                         className="btn btn-sidebar-secondary flex-fill btn-action-min"
                                         title="Chat con analista asignado"
-                                        onClick={() => changeView(`supervisor - chat - ${ticket.id} `)}
+                                        onClick={() => openChat(ticket.id)}
                                     >
                                         <i className="fas fa-user-tie me-2"></i>
                                         Chat Analista
@@ -401,7 +406,7 @@ function TicketRow({
                                             <li>
                                                 <button
                                                     className="dropdown-item"
-                                                    onClick={() => changeView(`identificar - ${ticket.id} `)}
+                                                    onClick={() => openIdentificar(ticket.id)}
                                                 >
                                                     <i className="fas fa-camera me-2"></i>
                                                     Analizar Imagen

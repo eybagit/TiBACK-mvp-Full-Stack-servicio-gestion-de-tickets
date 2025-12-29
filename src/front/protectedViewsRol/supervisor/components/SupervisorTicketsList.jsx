@@ -38,7 +38,12 @@ function SupervisorTicketsList({
     loadingCerrados,
     cargarTicketsCerrados,
     getEstadoColor,
-    getPrioridadColor
+    getPrioridadColor,
+    openComments,
+    openChat,
+    openVerHD,
+    openRecomendacion,
+    openIdentificar
 }) {
     return (
         <>
@@ -191,6 +196,11 @@ function SupervisorTicketsList({
                                             cerrarTicket={cerrarTicket}
                                             reabrirTicket={reabrirTicket}
                                             generarRecomendacion={generarRecomendacion}
+                                            openComments={openComments}
+                                            openChat={openChat}
+                                            openVerHD={openVerHD}
+                                            openRecomendacion={openRecomendacion}
+                                            openIdentificar={openIdentificar}
                                         />
                                     ))}
                                 </tbody>
