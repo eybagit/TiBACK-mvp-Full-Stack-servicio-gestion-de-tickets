@@ -203,6 +203,9 @@ class TicketEstadoService:
         ticket.estado = TicketState.EN_ESPERA.value
         ticket.fecha_cierre = None
         
+        # CRÍTICO: Limpiar el flag de solicitud de reapertura
+        ticket.tiene_solicitud_reapertura_pendiente = False
+        
         # Si estaba solucionado, eliminar asignaciones anteriores
         asignaciones_eliminadas = 0
         if estado_actual == TicketState.SOLUCIONADO.value:
@@ -216,6 +219,7 @@ class TicketEstadoService:
         
         print(f"[DEBUG] Supervisor reabriendo ticket {ticket.id}, estado actual: {estado_actual}")
         print(f"[DEBUG] Asignaciones eliminadas: {asignaciones_eliminadas}")
+        print(f"[DEBUG] Flag tiene_solicitud_reapertura_pendiente limpiado: {ticket.tiene_solicitud_reapertura_pendiente}")
         
         db.session.commit()
         return ticket, None

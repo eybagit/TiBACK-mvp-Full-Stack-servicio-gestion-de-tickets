@@ -169,16 +169,61 @@ function useClienteWebSocket({
 
             /** @param {TicketWebSocketEvent} data */
             const handleTicketReabierto = (data) => {
-                if (data.ticket_id) {
-                    setTickets(prev => Array.isArray(prev) 
-                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: data.estado || 'en_espera' } : t)
-                        : prev
-                    );
-                    setSolicitudesReapertura(prev => {
-                        const newSet = new Set(prev);
-                        newSet.delete(data.ticket_id);
-                        return newSet;
-                    });
+                console.log('🔔 [Cliente] Evento ticket_reabierto recibido:', data);
+                console.log('🔔 [Cliente] ticket_id:', data.ticket_id);
+                console.log('🔔 [Cliente] typeof ticket_id:', typeof data.ticket_id);
+                console.log('🔔 [Cliente] ticket_id truthy?:', !!data.ticket_id);
+                console.log('🔔 [Cliente] setSolicitudesReapertura es función?:', typeof setSolicitudesReapertura === 'function');
+                
+                try {
+                    if (data.ticket_id) {
+                        console.log('🔔 [Cliente] ✅ Entrando al if block');
+                        
+                        console.log('🔔 [Cliente] 📝 Actualizando tickets...');
+                        setTickets(prev => {
+                            console.log('🔔 [Cliente] setTickets ejecutándose, prev:', prev?.length);
+                            return Array.isArray(prev) 
+                                ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: data.estado || 'en_espera' } : t)
+                                : prev;
+                        });
+                        
+                        console.log('🔔 [Cliente] ✅ setTickets completado');
+                        console.log('🔔 [Cliente] 🗑️ Limpiando solicitudesReapertura...');
+                        console.log('🔔 [Cliente] 🗑️ Llamando a setSolicitudesReapertura con ticket_id:', data.ticket_id);
+                        
+                        try {
+                            setSolicitudesReapertura(prev => {
+                                console.log('🔔🔔🔔 [Cliente] ¡CALLBACK EJECUTADO! prev:', prev);
+                                console.log('🔔🔔🔔 [Cliente] prev es Set?:', prev instanceof Set);
+                                console.log('🔔🔔🔔 [Cliente] Array.from funciona?:', typeof Array.from === 'function');
+                                
+                                try {
+                                    const prevArray = Array.from(prev);
+                                    console.log('🔔 [Cliente] solicitudesReapertura ANTES:', prevArray);
+                                } catch (e) {
+                                    console.error('🔔 [Cliente] ERROR al convertir prev a array:', e);
+                                }
+                                
+                                const newSet = new Set(prev);
+                                const hadTicket = newSet.has(data.ticket_id);
+                                newSet.delete(data.ticket_id);
+                                
+                                console.log(`🗑️ [Cliente] Ticket ${data.ticket_id} reabierto`);
+                                console.log(`🗑️ [Cliente] Tenía solicitud: ${hadTicket}, eliminando del Set`);
+                                console.log(`🗑️ [Cliente] solicitudesReapertura DESPUÉS:`, Array.from(newSet));
+                                
+                                return newSet;
+                            });
+                            console.log('🔔 [Cliente] ✅✅ setSolicitudesReapertura completado');
+                        } catch (innerError) {
+                            console.error('🔔 [Cliente] 💥 ERROR dentro de setSolicitudesReapertura:', innerError);
+                        }
+                    } else {
+                        console.warn('🔔 [Cliente] ⚠️ NO entró al if - ticket_id es falsy');
+                    }
+                } catch (error) {
+                    console.error('🔔 [Cliente] 💥 ERROR en handleTicketReabierto:', error);
+                    console.error('🔔 [Cliente] 💥 Stack:', error.stack);
                 }
             };
 

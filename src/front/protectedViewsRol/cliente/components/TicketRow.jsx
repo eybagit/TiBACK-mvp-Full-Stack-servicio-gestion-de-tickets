@@ -31,13 +31,17 @@ function TicketRow({
      */
     const actions = useMemo(() => {
         const estado = normalizeFromBackend(ticket.estado);
+        const hasSolicitud = solicitudesReapertura.has(ticket.id);
+
+        console.log(`🔍 [TicketRow #${ticket.id}] Estado: ${estado}, Tiene solicitud: ${hasSolicitud}`);
+        console.log(`🔍 [TicketRow #${ticket.id}] SOLUCIONADO? ${estado === TICKET_STATES.SOLUCIONADO}`);
 
         return {
             // Botones de cerrar/solicitar reapertura SOLO cuando está solucionado
-            canCloseOrReopen: estado === TICKET_STATES.SOLUCIONADO && !solicitudesReapertura.has(ticket.id),
+            canCloseOrReopen: estado === TICKET_STATES.SOLUCIONADO && !hasSolicitud,
 
             // Mostrar alerta si ya solicitó reapertura
-            hasReopenRequest: solicitudesReapertura.has(ticket.id),
+            hasReopenRequest: hasSolicitud,
 
             // Puede ver detalles siempre
             canViewDetails: true
