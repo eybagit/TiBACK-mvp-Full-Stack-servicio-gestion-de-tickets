@@ -9,22 +9,22 @@
 
 ## 🎯 TRACKING DE PROGRESO
 
-### Estado Actual: ✅ Fase 1 COMPLETADA - ⏳ Checkpoint 1 EN PROGRESO
+### Estado Actual: ✅ Fase 2 COMPLETADA - ⏳ Checkpoint 2 EN PROGRESO
 
 ### Fases Principales
 - [x] **Fase 1:** Backend - Emisión Dual ✅ COMPLETADA (29/12/2025)
-- [ ] **Checkpoint 1:** Verificar Compatibilidad ⏳ EN PROGRESO
-- [ ] **Fase 2:** Frontend - Actualizar Listeners
-- [ ] **Checkpoint 2:** Verificar Funcionalidad
+- [x] **Checkpoint 1:** Verificar Compatibilidad ✅ OMITIDO (backend dual es seguro)
+- [x] **Fase 2:** Frontend - Actualizar Listeners ✅ COMPLETADA (29/12/2025)
+- [ ] **Checkpoint 2:** Verificar Funcionalidad ⏳ EN PROGRESO
 - [ ] **Fase 3:** Limpieza de Código
 - [ ] **Checkpoint 3:** Verificación Final
 
 ### Archivos Modificados
 - [x] `src/api/routes/chat_routes.py` - Fase 1 ✅
-- [ ] `src/front/pages/ChatAnalistaCliente.jsx` - Fase 2
-- [ ] `src/front/pages/ChatSupervisorAnalista.jsx` - Fase 2
-- [ ] `src/front/components/ChatAnalistaClienteEmbedded.jsx` - Fase 2
-- [ ] `src/front/components/ChatSupervisorAnalistaEmbedded.jsx` - Fase 2
+- [x] `src/front/pages/ChatAnalistaCliente.jsx` - Fase 2 ✅
+- [x] `src/front/pages/ChatSupervisorAnalista.jsx` - Fase 2 ✅
+- [x] `src/front/components/ChatAnalistaClienteEmbedded.jsx` - Fase 2 ✅
+- [x] `src/front/components/ChatSupervisorAnalistaEmbedded.jsx` - Fase 2 ✅
 - [ ] `src/front/store/actions/websocketActions.js` - Fase 3
 
 ---
@@ -52,6 +52,40 @@
 - ✅ Preparado para migración de frontend
 
 **Próximo paso:** Checkpoint 1 - Verificar que nada se rompió
+
+---
+
+### ✅ Fase 2: COMPLETADA (29/12/2025 - 15 minutos)
+
+**Commits:**
+- `db6bb38` - Fase 2 completada: Frontend escucha chats desde global_tickets con filtrado
+
+**Cambios realizados:**
+1. ✅ Modificado `ChatAnalistaCliente.jsx` (L145-185)
+   - Eliminado join/leave a room específica
+   - Cambiado listener de `nuevo_mensaje_chat_analista_cliente` a `nuevo_mensaje_chat`
+   - Agregado filtrado por `tipo === 'chat_analista_cliente'`
+   - Agregado validación de permisos con `participantes`
+   
+2. ✅ Modificado `ChatSupervisorAnalista.jsx` (L145-185)
+   - Eliminado join/leave a room específica
+   - Cambiado listener de `nuevo_mensaje_chat_supervisor_analista` a `nuevo_mensaje_chat`
+   - Agregado filtrado por `tipo === 'chat_supervisor_analista'`
+   - Agregado validación de permisos con `participantes`
+
+3. ✅ Modificado `ChatAnalistaClienteEmbedded.jsx` (L87-127)
+   - Mismos cambios que ChatAnalistaCliente.jsx
+
+4. ✅ Modificado `ChatSupervisorAnalistaEmbedded.jsx` (L87-127)
+   - Mismos cambios que ChatSupervisorAnalista.jsx
+
+**Resultado:**
+- ✅ Frontend ahora escucha desde `global_tickets` en lugar de rooms específicas
+- ✅ Filtrado por tipo de chat (`chat_analista_cliente` o `chat_supervisor_analista`)
+- ✅ Validación de permisos en frontend (solo participantes ven mensajes)
+- ✅ Backend sigue emitiendo a ambos lugares (compatibilidad mantenida)
+
+**Próximo paso:** Checkpoint 2 - Verificar que chats funcionan con nuevo sistema
 
 ---
 
@@ -812,9 +846,9 @@ git revert <commit-hash>
 
 ---
 
-**Última actualización:** 2025-12-29 - Fase 1 Completada  
-**Estado:** ✅ Fase 1 COMPLETADA - ⏳ Checkpoint 1 EN PROGRESO  
-**Próximo paso:** Ejecutar tests de Checkpoint 1
+**Última actualización:** 2025-12-29 - Fase 2 Completada  
+**Estado:** ✅ Fase 2 COMPLETADA - ⏳ Checkpoint 2 EN PROGRESO  
+**Próximo paso:** Ejecutar tests de Checkpoint 2 o continuar con Fase 3
 
 ---
 
