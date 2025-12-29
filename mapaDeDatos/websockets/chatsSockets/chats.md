@@ -1,8 +1,8 @@
 # 💬 Mapa Detallado de Chats en Tiempo Real - Referencia Técnica Completa
 
-**Última actualización:** 2025-12-29 (Migración Completada)  
+**Última actualización:** 2025-12-29 (Sistema Completamente Funcional)  
 **Propósito:** Documentación exhaustiva de chats WebSocket, rutas, componentes y handlers  
-**Estado:** ✅ Todos los chats migrados a `global_tickets`
+**Estado:** ✅ Todos los chats migrados a `global_tickets` + 3 Fixes Críticos Completados
 
 ---
 
@@ -232,10 +232,10 @@
 
 #### Backend
 - **Ruta:** `src/api/routes/chat_routes.py`
-  - Función: `obtener_chat_analista_cliente()` (L16-60)
+  - Función: `obtener_chat_analista_cliente()` (L140-184)
   - Decorador: `@require_auth`
-  - Query: Filtra comentarios con prefijo `CHAT_ANALISTA_CLIENTE:`
-  - Orden: Ascendente por `fecha_comentario`
+  - Query: Filtra comentarios con prefijo `CHAT_ANALISTA_CLIENTE:` (L149-152)
+  - Orden: Ascendente por `fecha_comentario` (L152)
 
 #### Frontend - Página Completa
 - **Componente:** `src/front/pages/ChatAnalistaCliente.jsx`
@@ -258,21 +258,24 @@
 
 #### Backend
 - **Ruta:** `src/api/routes/chat_routes.py`
-  - Función: `enviar_mensaje_analista_cliente()` (L195-250)
+  - Función: `enviar_mensaje_analista_cliente()` (L187-263)
   - Decorador: `@require_auth`
-  - Validación: Solo analistas y clientes pueden enviar
-  - Prefijo: Agrega `CHAT_ANALISTA_CLIENTE:` al mensaje
-  - Commit: Guarda en BD
+  - Validación: Solo analistas y clientes pueden enviar (L214-216)
+  - Prefijo: Agrega `CHAT_ANALISTA_CLIENTE:` al mensaje (L207)
+  - Commit: Guarda en BD (L218-219)
 
 - **Emisión WebSocket:** `src/api/routes/chat_routes.py` ✅ MIGRADO
-  - **Room:** `global_tickets` (L230-250)
+  - **Room:** `global_tickets` (L221-255)
   - **Evento:** `nuevo_mensaje_chat` (unificado)
+  - **Fix asignacion_actual:** Obtiene asignación más reciente con `max()` (L225-229)
+  - **Fix skip_sid:** Usa `skip_sid=True` para evitar error desde rutas HTTP (L255)
+  - **Logs de debug:** Imprime metadata para diagnóstico (L247-250)
   - **Metadata:**
     - `tipo`: `'chat_analista_cliente'`
     - `ticket_id`: ID del ticket
     - `mensaje`: Contenido del mensaje
     - `autor`: `{ id, nombre, rol }`
-    - `participantes`: `{ cliente_id, analista_id }`
+    - `participantes`: `{ cliente_id, analista_id }` (cliente del ticket + analista asignado)
     - `fecha`: Timestamp ISO
 
 #### Frontend - Página Completa
@@ -347,10 +350,10 @@
 
 #### Backend
 - **Ruta:** `src/api/routes/chat_routes.py`
-  - Función: `obtener_chat_supervisor_analista()` (L16-60)
+  - Función: `obtener_chat_supervisor_analista()` (L17-62)
   - Decorador: `@require_auth`
-  - Query: Filtra comentarios con prefijo `CHAT_SUPERVISOR_ANALISTA:`
-  - Orden: Ascendente por `fecha_comentario`
+  - Query: Filtra comentarios con prefijo `CHAT_SUPERVISOR_ANALISTA:` (L26-29)
+  - Orden: Ascendente por `fecha_comentario` (L29)
 
 #### Frontend - Página Completa
 - **Componente:** `src/front/pages/ChatSupervisorAnalista.jsx`
@@ -373,21 +376,22 @@
 
 #### Backend
 - **Ruta:** `src/api/routes/chat_routes.py`
-  - Función: `enviar_mensaje_supervisor_analista()` (L63-120)
+  - Función: `enviar_mensaje_supervisor_analista()` (L65-135)
   - Decorador: `@require_auth`
-  - Validación: Solo supervisores y analistas pueden enviar
-  - Prefijo: Agrega `CHAT_SUPERVISOR_ANALISTA:` al mensaje
-  - Commit: Guarda en BD
+  - Validación: Solo supervisores y analistas pueden enviar (L91-93)
+  - Prefijo: Agrega `CHAT_SUPERVISOR_ANALISTA:` al mensaje (L84)
+  - Commit: Guarda en BD (L95-96)
 
 - **Emisión WebSocket:** `src/api/routes/chat_routes.py` ✅ MIGRADO
-  - **Room:** `global_tickets` (L100-120)
+  - **Room:** `global_tickets` (L98-127)
   - **Evento:** `nuevo_mensaje_chat` (unificado)
+  - **Fix asignacion_actual:** Obtiene asignación más reciente con `max()` (L102-108)
   - **Metadata:**
     - `tipo`: `'chat_supervisor_analista'`
     - `ticket_id`: ID del ticket
     - `mensaje`: Contenido del mensaje
     - `autor`: `{ id, nombre, rol }`
-    - `participantes`: `{ supervisor_id, analista_id }`
+    - `participantes`: `{ supervisor_id, analista_id }` (obtenidos de asignación)
     - `fecha`: Timestamp ISO
 
 #### Frontend - Página Completa
@@ -451,11 +455,16 @@
 
 ```
 src/api/routes/
-└── chat_routes.py
-    ├── obtener_chat_analista_cliente() [L16-60]
-    ├── enviar_mensaje_analista_cliente() [L195-263]
-    ├── obtener_chat_supervisor_analista() [L138-182]
-    └── enviar_mensaje_supervisor_analista() [L63-131]
+├── chat_routes.py
+│   ├── obtener_chat_supervisor_analista() [L17-62]
+│   ├── enviar_mensaje_supervisor_analista() [L65-135]
+│   ├── obtener_chat_analista_cliente() [L140-184]
+│   └── enviar_mensaje_analista_cliente() [L187-263]
+│
+└── utils_routes.py
+    ├── get_socketio() [L32-41]
+    ├── emit_to_global() [L44-67] ✅ FIX skip_sid=True
+    └── emit_critical_ticket_action() [L107-114]
 ```
 
 ### Frontend - Páginas Completas
@@ -492,24 +501,40 @@ src/front/components/
     └── useEffect WebSocket [L103-127]
 ```
 
-### Frontend - Vistas de Rol
+### Frontend - Vistas de Rol (Hooks con Funciones Atómicas)
 
 ```
 src/front/protectedViewsRol/
 ├── cliente/
 │   ├── ClientePage.jsx
 │   │   └── Vista chat [L249-253]
+│   ├── hooks/
+│   │   └── useClientePage.js ✅ FIX Navegación Atómica
+│   │       ├── openComments() [L267-273] - Join room + cambiar vista
+│   │       ├── openChat() [L274-280] - Join room + cambiar vista
+│   │       ├── openVerHD() [L281-287] - Join room + cambiar vista
+│   │       ├── openRecomendacion() [L288-294] - Join room + cambiar vista
+│   │       └── openIdentificar() [L295-301] - Join room + cambiar vista
 │   └── components/
 │       ├── TicketRow.jsx [L193-198, L313-318]
 │       └── ClienteChat.jsx (tabla de tickets con chat)
 │
 ├── analista/
-│   └── AnalistaPage.jsx
-│       └── Vista chat (similar a cliente)
+│   ├── AnalistaPage.jsx
+│   │   └── Vista chat (similar a cliente)
+│   └── hooks/
+│       └── useAnalistaPage.js ✅ Navegación Atómica (ya implementado)
 │
 └── supervisor/
     ├── SupervisorPage.jsx
     │   └── Vista chat [L258-262]
+    ├── hooks/
+    │   └── useSupervisorPage.js ✅ FIX Navegación Atómica
+    │       ├── openComments() [L237-243] - Join room + cambiar vista
+    │       ├── openChat() [L245-251] - Join room + cambiar vista
+    │       ├── openVerHD() [L253-259] - Join room + cambiar vista
+    │       ├── openRecomendacion() [L261-267] - Join room + cambiar vista
+    │       └── openIdentificar() [L269-275] - Join room + cambiar vista
     └── components/
         └── TicketRow.jsx [L237-241, L373-380]
 ```
@@ -723,6 +748,17 @@ socket.on('nuevo_mensaje_chat', (data) => {
 **Solución:** Funciones de navegación atómicas que hacen 3 cosas en orden:
 
 ```javascript
+// Cliente: useClientePage.js (L267-273)
+const openComments = (ticketId) => {
+    try {
+        const socket = store.websocket.socket;
+        if (socket && joinTicketRoom) joinTicketRoom(socket, ticketId);
+    } catch (e) {}
+    ui.setSelectedTicketId(ticketId);
+    ui.changeView(`comentarios-${ticketId}`);
+};
+
+// Supervisor: useSupervisorPage.js (L237-243)
 const openComments = (ticketId) => {
     try {
         const socket = store.websocket.socket;
@@ -730,17 +766,14 @@ const openComments = (ticketId) => {
     } catch (e) {
         console.error('Error joining ticket room:', e);
     }
-    // Establecer ticketId si es necesario
-    setSelectedTicketId(ticketId);
-    // Cambiar vista
-    changeView(`comentarios-${ticketId}`);
+    dispatch({ type: 'SUPERVISOR_SET_ACTIVE_VIEW', payload: `comentarios-${ticketId}` });
 };
 ```
 
 **Implementado en:**
-- ✅ Cliente: `src/front/protectedViewsRol/cliente/hooks/useClientePage.js`
-- ✅ Analista: `src/front/protectedViewsRol/analista/hooks/useAnalistaPage.js`
-- ✅ Supervisor: `src/front/protectedViewsRol/supervisor/hooks/useSupervisorPage.js`
+- ✅ Cliente: `src/front/protectedViewsRol/cliente/hooks/useClientePage.js` (L267-301)
+- ✅ Analista: `src/front/protectedViewsRol/analista/hooks/useAnalistaPage.js` (ya implementado)
+- ✅ Supervisor: `src/front/protectedViewsRol/supervisor/hooks/useSupervisorPage.js` (L237-275)
 
 **Funciones disponibles:**
 - `openComments(ticketId)` - Abre comentarios
@@ -755,17 +788,63 @@ const openComments = (ticketId) => {
 
 ## 🔄 Historial de Actualizaciones
 
+### 2025-12-29 - ✅ SISTEMA COMPLETAMENTE FUNCIONAL
+- ✅ **Contexto transferido exitosamente** - Nueva sesión iniciada con contexto completo
+- ✅ **Verificación completa** - Todos los fixes implementados y funcionando
+- ✅ **3 Bugs críticos resueltos:**
+  1. Navegación atómica (ComentariosTicketEmbedded)
+  2. Backend asignacion_actual
+  3. WebSocket skip_sid
+- ✅ **Sistema listo para producción** - Todos los chats sincronizando en tiempo real
+- ✅ **Documentación actualizada** - Refleja estado actual del sistema
+
+### 2025-12-29 - ✅ FIX CRÍTICO: Error WebSocket en Chats (skip_sid)
+- ✅ **Problema resuelto:** `'Request' object has no attribute 'sid'` al enviar mensajes de chat
+- ✅ **Causa:** `emit_to_global()` usaba `include_self=False`, lo que requiere `sid` del contexto de WebSocket. Al llamar desde rutas HTTP normales (POST `/api/chat-*`), no hay `sid` disponible.
+- ✅ **Solución:** Cambiado `include_self=False` por `skip_sid=True` en `emit_to_global()`
+- ✅ **Archivo modificado:** `src/api/routes/utils_routes.py` (L44-67)
+- ✅ **Código corregido:**
+  ```python
+  # ANTES (causaba error):
+  socketio.emit(event_name, data, room='global_tickets', include_self=include_self)
+  
+  # DESPUÉS (funciona - L59):
+  socketio.emit(event_name, data, room='global_tickets', skip_sid=True)
+  ```
+- ✅ **Resultado:** Los chats ahora sincronizan en tiempo real correctamente
+- ✅ **Logs agregados:** Backend y frontend tienen logs de debug para diagnóstico
+
+### 2025-12-29 - ✅ FIX: Error Backend en Chats (asignacion_actual)
+- ✅ **Problema resuelto:** `'Ticket' object has no attribute 'asignacion_actual'`
+- ✅ **Causa:** El modelo `Ticket` tiene relación `asignaciones` (plural), no `asignacion_actual`
+- ✅ **Solución:** Obtener asignación más reciente con `max(ticket.asignaciones, key=lambda x: x.fecha_asignacion)`
+- ✅ **Archivos modificados:** 
+  - `src/api/routes/chat_routes.py` - `enviar_mensaje_supervisor_analista()` (L102-108)
+  - `src/api/routes/chat_routes.py` - `enviar_mensaje_analista_cliente()` (L225-229)
+- ✅ **Código implementado:**
+  ```python
+  # Obtener la asignación más reciente
+  if ticket.asignaciones:
+      asignacion_mas_reciente = max(ticket.asignaciones, key=lambda x: x.fecha_asignacion)
+      supervisor_id = asignacion_mas_reciente.id_supervisor
+      analista_id = asignacion_mas_reciente.id_analista
+  ```
+- ✅ **Resultado:** Los mensajes se guardan correctamente con metadata de participantes
+
 ### 2025-12-29 - ✅ FIX: ComentariosTicketEmbedded para Cliente y Supervisor
 - ✅ **Problema resuelto:** Pantalla en blanco al abrir comentarios desde cliente y supervisor
 - ✅ **Causa:** Condición de carrera - componente se montaba antes de unirse al room WebSocket
 - ✅ **Solución:** Implementadas funciones de navegación atómicas (patrón del analista)
 - ✅ **Archivos modificados:**
-  - `src/front/protectedViewsRol/supervisor/hooks/useSupervisorPage.js` - Agregadas 5 funciones atómicas
+  - `src/front/protectedViewsRol/cliente/hooks/useClientePage.js` (L267-301)
+    - Agregadas 5 funciones atómicas: `openComments`, `openChat`, `openVerHD`, `openRecomendacion`, `openIdentificar`
+  - `src/front/protectedViewsRol/supervisor/hooks/useSupervisorPage.js` (L237-275)
+    - Agregadas 5 funciones atómicas: `openComments`, `openChat`, `openVerHD`, `openRecomendacion`, `openIdentificar`
   - `src/front/protectedViewsRol/supervisor/SupervisorPage.jsx` - Exportadas funciones
   - `src/front/protectedViewsRol/supervisor/components/SupervisorTicketsList.jsx` - Pasadas a TicketRow
   - `src/front/protectedViewsRol/supervisor/components/TicketRow.jsx` - Usadas en botones
   - `src/front/protectedViewsRol/cliente/components/TicketRow.jsx` - Usadas en botones compactos
-- ✅ **Funciones atómicas:** `openComments()`, `openChat()`, `openVerHD()`, `openRecomendacion()`, `openIdentificar()`
+- ✅ **Patrón implementado:** Join WebSocket room → Establecer ticketId → Cambiar vista (todo atómico)
 - ✅ **Resultado:** Cliente, Supervisor y Analista pueden ver comentarios sin problemas
 
 ### 2025-12-29 - ✅ MIGRACIÓN COMPLETADA
@@ -794,8 +873,9 @@ const openComments = (ticketId) => {
 
 ---
 
-**Última actualización:** 2025-12-29 (Fix ComentariosTicketEmbedded)  
+**Última actualización:** 2025-12-29 (Sistema Completamente Funcional - Contexto Transferido)  
 **Mantenido por:** Equipo de desarrollo TiBACK  
 **Chats documentados:** 3 (Comentarios 3 Roles, Analista-Cliente, Supervisor-Analista)  
-**Estado:** ✅ TODOS los chats migrados a `global_tickets` + Fix de navegación completado
+**Estado:** ✅ TODOS los chats migrados a `global_tickets` + 3 Fixes Críticos Completados  
+**Líneas de código:** Actualizadas con referencias exactas a las implementaciones actuales
 
