@@ -372,6 +372,11 @@ def asignar_ticket(id):
         emit_ws_event(socketio, 'ticket_asignado', data, None)
 
     accion = "reasignado" if es_reasignacion else "asignado"
+    
+    # IMPORTANTE: Refrescar asignacion desde DB para evitar ObjectDeletedError
+    # En reasignaciones, la asignación vieja se elimina y se crea una nueva
+    db.session.refresh(asignacion)
+    
     return jsonify({
         "message": f"Ticket {accion} exitosamente",
         "ticket": ticket.serialize(),

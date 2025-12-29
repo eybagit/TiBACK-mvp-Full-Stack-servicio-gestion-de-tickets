@@ -269,7 +269,7 @@ def get_analista_tickets():
                     continue
 
             estado_ticket_normalizado = ticket.estado.lower().replace('_', ' ')
-            if estado_ticket_normalizado not in ['en espera', 'en proceso']:
+            if estado_ticket_normalizado not in [TicketState.EN_ESPERA.value, TicketState.EN_PROCESO.value]:
                 continue
 
             tickets_filtrados.append(ticket)

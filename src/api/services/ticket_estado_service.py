@@ -54,7 +54,7 @@ class TicketEstadoService:
         if estado_actual != 'solucionado':
             return None, "Solo se pueden cerrar tickets solucionados"
         
-        ticket.estado = 'cerrado'
+        ticket.estado = TicketState.CERRADO.value
         ticket.fecha_cierre = datetime.now()
         
         if calificacion and 1 <= calificacion <= 5:
@@ -94,7 +94,7 @@ class TicketEstadoService:
         if estado_actual != 'cerrado':
             return None, "Solo se pueden reabrir tickets cerrados"
         
-        ticket.estado = 'en espera'
+        ticket.estado = TicketState.EN_ESPERA.value
         ticket.fecha_cierre = None
         
         TicketEstadoService.crear_comentario(
@@ -115,7 +115,7 @@ class TicketEstadoService:
         if estado_actual != 'en espera':
             return None, "Solo se pueden iniciar tickets en espera"
         
-        ticket.estado = 'en proceso'
+        ticket.estado = TicketState.EN_PROCESO.value
         
         TicketEstadoService.crear_comentario(
             ticket.id, "Analista inició trabajo en el ticket", id_analista=user_id
@@ -133,7 +133,7 @@ class TicketEstadoService:
         if estado_actual != 'en proceso':
             return None, "Solo se pueden solucionar tickets en proceso"
         
-        ticket.estado = 'solucionado'
+        ticket.estado = TicketState.SOLUCIONADO.value
         
         TicketEstadoService.crear_comentario(
             ticket.id, "Ticket solucionado por analista", id_analista=user_id
@@ -151,16 +151,17 @@ class TicketEstadoService:
         if estado_actual not in [TicketState.EN_ESPERA.value, TicketState.EN_PROCESO.value]:
             return None, "Solo se pueden escalar tickets en espera o en proceso"
         
-        ticket.estado = 'en espera'
+        ticket.estado = TicketState.EN_ESPERA.value
         
-        # Eliminar asignaciones del analista
+        # Eliminar asignaciones del analista solo si existen
         asignaciones_analista = Asignacion.query.filter_by(
             id_ticket=ticket.id,
             id_analista=user_id
         ).all()
         
-        for asignacion in asignaciones_analista:
-            db.session.delete(asignacion)
+        if asignaciones_analista:
+            for asignacion in asignaciones_analista:
+                db.session.delete(asignacion)
         
         texto = "Ticket escalado al supervisor" if estado_actual == TicketState.EN_ESPERA.value else "Ticket escalado al supervisor - Analista no pudo resolver"
         TicketEstadoService.crear_comentario(ticket.id, texto, id_analista=user_id)
@@ -175,10 +176,10 @@ class TicketEstadoService:
         """Supervisor cierra un ticket"""
         estado_actual = TicketEstadoService.normalizar_estado(ticket.estado)
         
-        if estado_actual not in ['solucionado', 'reabierto']:
+        if estado_actual not in [TicketState.SOLUCIONADO.value, TicketState.REABIERTO.value]:
             return None, "Solo se pueden cerrar tickets solucionados o reabiertos"
         
-        ticket.estado = 'cerrado'
+        ticket.estado = TicketState.CERRADO.value
         ticket.fecha_cierre = datetime.now()
         
         TicketEstadoService.crear_comentario(
@@ -195,11 +196,11 @@ class TicketEstadoService:
         """Supervisor reabre un ticket"""
         estado_actual = TicketEstadoService.normalizar_estado(ticket.estado)
         
-        estados_permitidos = ['cerrado', 'solucionado']
-        if estado_actual not in estados_permitidos and not estado_actual.startswith('cerrado'):
+        estados_permitidos = [TicketState.CERRADO.value, TicketState.SOLUCIONADO.value]
+        if estado_actual not in estados_permitidos and not estado_actual.startswith(TicketState.CERRADO.value):
             return None, "Solo se pueden reabrir tickets cerrados o solucionados"
         
-        ticket.estado = 'en espera'
+        ticket.estado = TicketState.EN_ESPERA.value
         ticket.fecha_cierre = None
         
         # Si estaba solucionado, eliminar asignaciones anteriores

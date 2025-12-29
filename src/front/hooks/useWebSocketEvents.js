@@ -49,7 +49,7 @@ export function useWebSocketEvents({ role, store, setTickets }) {
             console.log(`[${role}] 🔄 Actualizando ticket ${data.ticket_id}:`, updates);
         }
         
-        // FILTRO POR ROL: Analistas solo actualizan tickets que ya tienen (asignados)
+        // FILTRO POR ROL: Analistas solo ven tickets asignados a ellos
         if (role === 'analista') {
             const userId = store?.auth?.user?.id;
             const ticketActualizado = data.ticket || updates;
@@ -57,16 +57,52 @@ export function useWebSocketEvents({ role, store, setTickets }) {
                            ticketActualizado.id_analista === userId;
             
             if (!esParaMi) {
+                // CASO ESPECIAL: Si el ticket ya NO está asignado a mí, ELIMINARLO de mi lista
+                // Esto ocurre cuando: escalamiento, reasignación a otro analista
                 if (import.meta.env.DEV) {
-                    console.log(`[${role}] ⏭️ Actualización de ticket ${data.ticket_id} no asignado a mí, ignorando`);
+                    console.log(`[${role}] 🗑️ Ticket ${data.ticket_id} ya no asignado a mí, eliminando de lista`);
                 }
-                return; // No actualizar tickets no asignados
+                setTickets(prev => {
+                    if (!Array.isArray(prev)) return prev;
+                    return prev.filter(t => t.id !== data.ticket_id);
+                });
+                return;
+            }
+        }
+        
+        // FILTRO POR ROL: Clientes NO deben ver tickets cerrados
+        if (role === 'cliente') {
+            const ticketActualizado = data.ticket || updates;
+            const estaCerrado = ticketActualizado.estado === 'cerrado' || 
+                              ticketActualizado.estado === 'en espera' && data.ticket_estado === 'cerrado';
+            
+            if (estaCerrado || data.ticket_estado === 'cerrado') {
+                // Tickets cerrados se ELIMINAN de la vista del cliente
+                if (import.meta.env.DEV) {
+                    console.log(`[${role}] 🗑️ Ticket ${data.ticket_id} cerrado, eliminando de vista`);
+                }
+                setTickets(prev => {
+                    if (!Array.isArray(prev)) return prev;
+                    return prev.filter(t => t.id !== data.ticket_id);
+                });
+                return;
             }
         }
         
         setTickets(prev => {
             if (!Array.isArray(prev)) return prev;
             
+            const ticketExists = prev.some(t => t.id === data.ticket_id);
+            
+            // Si el ticket NO existe y es una asignación, AGREGARLO
+            if (!ticketExists && data.tipo === 'asignado' && data.ticket) {
+                if (import.meta.env.DEV) {
+                    console.log(`[${role}] ➕ Agregando ticket ${data.ticket_id} recién asignado`);
+                }
+                return [data.ticket, ...prev];
+            }
+            
+            // Si el ticket existe, ACTUALIZARLO
             return prev.map(t => {
                 if (t.id === data.ticket_id) {
                     const merged = { ...t, ...updates };

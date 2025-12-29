@@ -138,11 +138,32 @@ function useClienteWebSocket({
 
             /** @param {TicketWebSocketEvent} data */
             const handleTicketCerrado = (data) => {
+                console.log('🔔 [Cliente] Evento ticket_cerrado recibido:', data);
+                console.log('🔔 [Cliente] ticket_id:', data.ticket_id);
+                console.log('🔔 [Cliente] Tickets actuales:', tickets.length);
+                
                 if (data.ticket_id) {
-                    setTickets(prev => Array.isArray(prev) 
-                        ? prev.map(t => t.id === data.ticket_id ? { ...t, estado: 'cerrado' } : t)
-                        : prev
-                    );
+                    // IMPORTANTE: Los tickets cerrados se ELIMINAN de la vista del cliente
+                    // El cliente solo debe ver tickets activos (en espera, en proceso, solucionado)
+                    setTickets(prev => {
+                        const filtered = Array.isArray(prev) 
+                            ? prev.filter(t => t.id !== data.ticket_id)
+                            : prev;
+                        
+                        console.log(`🗑️ [Cliente] Ticket ${data.ticket_id} cerrado - removido de la vista`);
+                        console.log(`📊 [Cliente] Tickets antes: ${Array.isArray(prev) ? prev.length : 0}, después: ${Array.isArray(filtered) ? filtered.length : 0}`);
+                        
+                        return filtered;
+                    });
+                    
+                    // También limpiar de solicitudes de reapertura si existía
+                    setSolicitudesReapertura(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(data.ticket_id);
+                        return newSet;
+                    });
+                } else {
+                    console.warn('⚠️ [Cliente] Evento ticket_cerrado sin ticket_id:', data);
                 }
             };
 

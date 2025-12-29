@@ -29,12 +29,10 @@ export function useSupervisorActions({
 
       if (!response.ok) throw new Error('Error al asignar ticket');
 
-      // WebSocket se encarga de la actualización local
-      if (store.websocket.socket) {
-        emitCriticalTicketAction(store.websocket.socket, ticketId, 'ticket_asignado', store.auth.user);
-      }
+      // ✅ Backend emite 'ticket_asignado' automáticamente (ticket_routes.py:372)
+      // ✅ WebSocket handler actualiza localmente cuando recibe el evento
+      // ❌ NO emitir desde aquí - causaría duplicación de eventos
 
-      // NO hacer fetch - WebSocket actualiza localmente
       return { success: true };
     } catch (err) {
       setError(err.message);
@@ -55,12 +53,9 @@ export function useSupervisorActions({
 
       if (!response.ok) throw new Error('Error al reasignar ticket');
 
-      // WebSocket se encarga de la actualización local
-      if (store.websocket.socket) {
-        emitCriticalTicketAction(store.websocket.socket, ticketId, 'ticket_reasignado', store.auth.user);
-      }
+      // ✅ Backend emite 'ticket_asignado' automáticamente (ticket_routes.py:372)
+      // ✅ WebSocket handler actualiza localmente cuando recibe el evento
 
-      // NO hacer fetch - WebSocket actualiza localmente
       return { success: true };
     } catch (err) {
       setError(err.message);

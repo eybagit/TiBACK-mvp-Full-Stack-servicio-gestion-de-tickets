@@ -17,22 +17,21 @@ export function useAnalistaActions({
   const iniciarTicket = async (ticketId) => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/cambiar-estado`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`,
         {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${store.auth.token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ estado: 'en_progreso' })
+          body: JSON.stringify({ estado: 'en_proceso' })  // ✅ Estado válido según enums
         }
       );
 
       if (!response.ok) throw new Error('Error al iniciar ticket');
 
-      if (store.websocket.socket) {
-        emitCriticalTicketAction(store.websocket.socket, ticketId, 'ticket_iniciado', store.auth.user);
-      }
+      // ✅ Backend emite 'ticket_iniciado' automáticamente (ticket_estado_routes.py:99)
+      // ❌ NO emitir desde aquí - causaría duplicación
 
       await actualizarTicketsAsignados();
       return { success: true };
@@ -46,7 +45,7 @@ export function useAnalistaActions({
   const solucionarTicket = async (ticketId) => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/cambiar-estado`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`,
         {
           method: 'PUT',
           headers: {
@@ -59,9 +58,8 @@ export function useAnalistaActions({
 
       if (!response.ok) throw new Error('Error al solucionar ticket');
 
-      if (store.websocket.socket) {
-        emitCriticalTicketAction(store.websocket.socket, ticketId, 'ticket_solucionado', store.auth.user);
-      }
+      // ✅ Backend emite 'ticket_solucionado' automáticamente (ticket_estado_routes.py:107)
+      // ❌ NO emitir desde aquí - causaría duplicación
 
       await actualizarTicketsAsignados();
       return { success: true };
@@ -72,29 +70,59 @@ export function useAnalistaActions({
   };
 
   // Escalar ticket al supervisor
+  // IMPORTANTE: NO existe estado 'escalado' - Se usa 'en_espera' según enums oficiales
+  // El escalamiento se detecta por: comentarios del analista + sin asignación
   const escalarTicket = async (ticketId) => {
     try {
+      console.log('🚀 [ESCALAMIENTO] Iniciando escalamiento de ticket:', ticketId);
+      console.log('🔑 [ESCALAMIENTO] Token presente:', !!store.auth.token);
+      
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/cambiar-estado`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`,
         {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${store.auth.token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ estado: 'escalado' })
+          body: JSON.stringify({ estado: 'en_espera' })  // ✅ Estado válido
         }
       );
 
-      if (!response.ok) throw new Error('Error al escalar ticket');
+      console.log('📡 [ESCALAMIENTO] Respuesta recibida:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
 
-      if (store.websocket.socket) {
-        emitCriticalTicketAction(store.websocket.socket, ticketId, 'ticket_escalado', store.auth.user);
+      if (!response.ok) {
+        // Intentar leer el cuerpo del error
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('❌ [ESCALAMIENTO] Error del servidor (JSON):', errorData);
+        } catch (e) {
+          const errorText = await response.text();
+          console.error('❌ [ESCALAMIENTO] Error del servidor (TEXT):', errorText);
+          errorData = { message: errorText || 'Error desconocido' };
+        }
+        
+        throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
       }
+
+      console.log('✅ [ESCALAMIENTO] Escalamiento exitoso');
+
+      // ✅ Backend emite 'ticket_escalado' automáticamente (ticket_estado_routes.py:118)
+      // ❌ NO emitir desde aquí - causaría duplicación
 
       await actualizarTicketsAsignados();
       return { success: true };
     } catch (err) {
+      console.error('💥 [ESCALAMIENTO] Error capturado:', {
+        message: err.message,
+        stack: err.stack,
+        error: err
+      });
       setError(err.message);
       return { success: false, error: err.message };
     }
@@ -104,13 +132,13 @@ export function useAnalistaActions({
 
   // Helper: Acciones disponibles según estado
   const getAvailableActions = (ticket) => {
-    const estado = ticket.estado?.toLowerCase();
+    const estado = ticket.estado?.toLowerCase().replace(/\s+/g, '_');
     
     return {
-      canStart: estado === 'abierto',
-      canSolve: estado === 'en_progreso',
-      canEscalate: ['abierto', 'en_progreso'].includes(estado),
-      canComment: ['abierto', 'en_progreso', 'escalado'].includes(estado)
+      canStart: estado === 'en_espera',
+      canSolve: estado === 'en_proceso',
+      canEscalate: ['en_espera', 'en_proceso'].includes(estado),
+      canComment: ['en_espera', 'en_proceso', 'reabierto'].includes(estado)
     };
   };
 

@@ -230,6 +230,9 @@ export const analistaActions = {
    */
   escalateTicket: async (dispatch, token, ticketId, socket, emitCriticalAction, user) => {
     try {
+      console.log('🚀 [ESCALAMIENTO] Iniciando, ticket:', ticketId);
+      console.log('🔑 [ESCALAMIENTO] Token:', !!token);
+      
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}/estado`, {
         method: 'PUT',
         headers: {
@@ -239,8 +242,11 @@ export const analistaActions = {
         body: JSON.stringify({ estado: 'en_espera' })
       });
 
+      console.log('📡 [ESCALAMIENTO] Status:', response.status, response.statusText);
+
       if (response.ok) {
         const updatedTicket = await response.json();
+        console.log('✅ [ESCALAMIENTO] Exitoso');
         dispatch({ type: 'ANALISTA_UPDATE_TICKET', payload: updatedTicket });
         
         if (socket) {
@@ -255,10 +261,19 @@ export const analistaActions = {
         }
         return { success: true };
       } else {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('❌ [ESCALAMIENTO] Error JSON:', errorData);
+        } catch (e) {
+          const errorText = await response.text();
+          console.error('❌ [ESCALAMIENTO] Error TEXT:', errorText);
+          errorData = { message: errorText || 'Error desconocido' };
+        }
         return { success: false, error: errorData.message };
       }
     } catch (error) {
+      console.error('💥 [ESCALAMIENTO] Exception:', error.message, error.stack);
       return { success: false, error: error.message };
     }
   },

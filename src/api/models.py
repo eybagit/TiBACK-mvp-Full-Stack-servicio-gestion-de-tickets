@@ -4,6 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from typing import List
 from api.utils.normalize import normalize_to_backend
+from api.constants.ticket_enums import TicketState
 
 db = SQLAlchemy()
 
