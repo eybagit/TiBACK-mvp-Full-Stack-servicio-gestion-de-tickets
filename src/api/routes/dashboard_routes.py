@@ -4,13 +4,13 @@ Rutas de Dashboard: mapa de calor y reportes
 from flask import Blueprint, jsonify
 
 from api.models import db, Ticket, Cliente
-from api.jwt_utils import require_auth
+from api.jwt_utils import require_auth, require_role
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
 
 @dashboard_bp.route('/heatmap-data', methods=['GET'])
-@require_auth
+@require_role(['supervisor', 'administrador'])
 def get_heatmap_data():
     """Obtener datos de coordenadas de tickets para el mapa de calor"""
     try:

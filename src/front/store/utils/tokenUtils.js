@@ -115,17 +115,39 @@ export const findToken = () => {
   return { token: null, key: null };
 };
 
-// Función para limpiar tokens
+// Función para limpiar tokens y TODOS los datos sensibles
 export const clearAllTokens = () => {
-  const keys = [
+  // 1. Limpiar tokens de roles
+  const tokenKeys = [
     "token",
     "cliente",
     "analista",
     "supervisor",
     "administrador",
     "usuario",
+  ];
+  tokenKeys.forEach(key => localStorage.removeItem(key));
+
+  // 2. 🚨 CRÍTICO: Limpiar datos legacy/sensibles que NO deben estar
+  const legacyKeys = [
     "role",
     "user",
+    "activeChats",       // Datos de chats activos
+    "activeTicket",      // Información del ticket activo
+    "cliente_logIn_on",  // Datos de login legacy
+    "carrito_expira_en", // Datos de carrito (si existe)
+    "session_data",      // Datos de sesión genéricos
   ];
-  keys.forEach(key => localStorage.removeItem(key));
+  legacyKeys.forEach(key => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+  
+  console.log('🔒 Todos los tokens y datos sensibles limpiados');
+};
+
+// Función para limpiar solo activeChats (sin cerrar sesión)
+export const clearActiveChats = () => {
+  localStorage.removeItem("activeChats");
+  console.log('🗑️ Active chats limpiados');
 };
