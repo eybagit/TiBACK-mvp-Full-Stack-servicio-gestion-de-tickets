@@ -32,7 +32,9 @@ function ClienteTicketsList({
     generarRecomendacion,
     cerrarTicket,
     solicitarReapertura,
-    navigate
+    navigate,
+    openComments,
+    openChat
 }) {
     return (
         <>
@@ -125,6 +127,8 @@ function ClienteTicketsList({
                                             cerrarTicket={cerrarTicket}
                                             solicitarReapertura={solicitarReapertura}
                                             navigate={navigate}
+                                            openComments={openComments}
+                                            openChat={openChat}
                                         />
                                     ))}
                                 </tbody>

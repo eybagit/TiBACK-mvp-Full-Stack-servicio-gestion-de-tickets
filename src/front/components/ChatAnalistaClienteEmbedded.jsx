@@ -96,37 +96,64 @@ const ChatAnalistaClienteEmbedded = ({ ticketId, onBack }) => {
         }
     }, [store.auth.isAuthenticated, store.auth.token, store.auth.user, dispatch]);
 
-    // Efecto para unirse al room del chat
+    // FASE 2: Efecto para unirse al room del chat (ahora solo global_tickets)
     useEffect(() => {
         if (ticketId && store.websocket.socket && store.websocket.connected) {
-            // Unirse al room general del ticket
+            // Solo unirse al room general (ya no necesitamos room específica)
             joinTicketRoom(store.websocket.socket, parseInt(ticketId));
-            // Unirse al room específico del chat analista-cliente
-            joinChatAnalistaCliente(store.websocket.socket, parseInt(ticketId));
 
             // Configurar listeners para el room del chat
             const socket = store.websocket.socket;
 
-            // Escuchar nuevos mensajes del chat específico
+            // FASE 2: Escuchar evento genérico de chat desde global_tickets
             const handleNuevoMensaje = (data) => {
-                if (data.ticket_id === parseInt(ticketId)) {
-                    setSincronizando(true);
-                    cargarMensajes(false).finally(() => setSincronizando(false));
+                console.log('🔔 [ChatAnalistaClienteEmbedded] Evento recibido:', data);
+
+                // Filtrar por tipo y ticket_id
+                if (data.tipo === 'chat_analista_cliente' && data.ticket_id === parseInt(ticketId)) {
+                    console.log('✅ [ChatAnalistaClienteEmbedded] Mensaje es para este chat');
+
+                    // Validar permisos (filtrado en frontend)
+                    const userRole = store.auth.user?.role || tokenUtils.getRole(store.auth.token);
+                    const userId = store.auth.user?.id || tokenUtils.getUserId(store.auth.token);
+
+                    console.log('👤 [ChatAnalistaClienteEmbedded] Usuario:', { userRole, userId });
+                    console.log('👥 [ChatAnalistaClienteEmbedded] Participantes:', data.participantes);
+
+                    // Solo mostrar si el usuario es participante
+                    const esParticipante = (
+                        (userRole === 'cliente' && data.participantes?.cliente_id === userId) ||
+                        (userRole === 'analista' && data.participantes?.analista_id === userId) ||
+                        userRole === 'administrador'
+                    );
+
+                    console.log('🔐 [ChatAnalistaClienteEmbedded] Es participante:', esParticipante);
+
+                    if (esParticipante) {
+                        console.log('🔄 [ChatAnalistaClienteEmbedded] Recargando mensajes...');
+                        setSincronizando(true);
+                        cargarMensajes(false).finally(() => setSincronizando(false));
+                    }
+                } else {
+                    console.log('❌ [ChatAnalistaClienteEmbedded] Mensaje no es para este chat:', {
+                        tipo: data.tipo,
+                        ticket_id: data.ticket_id,
+                        esperado: { tipo: 'chat_analista_cliente', ticket_id: parseInt(ticketId) }
+                    });
                 }
             };
 
-            // Agregar listener específico del chat
-            socket.on('nuevo_mensaje_chat_analista_cliente', handleNuevoMensaje);
+            // Escuchar evento genérico de chat desde global_tickets
+            socket.on('nuevo_mensaje_chat', handleNuevoMensaje);
 
             // Cleanup al desmontar
             return () => {
-                socket.off('nuevo_mensaje_chat_analista_cliente', handleNuevoMensaje);
-                // Salir de ambos rooms
+                socket.off('nuevo_mensaje_chat', handleNuevoMensaje);
                 leaveTicketRoom(socket, parseInt(ticketId));
-                leaveChatAnalistaCliente(socket, parseInt(ticketId));
+                // Ya no necesitamos leave de chat específico
             };
         }
-    }, [ticketId, store.websocket.socket, store.websocket.connected, joinTicketRoom, leaveTicketRoom, joinChatAnalistaCliente, leaveChatAnalistaCliente]);
+    }, [ticketId, store.websocket.socket, store.websocket.connected, joinTicketRoom, leaveTicketRoom]);
 
     const cargarMensajes = async (showLoading = true) => {
         try {

@@ -96,37 +96,45 @@ const ChatSupervisorAnalistaEmbedded = ({ ticketId, onBack }) => {
         }
     }, [store.auth.isAuthenticated, store.auth.token, store.auth.user, dispatch]);
 
-    // Efecto para unirse al room del chat
+    // FASE 2: Efecto para unirse al room del chat (ahora solo global_tickets)
     useEffect(() => {
         if (ticketId && store.websocket.socket && store.websocket.connected) {
-            // Unirse al room general del ticket
+            // Solo unirse al room general
             joinTicketRoom(store.websocket.socket, parseInt(ticketId));
-            // Unirse al room específico del chat supervisor-analista
-            joinChatSupervisorAnalista(store.websocket.socket, parseInt(ticketId));
 
             // Configurar listeners para el room del chat
             const socket = store.websocket.socket;
 
-            // Escuchar nuevos mensajes del chat específico
+            // FASE 2: Escuchar evento genérico de chat desde global_tickets
             const handleNuevoMensaje = (data) => {
-                if (data.ticket_id === parseInt(ticketId)) {
-                    setSincronizando(true);
-                    cargarMensajes(false).finally(() => setSincronizando(false));
+                // Filtrar por tipo y ticket_id
+                if (data.tipo === 'chat_supervisor_analista' && data.ticket_id === parseInt(ticketId)) {
+                    // Validar permisos
+                    const userRole = store.auth.user?.role || tokenUtils.getRole(store.auth.token);
+                    const userId = store.auth.user?.id || tokenUtils.getUserId(store.auth.token);
+
+                    const esParticipante = (
+                        (userRole === 'supervisor' && data.participantes?.supervisor_id === userId) ||
+                        (userRole === 'analista' && data.participantes?.analista_id === userId) ||
+                        userRole === 'administrador'
+                    );
+
+                    if (esParticipante) {
+                        setSincronizando(true);
+                        cargarMensajes(false).finally(() => setSincronizando(false));
+                    }
                 }
             };
 
-            // Agregar listener específico del chat
-            socket.on('nuevo_mensaje_chat_supervisor_analista', handleNuevoMensaje);
+            socket.on('nuevo_mensaje_chat', handleNuevoMensaje);
 
             // Cleanup al desmontar
             return () => {
-                socket.off('nuevo_mensaje_chat_supervisor_analista', handleNuevoMensaje);
-                // Salir de ambos rooms
+                socket.off('nuevo_mensaje_chat', handleNuevoMensaje);
                 leaveTicketRoom(socket, parseInt(ticketId));
-                leaveChatSupervisorAnalista(socket, parseInt(ticketId));
             };
         }
-    }, [ticketId, store.websocket.socket, store.websocket.connected, joinTicketRoom, leaveTicketRoom, joinChatSupervisorAnalista, leaveChatSupervisorAnalista]);
+    }, [ticketId, store.websocket.socket, store.websocket.connected, joinTicketRoom, leaveTicketRoom]);
 
     const cargarMensajes = async (showLoading = true) => {
         try {

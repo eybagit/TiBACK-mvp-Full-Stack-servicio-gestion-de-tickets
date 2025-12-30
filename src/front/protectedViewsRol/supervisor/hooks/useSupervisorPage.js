@@ -214,6 +214,59 @@ export function useSupervisorPage() {
     };
 
     // ==============================
+    // FUNCIONES DE NAVEGACIÓN ATÓMICAS (FIX para comentarios)
+    // ==============================
+    const openComments = (ticketId) => {
+        try {
+            const socket = store.websocket.socket;
+            if (socket && joinTicketRoom) joinTicketRoom(socket, ticketId);
+        } catch (e) {
+            console.error('Error joining ticket room:', e);
+        }
+        dispatch({ type: 'SUPERVISOR_SET_ACTIVE_VIEW', payload: `comentarios-${ticketId}` });
+    };
+
+    const openChat = (ticketId) => {
+        try {
+            const socket = store.websocket.socket;
+            if (socket && joinTicketRoom) joinTicketRoom(socket, ticketId);
+        } catch (e) {
+            console.error('Error joining ticket room:', e);
+        }
+        dispatch({ type: 'SUPERVISOR_SET_ACTIVE_VIEW', payload: `supervisor-chat-${ticketId}` });
+    };
+
+    const openVerHD = (ticketId) => {
+        try {
+            const socket = store.websocket.socket;
+            if (socket && joinTicketRoom) joinTicketRoom(socket, ticketId);
+        } catch (e) {
+            console.error('Error joining ticket room:', e);
+        }
+        dispatch({ type: 'SUPERVISOR_SET_ACTIVE_VIEW', payload: `ticket-${ticketId}` });
+    };
+
+    const openRecomendacion = (ticketId) => {
+        try {
+            const socket = store.websocket.socket;
+            if (socket && joinTicketRoom) joinTicketRoom(socket, ticketId);
+        } catch (e) {
+            console.error('Error joining ticket room:', e);
+        }
+        dispatch({ type: 'SUPERVISOR_SET_ACTIVE_VIEW', payload: `recomendacion-${ticketId}` });
+    };
+
+    const openIdentificar = (ticketId) => {
+        try {
+            const socket = store.websocket.socket;
+            if (socket && joinTicketRoom) joinTicketRoom(socket, ticketId);
+        } catch (e) {
+            console.error('Error joining ticket room:', e);
+        }
+        dispatch({ type: 'SUPERVISOR_SET_ACTIVE_VIEW', payload: `identificar-${ticketId}` });
+    };
+
+    // ==============================
     // RETORNO (misma interfaz que antes)
     // ==============================
     return {
@@ -296,6 +349,13 @@ export function useSupervisorPage() {
         getPrioridadColor,
         updateInfo,
         actualizarInformacion,
+        
+        // Funciones de navegación atómicas
+        openComments,
+        openChat,
+        openVerHD,
+        openRecomendacion,
+        openIdentificar,
         
         // Computados
         filteredTickets: getFilteredTickets(),

@@ -99,31 +99,33 @@ def enviar_mensaje_supervisor_analista():
 
         socketio = get_socketio()
         if socketio:
-            chat_room = f'chat_supervisor_analista_{ticket_id}'
+            # Obtener la asignación más reciente
+            asignacion_actual = None
+            supervisor_id = None
+            analista_id = None
             
-            socketio.emit('nuevo_mensaje_chat_supervisor_analista', {
-                'ticket_id': ticket_id,
-                'mensaje': mensaje,
-                'autor': {
-                    'id': user_info['id'],
-                    'nombre': user_info.get('nombre', 'Usuario'),
-                    'rol': user_info['role']
-                },
-                'fecha': datetime.now().isoformat()
-            }, room=chat_room)
-
-            general_room = f'room_ticket_{ticket_id}'
-            socketio.emit('nuevo_mensaje_chat', {
-                'ticket_id': ticket_id,
+            if ticket.asignaciones:
+                asignacion_mas_reciente = max(ticket.asignaciones, key=lambda x: x.fecha_asignacion)
+                supervisor_id = asignacion_mas_reciente.id_supervisor
+                analista_id = asignacion_mas_reciente.id_analista
+            
+            # FASE 3: Solo emisión a global_tickets (código limpio)
+            from api.routes.utils_routes import emit_to_global
+            emit_to_global('nuevo_mensaje_chat', {
                 'tipo': 'chat_supervisor_analista',
+                'ticket_id': ticket_id,
                 'mensaje': mensaje,
                 'autor': {
                     'id': user_info['id'],
                     'nombre': user_info.get('nombre', 'Usuario'),
                     'rol': user_info['role']
                 },
+                'participantes': {
+                    'supervisor_id': supervisor_id,
+                    'analista_id': analista_id
+                },
                 'fecha': datetime.now().isoformat()
-            }, room=general_room)
+            })
         
         return jsonify({
             "message": "Mensaje enviado exitosamente",
@@ -223,31 +225,38 @@ def enviar_mensaje_analista_cliente():
 
         socketio = get_socketio()
         if socketio:
-            chat_room = f'chat_analista_cliente_{ticket_id}'
+            # Obtener la asignación más reciente
+            analista_id = None
             
-            socketio.emit('nuevo_mensaje_chat_analista_cliente', {
-                'ticket_id': ticket_id,
-                'mensaje': mensaje,
-                'autor': {
-                    'id': user_info['id'],
-                    'nombre': user_info.get('nombre', 'Usuario'),
-                    'rol': user_info['role']
-                },
-                'fecha': datetime.now().isoformat()
-            }, room=chat_room)
-
-            general_room = f'room_ticket_{ticket_id}'
-            socketio.emit('nuevo_mensaje_chat', {
-                'ticket_id': ticket_id,
+            if ticket.asignaciones:
+                asignacion_mas_reciente = max(ticket.asignaciones, key=lambda x: x.fecha_asignacion)
+                analista_id = asignacion_mas_reciente.id_analista
+            
+            # FASE 3: Solo emisión a global_tickets (código limpio)
+            from api.routes.utils_routes import emit_to_global
+            
+            payload = {
                 'tipo': 'chat_analista_cliente',
+                'ticket_id': ticket_id,
                 'mensaje': mensaje,
                 'autor': {
                     'id': user_info['id'],
                     'nombre': user_info.get('nombre', 'Usuario'),
                     'rol': user_info['role']
                 },
+                'participantes': {
+                    'cliente_id': ticket.id_cliente,
+                    'analista_id': analista_id
+                },
                 'fecha': datetime.now().isoformat()
-            }, room=general_room)
+            }
+            
+            print(f"🔔 [chat_routes] Emitiendo evento nuevo_mensaje_chat a global_tickets:")
+            print(f"   Tipo: {payload['tipo']}")
+            print(f"   Ticket ID: {payload['ticket_id']}")
+            print(f"   Participantes: {payload['participantes']}")
+            
+            emit_to_global('nuevo_mensaje_chat', payload)
         
         return jsonify({
             "message": "Mensaje enviado exitosamente",

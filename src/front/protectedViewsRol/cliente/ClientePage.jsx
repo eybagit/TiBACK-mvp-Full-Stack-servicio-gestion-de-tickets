@@ -86,6 +86,9 @@ function ClientePage() {
 
         // Ticket seleccionado
         selectedTicketId, setSelectedTicketId,
+
+        // Funciones de navegación (FIX para comentarios)
+        openComments, openChat, openVerHD, openRecomendacion, openIdentificar,
     } = useClientePage();
 
     // Mostrar loading
@@ -177,6 +180,8 @@ function ClientePage() {
                             cerrarTicket={cerrarTicket}
                             solicitarReapertura={solicitarReapertura}
                             navigate={navigate}
+                            openComments={openComments}
+                            openChat={openChat}
                         />
                     )}
 

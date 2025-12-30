@@ -247,6 +247,48 @@ function useClientePage() {
         toggleTicketExpansion: ui.toggleTicketExpansion,
         getFilteredTickets: () => ui.getFilteredTickets(ticketsHook.tickets),
         
+        // Funciones de navegación (similar al analista - FIX para comentarios)
+        openComments: (ticketId) => {
+            try {
+                const socket = store.websocket.socket;
+                if (socket && joinTicketRoom) joinTicketRoom(socket, ticketId);
+            } catch (e) {}
+            ui.setSelectedTicketId(ticketId);
+            ui.changeView(`comentarios-${ticketId}`);
+        },
+        openChat: (ticketId) => {
+            try {
+                const socket = store.websocket.socket;
+                if (socket && joinTicketRoom) joinTicketRoom(socket, ticketId);
+            } catch (e) {}
+            ui.setSelectedTicketId(ticketId);
+            ui.changeView(`chat-${ticketId}`);
+        },
+        openVerHD: (ticketId) => {
+            try {
+                const socket = store.websocket.socket;
+                if (socket && joinTicketRoom) joinTicketRoom(socket, ticketId);
+            } catch (e) {}
+            ui.setSelectedTicketId(ticketId);
+            ui.changeView(`ticket-${ticketId}`);
+        },
+        openRecomendacion: (ticketId) => {
+            try {
+                const socket = store.websocket.socket;
+                if (socket && joinTicketRoom) joinTicketRoom(socket, ticketId);
+            } catch (e) {}
+            ui.setSelectedTicketId(ticketId);
+            ui.changeView(`recomendacion-${ticketId}`);
+        },
+        openIdentificar: (ticketId) => {
+            try {
+                const socket = store.websocket.socket;
+                if (socket && joinTicketRoom) joinTicketRoom(socket, ticketId);
+            } catch (e) {}
+            ui.setSelectedTicketId(ticketId);
+            ui.changeView(`identificar-${ticketId}`);
+        },
+        
         // Modal de imágenes
         selectedTicketImages: null,
         setSelectedTicketImages: () => {},

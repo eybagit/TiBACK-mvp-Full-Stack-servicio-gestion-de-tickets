@@ -61,11 +61,14 @@ def emit_to_global(event_name, data, include_self=False):
                 data['timestamp'] = datetime.now().isoformat()
             
             # SIEMPRE global_tickets - única fuente de verdad
-            socketio.emit(event_name, data, room='global_tickets', include_self=include_self)
+            # skip_sid=True para evitar error cuando se llama desde ruta HTTP (no WebSocket)
+            socketio.emit(event_name, data, room='global_tickets', skip_sid=True)
             print(f"✅ WebSocket: {event_name} → global_tickets")
             return True
     except Exception as e:
         print(f"❌ Error enviando WebSocket '{event_name}': {e}")
+        import traceback
+        traceback.print_exc()
         return False
     
     return False
