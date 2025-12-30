@@ -1,6 +1,7 @@
 
 import click
-from api.models import db, User, Cliente, Analista, Supervisor, Administrador
+from api.models import db, User, Cliente, Analista, Supervisor, Administrador, Comentarios, Ticket, Asignacion
+from werkzeug.security import generate_password_hash
 
 """
 In this file, you can add as many commands as you want using the @app.cli.command decorator
@@ -64,7 +65,7 @@ def setup_commands(app):
                     nombre=cliente_data["nombre"],
                     apellido=cliente_data["apellido"],
                     email=cliente_data["email"],
-                    contraseña_hash="123456",
+                    contraseña_hash=generate_password_hash("123456"),
                     direccion=cliente_data["direccion"],
                     telefono=cliente_data["telefono"]
                 )
@@ -101,7 +102,7 @@ def setup_commands(app):
                     nombre=analista_data["nombre"],
                     apellido=analista_data["apellido"],
                     email=analista_data["email"],
-                    contraseña_hash="123456",
+                    contraseña_hash=generate_password_hash("123456"),
                     especialidad=analista_data["especialidad"]
                 )
                 db.session.add(analista)
@@ -131,7 +132,7 @@ def setup_commands(app):
                     nombre=supervisor_data["nombre"],
                     apellido=supervisor_data["apellido"],
                     email=supervisor_data["email"],
-                    contraseña_hash="123456",
+                    contraseña_hash=generate_password_hash("123456"),
                     area_responsable=supervisor_data["area_responsable"]
                 )
                 db.session.add(supervisor)
@@ -143,7 +144,7 @@ def setup_commands(app):
         try:
             administrador = Administrador(
                 email="admin@test.com",
-                contraseña_hash="123456",
+                contraseña_hash=generate_password_hash("123456"),
                 permisos_especiales="Gestión completa del sistema"
             )
             db.session.add(administrador)
@@ -169,11 +170,38 @@ def setup_commands(app):
         print("Limpiando datos de prueba existentes...")
         
         try:
-            # Eliminar todos los usuarios de prueba
-            Cliente.query.filter(Cliente.email.like('%@test.com')).delete()
-            Analista.query.filter(Analista.email.like('%@test.com')).delete()
-            Supervisor.query.filter(Supervisor.email.like('%@test.com')).delete()
-            Administrador.query.filter(Administrador.email.like('%@test.com')).delete()
+            # Primero obtener IDs de usuarios de prueba
+            cliente_ids = [c.id for c in Cliente.query.filter(Cliente.email.like('%@test.com')).all()]
+            analista_ids = [a.id for a in Analista.query.filter(Analista.email.like('%@test.com')).all()]
+            supervisor_ids = [s.id for s in Supervisor.query.filter(Supervisor.email.like('%@test.com')).all()]
+            
+            # Eliminar datos relacionados primero (orden: asignaciones -> comentarios -> tickets)
+            # 1. Obtener ticket IDs de clientes de prueba
+            ticket_ids = [t.id for t in Ticket.query.filter(Ticket.id_cliente.in_(cliente_ids)).all()] if cliente_ids else []
+            
+            # 2. Eliminar asignaciones (por ticket, analista, supervisor)
+            if ticket_ids:
+                Asignacion.query.filter(Asignacion.id_ticket.in_(ticket_ids)).delete(synchronize_session=False)
+            if analista_ids:
+                Asignacion.query.filter(Asignacion.id_analista.in_(analista_ids)).delete(synchronize_session=False)
+            if supervisor_ids:
+                Asignacion.query.filter(Asignacion.id_supervisor.in_(supervisor_ids)).delete(synchronize_session=False)
+            
+            # 3. Eliminar comentarios (por cliente_id Y por ticket_id)
+            if cliente_ids:
+                Comentarios.query.filter(Comentarios.id_cliente.in_(cliente_ids)).delete(synchronize_session=False)
+            if ticket_ids:
+                Comentarios.query.filter(Comentarios.id_ticket.in_(ticket_ids)).delete(synchronize_session=False)
+            
+            # 4. Eliminar tickets
+            if cliente_ids:
+                Ticket.query.filter(Ticket.id_cliente.in_(cliente_ids)).delete(synchronize_session=False)
+            
+            # Ahora eliminar usuarios
+            Cliente.query.filter(Cliente.email.like('%@test.com')).delete(synchronize_session=False)
+            Analista.query.filter(Analista.email.like('%@test.com')).delete(synchronize_session=False)
+            Supervisor.query.filter(Supervisor.email.like('%@test.com')).delete(synchronize_session=False)
+            Administrador.query.filter(Administrador.email.like('%@test.com')).delete(synchronize_session=False)
             
             db.session.commit()
             print("Datos de prueba eliminados exitosamente!")
@@ -187,13 +215,42 @@ def setup_commands(app):
         
         # Primero limpiar datos existentes
         try:
-            Cliente.query.filter(Cliente.email.like('%@test.com')).delete()
-            Analista.query.filter(Analista.email.like('%@test.com')).delete()
-            Supervisor.query.filter(Supervisor.email.like('%@test.com')).delete()
-            Administrador.query.filter(Administrador.email.like('%@test.com')).delete()
+            # Obtener IDs de usuarios de prueba
+            cliente_ids = [c.id for c in Cliente.query.filter(Cliente.email.like('%@test.com')).all()]
+            analista_ids = [a.id for a in Analista.query.filter(Analista.email.like('%@test.com')).all()]
+            supervisor_ids = [s.id for s in Supervisor.query.filter(Supervisor.email.like('%@test.com')).all()]
+            
+            # Eliminar datos relacionados primero (orden: asignaciones -> comentarios -> tickets)
+            # 1. Obtener ticket IDs de clientes de prueba
+            ticket_ids = [t.id for t in Ticket.query.filter(Ticket.id_cliente.in_(cliente_ids)).all()] if cliente_ids else []
+            
+            # 2. Eliminar asignaciones (por ticket, analista, supervisor)
+            if ticket_ids:
+                Asignacion.query.filter(Asignacion.id_ticket.in_(ticket_ids)).delete(synchronize_session=False)
+            if analista_ids:
+                Asignacion.query.filter(Asignacion.id_analista.in_(analista_ids)).delete(synchronize_session=False)
+            if supervisor_ids:
+                Asignacion.query.filter(Asignacion.id_supervisor.in_(supervisor_ids)).delete(synchronize_session=False)
+            
+            # 3. Eliminar comentarios (por cliente_id Y por ticket_id)
+            if cliente_ids:
+                Comentarios.query.filter(Comentarios.id_cliente.in_(cliente_ids)).delete(synchronize_session=False)
+            if ticket_ids:
+                Comentarios.query.filter(Comentarios.id_ticket.in_(ticket_ids)).delete(synchronize_session=False)
+            
+            # 4. Eliminar tickets
+            if cliente_ids:
+                Ticket.query.filter(Ticket.id_cliente.in_(cliente_ids)).delete(synchronize_session=False)
+            
+            # Ahora eliminar usuarios
+            Cliente.query.filter(Cliente.email.like('%@test.com')).delete(synchronize_session=False)
+            Analista.query.filter(Analista.email.like('%@test.com')).delete(synchronize_session=False)
+            Supervisor.query.filter(Supervisor.email.like('%@test.com')).delete(synchronize_session=False)
+            Administrador.query.filter(Administrador.email.like('%@test.com')).delete(synchronize_session=False)
             db.session.commit()
             print("Datos existentes eliminados.")
         except Exception as e:
+            db.session.rollback()
             print(f"Error al limpiar datos existentes: {e}")
             return
         
@@ -231,7 +288,7 @@ def setup_commands(app):
                     nombre=cliente_data["nombre"],
                     apellido=cliente_data["apellido"],
                     email=cliente_data["email"],
-                    contraseña_hash="123456",
+                    contraseña_hash=generate_password_hash("123456"),
                     direccion=cliente_data["direccion"],
                     telefono=cliente_data["telefono"]
                 )
@@ -268,7 +325,7 @@ def setup_commands(app):
                     nombre=analista_data["nombre"],
                     apellido=analista_data["apellido"],
                     email=analista_data["email"],
-                    contraseña_hash="123456",
+                    contraseña_hash=generate_password_hash("123456"),
                     especialidad=analista_data["especialidad"]
                 )
                 db.session.add(analista)
@@ -298,7 +355,7 @@ def setup_commands(app):
                     nombre=supervisor_data["nombre"],
                     apellido=supervisor_data["apellido"],
                     email=supervisor_data["email"],
-                    contraseña_hash="123456",
+                    contraseña_hash=generate_password_hash("123456"),
                     area_responsable=supervisor_data["area_responsable"]
                 )
                 db.session.add(supervisor)
@@ -310,7 +367,7 @@ def setup_commands(app):
         try:
             administrador = Administrador(
                 email="admin@test.com",
-                contraseña_hash="123456",
+                contraseña_hash=generate_password_hash("123456"),
                 permisos_especiales="Gestión completa del sistema"
             )
             db.session.add(administrador)

@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from api.models import db, Cliente
 from api.jwt_utils import require_role
+from werkzeug.security import generate_password_hash
 
 cliente_bp = Blueprint('clientes', __name__)
 
@@ -35,6 +36,8 @@ def create_cliente():
             cliente_data['longitude'] = body['longitude']
         if 'url_imagen' in body:
             cliente_data['url_imagen'] = body['url_imagen']
+        # Hash de contraseña antes de guardar
+        cliente_data['contraseña_hash'] = generate_password_hash(cliente_data['contraseña_hash'])
             
         cliente = Cliente(**cliente_data)
         db.session.add(cliente)
@@ -65,9 +68,11 @@ def update_cliente(id):
     if not cliente:
         return jsonify({"message": "Cliente no encontrado"}), 404
     try:
-        for field in ["direccion", "telefono", "nombre", "apellido", "email", "contraseña_hash", "latitude", "longitude", "url_imagen"]:
+        for field in ["direccion", "telefono", "nombre", "apellido", "email", "latitude", "longitude", "url_imagen"]:
             if field in body:
                 setattr(cliente, field, body[field])
+        if "contraseña_hash" in body:
+            setattr(cliente, "contraseña_hash", generate_password_hash(body["contraseña_hash"]))
         db.session.commit()
         return jsonify(cliente.serialize()), 200
     except IntegrityError:

@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from api.models import db, Supervisor
 from api.jwt_utils import require_role
+from werkzeug.security import generate_password_hash
 
 supervisor_bp = Blueprint('supervisores', __name__)
 
@@ -27,7 +28,9 @@ def create_supervisor():
     if missing:
         return jsonify({"message": f"Faltan campos: {', '.join(missing)}"}), 400
     try:
-        supervisor = Supervisor(**{k: body[k] for k in required})
+        data = {k: body[k] for k in required}
+        data['contraseña_hash'] = generate_password_hash(data['contraseña_hash'])
+        supervisor = Supervisor(**data)
         db.session.add(supervisor)
         db.session.commit()
         return jsonify(supervisor.serialize()), 201
@@ -56,9 +59,11 @@ def update_supervisor(id):
     if not supervisor:
         return jsonify({"message": "Supervisor no encontrado"}), 404
     try:
-        for field in ["area_responsable", "nombre", "apellido", "email", "contraseña_hash"]:
+        for field in ["area_responsable", "nombre", "apellido", "email"]:
             if field in body:
                 setattr(supervisor, field, body[field])
+        if "contraseña_hash" in body:
+            setattr(supervisor, "contraseña_hash", generate_password_hash(body["contraseña_hash"]))
         db.session.commit()
         return jsonify(supervisor.serialize()), 200
     except IntegrityError:
