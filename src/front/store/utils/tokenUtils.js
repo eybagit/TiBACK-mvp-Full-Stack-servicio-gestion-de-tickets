@@ -151,3 +151,38 @@ export const clearActiveChats = () => {
   localStorage.removeItem("activeChats");
   console.log('🗑️ Active chats limpiados');
 };
+
+/**
+ * Limpia localStorage de keys NO autorizadas
+ * Mantiene solo tokens de roles válidos
+ * Ejecutar al inicio de la app para limpiar basura de otros proyectos
+ */
+export const cleanUnauthorizedStorage = () => {
+  const ALLOWED_KEYS = [
+    'cliente',
+    'analista', 
+    'supervisor',
+    'administrador'
+  ];
+
+  // Obtener todas las keys actuales
+  const allKeys = Object.keys(localStorage);
+  
+  // Contador de keys eliminadas
+  let removedCount = 0;
+  
+  // Eliminar keys NO autorizadas
+  allKeys.forEach(key => {
+    if (!ALLOWED_KEYS.includes(key)) {
+      console.log(`🗑️ Limpiando key no autorizada: "${key}"`);
+      localStorage.removeItem(key);
+      removedCount++;
+    }
+  });
+
+  if (removedCount > 0) {
+    console.log(`✅ Limpieza completada: ${removedCount} key(s) eliminadas`);
+  } else {
+    console.log('✅ localStorage limpio - solo tokens autorizados');
+  }
+};
