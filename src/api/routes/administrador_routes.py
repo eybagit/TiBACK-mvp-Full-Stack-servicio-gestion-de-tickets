@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from api.models import db, Administrador
 from api.jwt_utils import require_role
+from werkzeug.security import generate_password_hash
 
 administrador_bp = Blueprint('administradores', __name__)
 
@@ -26,7 +27,9 @@ def create_administrador():
     if missing:
         return jsonify({"message": f"Faltan campos: {', '.join(missing)}"}), 400
     try:
-        administrador = Administrador(**{k: body[k] for k in required})
+        data = {k: body[k] for k in required}
+        data['contraseña_hash'] = generate_password_hash(data['contraseña_hash'])
+        administrador = Administrador(**data)
         db.session.add(administrador)
         db.session.commit()
         return jsonify(administrador.serialize()), 201
@@ -55,9 +58,11 @@ def update_administrador(id):
     if not administrador:
         return jsonify({"message": "Administrador no encontrado"}), 404
     try:
-        for field in ["permisos_especiales", "email", "contraseña_hash"]:
+        for field in ["permisos_especiales", "email"]:
             if field in body:
                 setattr(administrador, field, body[field])
+        if "contraseña_hash" in body:
+            setattr(administrador, "contraseña_hash", generate_password_hash(body["contraseña_hash"]))
         db.session.commit()
         return jsonify(administrador.serialize()), 200
     except IntegrityError:

@@ -10,6 +10,7 @@ from api.jwt_utils import (
 )
 from api.routes.utils_routes import handle_general_error
 from api.constants.ticket_enums import TicketState
+from werkzeug.security import generate_password_hash, check_password_hash
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -31,7 +32,7 @@ def register():
                 'nombre': 'Pendiente',
                 'apellido': 'Pendiente',
                 'email': body['email'],
-                'contraseña_hash': body['password'],
+                'contraseña_hash': generate_password_hash(body['password']),
                 'direccion': 'Pendiente',
                 'telefono': '0000000000'
             }
@@ -57,7 +58,7 @@ def register():
                 'nombre': body['nombre'],
                 'apellido': body['apellido'],
                 'email': body['email'],
-                'contraseña_hash': body['password'],
+                'contraseña_hash': generate_password_hash(body['password']),
                 'direccion': body['direccion'],
                 'telefono': body['telefono']
             }
@@ -110,7 +111,7 @@ def complete_client_info():
             cliente.longitude = body['longitude']
 
         if 'password' in body and body['password']:
-            cliente.contraseña_hash = body['password']
+            cliente.contraseña_hash = generate_password_hash(body['password'])
 
         db.session.commit()
 
@@ -148,7 +149,7 @@ def login():
         else:
             return jsonify({"message": "Rol inválido"}), 400
 
-        if not user or user.contraseña_hash != password:
+        if not user or not check_password_hash(user.contraseña_hash, password):
             return jsonify({"message": "Credenciales inválidas"}), 401
 
         token = generate_token(user.id, user.email, role)

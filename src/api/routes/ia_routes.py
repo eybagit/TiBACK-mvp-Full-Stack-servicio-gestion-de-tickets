@@ -7,7 +7,7 @@ import requests
 from flask import Blueprint, request, jsonify
 
 from api.models import Ticket
-from api.jwt_utils import require_auth, get_user_from_token
+from api.jwt_utils import require_auth, require_role, get_user_from_token
 from api.services import IAService
 from api.constants.ticket_enums import TicketState
 
@@ -15,7 +15,7 @@ ia_bp = Blueprint('ia', __name__)
 
 
 @ia_bp.route('/tickets/<int:ticket_id>/recomendaciones-similares', methods=['GET'])
-@require_auth
+@require_role(['cliente', 'analista', 'supervisor', 'administrador'])
 def obtener_tickets_similares(ticket_id):
     """Obtener tickets similares basados en similitud semántica"""
     try:
@@ -87,7 +87,7 @@ def obtener_tickets_similares(ticket_id):
 
 
 @ia_bp.route('/tickets/<int:ticket_id>/recomendacion-ia', methods=['POST'])
-@require_auth
+@require_role(['analista', 'supervisor', 'administrador'])
 def generar_recomendacion_ia(ticket_id):
     """Generar recomendación usando OpenAI"""
     try:
@@ -155,7 +155,7 @@ def cloud_vision_status():
 
 
 @ia_bp.route('/analyze-image', methods=['POST'])
-@require_auth
+@require_role(['cliente', 'analista', 'supervisor', 'administrador'])
 def analyze_image():
     """Analizar imagen usando Google Cloud Vision API"""
     try:

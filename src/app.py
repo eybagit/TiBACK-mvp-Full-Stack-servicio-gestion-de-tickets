@@ -83,6 +83,11 @@ app.register_blueprint(api, url_prefix='/api')
 def get_socketio():
     return socketio
 
+# ==================== SOCKET SESSION STORAGE ====================
+# Diccionario global para almacenar sesiones de sockets
+# Estructura: {socket_id: {'user_id': int, 'role': str, 'connected_at': str}}
+socket_sessions = {}
+
 # Eventos de WebSocket mejorados
 @socketio.on('connect')
 def handle_connect(auth=None):
@@ -95,17 +100,26 @@ def handle_connect(auth=None):
             from api.jwt_utils import verify_token
             user_data = verify_token(auth['token'])
             if user_data:
-                # Almacenar información del usuario en la sesión
-                socketio.session[request.sid] = {
-                    'user_id': user_data['id'],
+                # Almacenar información del usuario en dict global
+                socket_sessions[request.sid] = {
+                    'user_id': user_data['user_id'],
                     'role': user_data['role'],
+                    'email': user_data.get('email', ''),
                     'connected_at': datetime.now().isoformat()
                 }
-                print(f'✅ Usuario autenticado: {user_data["role"]} (ID: {user_data["id"]})')
+                
+                # 🔒 SEGURIDAD: Unir automáticamente a global_tickets
+                join_room('global_tickets')
+                
+                print(f'✅ Usuario autenticado: {user_data["role"]} (ID: {user_data["user_id"]})')
+                print(f'🔐 Sesión guardada: socket_sessions[{request.sid[:12]}...]')
+                print(f'🏠 Usuario unido a room global_tickets')
             else:
                 print('❌ Token inválido')
         except Exception as e:
             print(f'❌ Error de autenticación: {e}')
+            import traceback
+            traceback.print_exc()
     
     emit('connected', {
         'data': 'Conectado al servidor',
@@ -118,6 +132,14 @@ def handle_connect(auth=None):
 def handle_disconnect():
     """Manejar desconexión de cliente"""
     print(f'🔌 Cliente desconectado: {request.sid}')
+    
+    # Limpiar sesión del diccionario global
+    if request.sid in socket_sessions:
+        session_data = socket_sessions.pop(request.sid)
+        print(f'🗑️ Sesión limpiada: user_id={session_data.get("user_id")}, role={session_data.get("role")}')
+    
+    # 🔒 SEGURIDAD: Salir de global_tickets al desconectar
+    leave_room('global_tickets')
 
 @socketio.on('ping')
 def handle_ping():

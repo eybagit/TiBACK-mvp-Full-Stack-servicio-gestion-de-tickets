@@ -20,14 +20,17 @@
 
 ### Arquitectura WebSocket
 - **Room Global:** `global_tickets` - Todos los eventos se emiten aquí
-- **Filtrado:** Frontend filtra eventos por rol y permisos
+- **Filtrado Backend:** Middleware `emit_con_autorizacion` valida permisos vía JWT
+- **Filtrado Frontend:** Validación adicional por rol y permisos
 - **Sincronización:** Tiempo real para todos los roles
+- **Seguridad:** `_permissions` metadata + `socket_sessions` dict
 
 ### Principios de Diseño
 1. **Un solo evento por acción** - Backend emite, frontend escucha
 2. **Sin redundancia** - Frontend NO emite eventos de tickets
 3. **Estado único** - Base de datos es la fuente de verdad
 4. **Return inmediato** - Después de emitir WebSocket, retornar para evitar 500
+5. **Filtrado en capas** - Backend middleware + frontend validación
 
 ---
 
@@ -85,9 +88,10 @@
   - Estado asignado: `TicketState.EN_ESPERA.value` (L53)
 
 - **Emisión WebSocket:** `src/api/utils/websocket_utils.py`
-  - Función: `emit_ticket_created()` (L95-105)
-  - Llama a: `emit_ticket_event()`
+  - Función: `emit_ticket_created()` (L94-109)
+  - Llama a: `emit_ticket_event()` → `emit_con_autorizacion` (middleware)
   - Room: `global_tickets`
+  - Metadata: `_permissions` con `cliente_id`, `roles_permitidos`, `tipo_permiso`
 
 #### Frontend Handler
 - **Handler:** `src/front/hooks/useWebSocketEvents.js`
@@ -459,8 +463,14 @@ src/front/store/actions/
 
 **Archivo:** `src/api/utils/websocket_utils.py`
 - `emit_websocket_event()` [L42-57] - DEPRECADO, usar `emit_ticket_event`
-- `emit_ticket_event()` [L30-75] - RECOMENDADO - Emite evento a global_tickets
-- `emit_ticket_created()` [L95-105] - Emite evento de ticket creado
+- `emit_ticket_event()` [L30-75] - RECOMENDADO - Llama a `emit_con_autorizacion`
+- `emit_ticket_created()` [L95-105] - Emite evento de ticket creado con metadata
+- `construir_metadata_permisos()` [L267-339] - Construye `_permissions` para filtrado
+
+**Archivo:** `src/api/middleware/websocket_auth.py`
+- `emit_con_autorizacion()` [L184-362] - **MIDDLEWARE** Filtra eventos por JWT + `_permissions`
+- `validar_jwt_socket()` [L34-78] - Valida JWT desde `socket_sessions` dict
+- `validar_permiso()` [L80-182] - Valida permisos del usuario para el evento
 
 ### Frontend
 
@@ -515,6 +525,28 @@ src/front/store/actions/
 - ✅ Agregada sección 2.3 en documentación para flujo de reapertura por cliente
 - 📝 **Razón:** El estado `REABIERTO` permite que el supervisor vea los botones de cerrar/reabrir según la lógica en `TicketRow.jsx` (L69)
 
+### Seguridad Actual
+
+**Nivel:** 8/10 ✅ (Mejorado con middleware JWT)
+
+**Mejoras implementadas (2025-12-30):**
+- ✅ Arquitectura unificada `global_tickets`
+- ✅ Metadata `_permissions` en cada evento
+- ✅ **Middleware JWT backend** (`emit_con_autorizacion`)
+- ✅ Filtrado en backend antes de emitir eventos
+- ✅ Sesiones de socket en `socket_sessions` dict global
+- ✅ Auditoría de accesos con logs WARNING
+- ✅ Validación de permisos por rol, cliente_id, analista_id, supervisor_id
+
+**Mejoras pendientes:**
+- ⚠️ Rate limiting para prevenir spam
+- ⚠️ Encriptación end-to-end de chats (opcional)
+- ⚠️ Logs centralizados en sistema externo
+
+**Documentación:**
+- Ver `mapaDeDatos/seguridad/seguridad.md` para flujos completos de JWT y seguridad
+- Ver `src/api/middleware/websocket_auth.py` para implementación del middleware
+
 ### 2025-12-29 - Simplificación del Documento
 - ✅ Eliminado todo el código de los bloques
 - ✅ Mantenidas solo las referencias: rutas de archivos, números de línea, nombres de funciones/métodos
@@ -539,5 +571,6 @@ src/front/store/actions/
 
 ---
 
-**Última actualización:** 2025-12-29  
+**Última actualización:** 2025-12-30 - Seguridad WebSocket con middleware JWT  
 **Mantenido por:** Equipo de desarrollo TiBACK
+

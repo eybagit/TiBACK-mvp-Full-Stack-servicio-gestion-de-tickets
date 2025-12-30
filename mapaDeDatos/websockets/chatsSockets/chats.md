@@ -20,11 +20,12 @@
 
 ## 🎯 Contexto General
 
-### ✅ Arquitectura WebSocket Actual (Post-Migración)
+### ✅ Arquitectura WebSocket Actual (Post-Migración + Seguridad JWT)
 - **Room Global Unificada:** `global_tickets` - TODOS los eventos van aquí
-- **Filtrado en Frontend:** Por tipo de evento y permisos de participantes
+- **Filtrado Backend:** Middleware `emit_con_autorizacion` valida JWT + `_permissions`
+- **Filtrado Frontend:** Por tipo de evento y permisos de participantes
 - **Sincronización:** Tiempo real mediante evento genérico `nuevo_mensaje_chat`
-- **Preparado para JWT:** Arquitectura lista para seguridad backend
+- **Seguridad:** JWT autenticación + metadata de permisos + auditoría
 
 ### Arquitectura Anterior (Deprecada)
 - ~~Rooms Específicas por Ticket~~ ❌ Eliminadas
@@ -58,6 +59,8 @@
 2. **Sin gestión manual de rooms** - Simplicidad
 3. **Estado único en BD** - Comentarios con prefijo especial
 4. **Metadata de participantes** - Para filtrado correcto
+5. **Middleware JWT** - Validación de permisos en backend (2025-12-30)
+6. **Auditoría de accesos** - Logs de eventos denegados
 
 ---
 
@@ -722,22 +725,25 @@ socket.on('nuevo_mensaje_chat', (data) => {
 
 ### Seguridad Actual
 
-**Nivel:** 7/10 ⚠️ (Mejorado con migración)
+**Nivel:** 8/10 ✅ (Mejorado con middleware JWT - 2025-12-30)
 
-**Mejoras con migración:**
-- ✅ Arquitectura unificada (más fácil de asegurar)
+**Mejoras implementadas:**
+- ✅ Arquitectura unificada `global_tickets`
 - ✅ Metadata de participantes en cada evento
-- ✅ Preparado para JWT middleware
+- ✅ **Middleware JWT backend** (`emit_con_autorizacion`)
+- ✅ Filtrado en backend antes de emitir eventos
+- ✅ Sesiones de socket en `socket_sessions` dict
+- ✅ Auditoría de accesos con logs WARNING
+- ✅ Validación de permisos por `participantes` (cliente_id, analista_id, supervisor_id)
 
-**Vulnerabilidades restantes:**
-- ⚠️ Filtrado solo en frontend
-- ⚠️ Cliente malicioso puede modificar código y ver otros chats
-- ⚠️ No hay auditoría de accesos
+**Mejoras pendientes:**
+- ⚠️ Encriptación end-to-end de mensajes (opcional)
+- ⚠️ Rate limiting por usuario
+- ⚠️ Logs centralizados en sistema externo
 
-**Solución Futura:**
-- Implementar JWT middleware (ver `mapaDeDatos/websockets/seguridadSugerencias.md`)
-- Validar permisos en backend antes de emitir
-- Auditoría de accesos con logs
+**Documentación:**
+- Ver `mapaDeDatos/seguridad/seguridad.md` para flujos JWT completos
+- Ver `src/api/middleware/websocket_auth.py` para implementación del middleware
 
 ### Patrón de Navegación Atómica (Fix 29/12/2025)
 
@@ -787,6 +793,14 @@ const openComments = (ticketId) => {
 ---
 
 ## 🔄 Historial de Actualizaciones
+
+### 2025-12-30 - Actualización de Seguridad WebSocket
+- ✅ Agregada documentación de middleware JWT (`emit_con_autorizacion`)
+- ✅ Actualizada arquitectura: filtrado backend + frontend
+- ✅ Actualizado nivel de seguridad: 7/10 → 8/10
+- ✅ Agregada referencia a `socket_sessions` dict global
+- ✅ Actualizada sección de seguridad con mejoras implementadas
+- ✅ Documentadas referencias a `seguridad.md` y middleware
 
 ### 2025-12-29 - ✅ SISTEMA COMPLETAMENTE FUNCIONAL
 - ✅ **Contexto transferido exitosamente** - Nueva sesión iniciada con contexto completo
@@ -873,9 +887,9 @@ const openComments = (ticketId) => {
 
 ---
 
-**Última actualización:** 2025-12-29 (Sistema Completamente Funcional - Contexto Transferido)  
+**Última actualización:** 2025-12-30 (Seguridad WebSocket con middleware JWT)  
 **Mantenido por:** Equipo de desarrollo TiBACK  
 **Chats documentados:** 3 (Comentarios 3 Roles, Analista-Cliente, Supervisor-Analista)  
-**Estado:** ✅ TODOS los chats migrados a `global_tickets` + 3 Fixes Críticos Completados  
+**Estado:** ✅ TODOS los chats migrados a `global_tickets` + 3 Fixes Críticos + Seguridad JWT  
 **Líneas de código:** Actualizadas con referencias exactas a las implementaciones actuales
 

@@ -19,16 +19,25 @@ ticket_bp = Blueprint('tickets', __name__)
 
 def emit_ws_event(socketio, event, data, rooms=None):
     """
-    Helper para emitir eventos WebSocket
-    SIMPLIFICADO: Ignora rooms específicas y SIEMPRE emite a global_tickets
+    Helper para emitir eventos WebSocket CON FILTRADO
+    Usa el middleware de autorización JWT
     """
     if not socketio:
         return
     try:
-        # SOLO global_tickets - TODOS escuchan TODO
-        socketio.emit(event, data, room='global_tickets')
+        # 🔒 SEGURIDAD: Usar middleware de autorización
+        from api.middleware.websocket_auth import emit_con_autorizacion
+        emit_con_autorizacion(
+            socketio=socketio,
+            evento_nombre=event,
+            evento_data=data,
+            room='global_tickets'
+        )
     except Exception as e:
         print(f"Error enviando WebSocket {event}: {e}")
+        import traceback
+        traceback.print_exc()
+
 
 
 
@@ -81,7 +90,7 @@ def create_ticket():
 
 
 @ticket_bp.route('/upload-image', methods=['POST'])
-@require_auth
+@require_role(['cliente', 'analista', 'supervisor', 'administrador'])
 def upload_image():
     """Subir imagen a Cloudinary"""
     if 'image' not in request.files:
@@ -364,11 +373,21 @@ def asignar_ticket(id):
             'analista_nombre': f"{analista.nombre} {analista.apellido}" if analista else "",
             'tipo': 'asignado',
             'accion': "reasignado" if es_reasignacion else "asignado",
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            # 🔒 SEGURIDAD: Metadata de permisos para filtrado en middleware
+            '_permissions': {
+                'cliente_id': ticket.id_cliente,
+                'analista_id': id_analista,
+                'supervisor_id': user['id'],  # El supervisor que asigna
+                'roles_permitidos': ['cliente', 'analista', 'supervisor', 'administrador'],
+                'tipo_permiso': 'assigned',  # Solo involucrados ven el evento
+                'ticket_id': ticket.id
+            }
         }
 
-        # UNA sola emisión - global_tickets recibe todo
+        # UNA sola emisión - middleware filtra automáticamente
         emit_ws_event(socketio, 'ticket_asignado', data, None)
+
 
     accion = "reasignado" if es_reasignacion else "asignado"
     

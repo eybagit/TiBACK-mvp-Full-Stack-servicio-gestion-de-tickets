@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from api.models import db, Analista
 from api.jwt_utils import require_role, get_user_from_token
 from api.routes.utils_routes import get_socketio, handle_general_error
+from werkzeug.security import generate_password_hash
 
 analista_bp = Blueprint('analistas', __name__)
 
@@ -32,7 +33,9 @@ def create_analista():
     if missing:
         return jsonify({"message": f"Faltan campos: {', '.join(missing)}"}), 400
     try:
-        analista = Analista(**{k: body[k] for k in required})
+        data = {k: body[k] for k in required}
+        data['contraseña_hash'] = generate_password_hash(data['contraseña_hash'])
+        analista = Analista(**data)
         db.session.add(analista)
         db.session.commit()
 
@@ -78,9 +81,11 @@ def update_analista(id):
     if not analista:
         return jsonify({"message": "Analista no encontrado"}), 404
     try:
-        for field in ["especialidad", "nombre", "apellido", "email", "contraseña_hash"]:
+        for field in ["especialidad", "nombre", "apellido", "email"]:
             if field in body:
                 setattr(analista, field, body[field])
+        if "contraseña_hash" in body:
+            setattr(analista, "contraseña_hash", generate_password_hash(body["contraseña_hash"]))
         db.session.commit()
         return jsonify(analista.serialize()), 200
     except IntegrityError:

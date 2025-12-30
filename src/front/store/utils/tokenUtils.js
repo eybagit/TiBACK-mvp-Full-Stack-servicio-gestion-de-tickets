@@ -115,17 +115,74 @@ export const findToken = () => {
   return { token: null, key: null };
 };
 
-// Función para limpiar tokens
+// Función para limpiar tokens y TODOS los datos sensibles
 export const clearAllTokens = () => {
-  const keys = [
+  // 1. Limpiar tokens de roles
+  const tokenKeys = [
     "token",
     "cliente",
     "analista",
     "supervisor",
     "administrador",
     "usuario",
+  ];
+  tokenKeys.forEach(key => localStorage.removeItem(key));
+
+  // 2. 🚨 CRÍTICO: Limpiar datos legacy/sensibles que NO deben estar
+  const legacyKeys = [
     "role",
     "user",
+    "activeChats",       // Datos de chats activos
+    "activeTicket",      // Información del ticket activo
+    "cliente_logIn_on",  // Datos de login legacy
+    "carrito_expira_en", // Datos de carrito (si existe)
+    "session_data",      // Datos de sesión genéricos
   ];
-  keys.forEach(key => localStorage.removeItem(key));
+  legacyKeys.forEach(key => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+  
+  console.log('🔒 Todos los tokens y datos sensibles limpiados');
+};
+
+// Función para limpiar solo activeChats (sin cerrar sesión)
+export const clearActiveChats = () => {
+  localStorage.removeItem("activeChats");
+  console.log('🗑️ Active chats limpiados');
+};
+
+/**
+ * Limpia localStorage de keys NO autorizadas
+ * Mantiene solo tokens de roles válidos
+ * Ejecutar al inicio de la app para limpiar basura de otros proyectos
+ */
+export const cleanUnauthorizedStorage = () => {
+  const ALLOWED_KEYS = [
+    'cliente',
+    'analista', 
+    'supervisor',
+    'administrador'
+  ];
+
+  // Obtener todas las keys actuales
+  const allKeys = Object.keys(localStorage);
+  
+  // Contador de keys eliminadas
+  let removedCount = 0;
+  
+  // Eliminar keys NO autorizadas
+  allKeys.forEach(key => {
+    if (!ALLOWED_KEYS.includes(key)) {
+      console.log(`🗑️ Limpiando key no autorizada: "${key}"`);
+      localStorage.removeItem(key);
+      removedCount++;
+    }
+  });
+
+  if (removedCount > 0) {
+    console.log(`✅ Limpieza completada: ${removedCount} key(s) eliminadas`);
+  } else {
+    console.log('✅ localStorage limpio - solo tokens autorizados');
+  }
 };

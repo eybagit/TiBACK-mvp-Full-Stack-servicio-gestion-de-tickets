@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 
 from api.models import db, Ticket, Comentarios
-from api.jwt_utils import require_auth, get_user_from_token
+from api.jwt_utils import require_auth, require_role, get_user_from_token
 from api.routes.utils_routes import get_socketio
 
 chat_bp = Blueprint('chat', __name__)
@@ -14,7 +14,7 @@ chat_bp = Blueprint('chat', __name__)
 # ==================== CHAT SUPERVISOR-ANALISTA ====================
 
 @chat_bp.route('/tickets/<int:ticket_id>/chat-supervisor-analista', methods=['GET'])
-@require_auth
+@require_role(['supervisor', 'analista', 'administrador'])
 def obtener_chat_supervisor_analista(ticket_id):
     """Obtener mensajes del chat entre supervisor y analista para un ticket"""
     try:
@@ -62,7 +62,7 @@ def obtener_chat_supervisor_analista(ticket_id):
 
 
 @chat_bp.route('/chat-supervisor-analista', methods=['POST'])
-@require_auth
+@require_role(['supervisor', 'analista', 'administrador'])
 def enviar_mensaje_supervisor_analista():
     """Enviar mensaje en el chat entre supervisor y analista"""
     try:
@@ -140,7 +140,7 @@ def enviar_mensaje_supervisor_analista():
 # ==================== CHAT ANALISTA-CLIENTE ====================
 
 @chat_bp.route('/tickets/<int:ticket_id>/chat-analista-cliente', methods=['GET'])
-@require_auth
+@require_role(['cliente', 'analista', 'administrador'])
 def obtener_chat_analista_cliente(ticket_id):
     """Obtener mensajes del chat entre analista y cliente para un ticket"""
     try:
@@ -188,7 +188,7 @@ def obtener_chat_analista_cliente(ticket_id):
 
 
 @chat_bp.route('/chat-analista-cliente', methods=['POST'])
-@require_auth
+@require_role(['cliente', 'analista', 'administrador'])
 def enviar_mensaje_analista_cliente():
     """Enviar mensaje en el chat entre analista y cliente"""
     try:
