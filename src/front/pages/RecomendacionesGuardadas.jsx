@@ -64,17 +64,54 @@ const RecomendacionesGuardadas = () => {
 
     const parsearRecomendacion = (texto) => {
         // Verificar si es un análisis de imagen
-        if (texto.includes('🤖 ANÁLISIS DE IMAGEN CON IA:')) {
-            return {
+        if (texto.includes('🤖 ANÁLISIS DE IMAGEN CON IA')) {
+            const lineas = texto.split('\n');
+            const analisis = {
                 tipo: 'analisis_imagen',
-                contenido: texto.replace('🤖 ANÁLISIS DE IMAGEN CON IA:', '').trim(),
-                diagnostico: '',
-                pasos_solucion: [],
-                tiempo_estimado: '',
-                nivel_dificultad: '',
-                recursos_necesarios: [],
-                recomendaciones_adicionales: ''
+                problema_detectado: '',
+                recomendaciones: [],
+                preguntas_para_analista: []
             };
+
+            let seccionActual = '';
+
+            for (let linea of lineas) {
+                linea = linea.trim();
+
+                if (linea.includes('📋 PROBLEMA DETECTADO:')) {
+                    seccionActual = 'problema';
+                    continue;
+                } else if (linea.includes('💡 CÓMO ABORDARLO:')) {
+                    seccionActual = 'recomendaciones';
+                    continue;
+                } else if (linea.includes('❓ PREGUNTAS PARA EL ANALISTA:')) {
+                    seccionActual = 'preguntas';
+                    continue;
+                }
+
+                if (linea && seccionActual) {
+                    switch (seccionActual) {
+                        case 'problema':
+                            if (!linea.includes('🤖')) {
+                                analisis.problema_detectado += linea + ' ';
+                            }
+                            break;
+                        case 'recomendaciones':
+                            if (linea.match(/^\d+\./)) {
+                                const texto = linea.replace(/^\d+\.\s*/, '').trim();
+                                if (texto) analisis.recomendaciones.push(texto);
+                            }
+                            break;
+                        case 'preguntas':
+                            if (linea.startsWith('•')) {
+                                analisis.preguntas_para_analista.push(linea.substring(1).trim());
+                            }
+                            break;
+                    }
+                }
+            }
+
+            return analisis;
         }
 
         // Formato de recomendación estructurada
@@ -203,8 +240,7 @@ const RecomendacionesGuardadas = () => {
     return (
         <div className="hyper-layout d-flex">
             <SideBarCentral
-                hidden={sidebarHidden}
-                onToggle={toggleSidebar}
+                sidebarHidden={sidebarHidden}
                 activeView="recomendaciones-guardadas"
                 changeView={changeView}
             />
@@ -303,19 +339,53 @@ const RecomendacionesGuardadas = () => {
                                                     <div className="card-body">
                                                         {/* Análisis de Imagen */}
                                                         {recomendacion.tipo === 'analisis_imagen' && (
-                                                            <div className="mb-4">
-                                                                <h6 className="text-warning">
-                                                                    <i className="fas fa-image me-2"></i>
-                                                                    Análisis de Imagen
-                                                                </h6>
-                                                                <div className="card bg-warning bg-opacity-10 border-warning">
-                                                                    <div className="card-body">
-                                                                        <div className="whitespace-pre-wrap">
-                                                                            {recomendacion.contenido}
+                                                            <>
+                                                                {/* Problema Detectado */}
+                                                                {recomendacion.problema_detectado && (
+                                                                    <div className="mb-4">
+                                                                        <h6 className="text-primary">
+                                                                            <i className="fas fa-search me-2"></i>
+                                                                            Problema Detectado
+                                                                        </h6>
+                                                                        <div className="alert alert-info">
+                                                                            <p className="mb-0">{recomendacion.problema_detectado.trim()}</p>
                                                                         </div>
                                                                     </div>
-                                                                </div>
-                                                            </div>
+                                                                )}
+
+                                                                {/* Cómo Abordarlo */}
+                                                                {recomendacion.recomendaciones && recomendacion.recomendaciones.length > 0 && (
+                                                                    <div className="mb-4">
+                                                                        <h6 className="text-warning">
+                                                                            <i className="fas fa-lightbulb me-2"></i>
+                                                                            Cómo Abordarlo
+                                                                        </h6>
+                                                                        <ol className="list-group list-group-numbered">
+                                                                            {recomendacion.recomendaciones.map((rec, idx) => (
+                                                                                <li key={idx} className="list-group-item">{rec}</li>
+                                                                            ))}
+                                                                        </ol>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Preguntas para el Analista */}
+                                                                {recomendacion.preguntas_para_analista && recomendacion.preguntas_para_analista.length > 0 && (
+                                                                    <div className="mb-4">
+                                                                        <h6 className="text-success">
+                                                                            <i className="fas fa-question-circle me-2"></i>
+                                                                            Preguntas para el Analista
+                                                                        </h6>
+                                                                        <ul className="list-group">
+                                                                            {recomendacion.preguntas_para_analista.map((pregunta, idx) => (
+                                                                                <li key={idx} className="list-group-item">
+                                                                                    <i className="fas fa-angle-right me-2"></i>
+                                                                                    {pregunta}
+                                                                                </li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    </div>
+                                                                )}
+                                                            </>
                                                         )}
 
                                                         {/* Diagnóstico */}

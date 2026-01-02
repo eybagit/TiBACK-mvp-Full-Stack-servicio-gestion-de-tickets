@@ -163,39 +163,95 @@ const HeatmapComponent = () => {
 
     return (
         <div className="heatmap-container">
-            {/* Header */}
-            <div className="row mb-3">
+            {/* Header Premium */}
+            <div
+                className="row mb-4"
+                style={{
+                    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+                    borderRadius: '20px',
+                    padding: '20px',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)'
+                }}
+            >
                 <div className="col-12">
-                    <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 className="mb-1">
-                                <i className="fas fa-map-marker-alt me-2 text-primary"></i>
-                                Mapa de Calor - Tickets por Ubicación del Cliente
-                            </h5>
-                            <small className="text-muted">
-                                {stats.total} tickets ubicados según la dirección del cliente
-                            </small>
-                        </div>
-                        <div className="d-flex gap-3">
-                            <div className="d-flex align-items-center gap-2">
-                                <div className="d-flex align-items-center gap-1">
-                                    <div style={{
-                                        width: '20px',
-                                        height: '20px',
-                                        background: 'linear-gradient(45deg, rgba(255,200,200,0.3), rgba(255,0,0,1))',
-                                        borderRadius: '50%',
-                                        border: '2px solid #fff',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                                    }}></div>
-                                    <small><strong>Mapa de Calor</strong></small>
-                                </div>
-                                <small className="text-muted">• Paleta completa de rojos según intensidad</small>
+                    <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div className="d-flex align-items-center gap-3">
+                            {/* Icono con gradiente */}
+                            <div
+                                style={{
+                                    width: '56px',
+                                    height: '56px',
+                                    borderRadius: '16px',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
+                                }}
+                            >
+                                <i className="fas fa-fire-alt text-white" style={{ fontSize: '1.5rem' }}></i>
                             </div>
-                            <div className="d-flex align-items-center gap-1">
-                                <i className="fas fa-info-circle text-info"></i>
-                                <small className="text-muted">
-                                    {stats.total} tickets • Densidad: {stats.total > 0 ? 'Alta' : 'Baja'}
-                                </small>
+                            <div>
+                                <h4
+                                    className="mb-1 fw-bold"
+                                    style={{
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        backgroundClip: 'text'
+                                    }}
+                                >
+                                    Mapa de Calor Premium
+                                </h4>
+                                <p className="text-muted mb-0" style={{ fontSize: '0.9rem' }}>
+                                    <i className="fas fa-map-marked-alt me-1"></i>
+                                    {stats.total} tickets ubicados geográficamente
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Indicadores de densidad */}
+                        <div className="d-flex align-items-center gap-4">
+                            <div className="text-center">
+                                <div
+                                    className="d-inline-flex align-items-center justify-content-center mb-1"
+                                    style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '12px',
+                                        background: stats.total > 50 ? 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)' :
+                                            stats.total > 20 ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' :
+                                                'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'
+                                    }}
+                                >
+                                    <i className="fas fa-chart-line text-white"></i>
+                                </div>
+                                <div>
+                                    <small className="fw-bold" style={{ fontSize: '0.75rem' }}>
+                                        {stats.total > 50 ? 'ALTA' : stats.total > 20 ? 'MEDIA' : 'BAJA'}
+                                    </small>
+                                    <br />
+                                    <small className="text-muted" style={{ fontSize: '0.65rem' }}>Densidad</small>
+                                </div>
+                            </div>
+
+                            <div className="text-center">
+                                <div
+                                    className="d-inline-flex align-items-center justify-content-center mb-1"
+                                    style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '12px',
+                                        background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+                                    }}
+                                >
+                                    <i className="fas fa-sync-alt text-white"></i>
+                                </div>
+                                <div>
+                                    <small className="fw-bold text-success" style={{ fontSize: '0.75rem' }}>LIVE</small>
+                                    <br />
+                                    <small className="text-muted" style={{ fontSize: '0.65rem' }}>Tiempo Real</small>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -50,22 +50,19 @@ export const useHeatmapMap = ({ rawData, isLoaded, googleMapsError, calculateHea
         }]
     }), [mapCenter]);
 
-    // Gradiente de calor
+    // Gradiente de calor PREMIUM - Espectro multi-color
     const heatmapGradient = useMemo(() => [
-        'rgba(255, 0, 0, 0)',
-        'rgba(255, 200, 200, 1)',
-        'rgba(255, 180, 180, 1)',
-        'rgba(255, 160, 160, 1)',
-        'rgba(255, 140, 140, 1)',
-        'rgba(255, 120, 120, 1)',
-        'rgba(255, 100, 100, 1)',
-        'rgba(255, 80, 80, 1)',
-        'rgba(255, 60, 60, 1)',
-        'rgba(255, 40, 40, 1)',
-        'rgba(255, 20, 20, 1)',
-        'rgba(255, 10, 10, 1)',
-        'rgba(255, 5, 5, 1)',
-        'rgba(255, 0, 0, 1)'
+        'rgba(0, 0, 255, 0)',      // Transparente
+        'rgba(0, 0, 255, 0.3)',    // Azul suave
+        'rgba(0, 255, 255, 0.5)',  // Cyan
+        'rgba(0, 255, 128, 0.6)',  // Verde-cyan
+        'rgba(0, 255, 0, 0.7)',    // Verde
+        'rgba(128, 255, 0, 0.8)',  // Verde-amarillo
+        'rgba(255, 255, 0, 0.85)', // Amarillo
+        'rgba(255, 200, 0, 0.9)',  // Amarillo-naranja
+        'rgba(255, 140, 0, 0.92)', // Naranja
+        'rgba(255, 69, 0, 0.95)',  // Rojo-naranja
+        'rgba(255, 0, 0, 1)'       // Rojo intenso
     ], []);
 
     // Crear datos del heatmap

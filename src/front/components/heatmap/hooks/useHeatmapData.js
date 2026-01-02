@@ -113,9 +113,14 @@ export const useHeatmapData = (store) => {
     // Estadísticas calculadas
     const stats = useMemo(() => ({
         total: rawData.length,
+        pendientes: rawData.filter(t => {
+            const estado = normalizeFromBackend(t.ticket_estado);
+            return estado === TICKET_STATES.CREADO || estado === TICKET_STATES.EN_ESPERA;
+        }).length,
         enProceso: rawData.filter(t => normalizeFromBackend(t.ticket_estado) === TICKET_STATES.EN_PROCESO).length,
         solucionados: rawData.filter(t => normalizeFromBackend(t.ticket_estado) === TICKET_STATES.SOLUCIONADO).length,
-        cerrados: rawData.filter(t => normalizeFromBackend(t.ticket_estado) === TICKET_STATES.CERRADO).length
+        cerrados: rawData.filter(t => normalizeFromBackend(t.ticket_estado) === TICKET_STATES.CERRADO).length,
+        altaPrioridad: rawData.filter(t => t.ticket_prioridad?.toLowerCase() === 'alta').length
     }), [rawData]);
 
     return {

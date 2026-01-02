@@ -87,7 +87,7 @@ def obtener_tickets_similares(ticket_id):
 
 
 @ia_bp.route('/tickets/<int:ticket_id>/recomendacion-ia', methods=['POST'])
-@require_role(['analista', 'supervisor', 'administrador'])
+@require_role(['cliente', 'analista', 'supervisor', 'administrador'])
 def generar_recomendacion_ia(ticket_id):
     """Generar recomendación usando OpenAI"""
     try:
@@ -108,10 +108,10 @@ def generar_recomendacion_ia(ticket_id):
            user_role not in ['supervisor', 'administrador']:
             return jsonify({"message": "No tienes permisos para ver este ticket"}), 403
 
-        api_key = os.getenv('API_KEY_IA')
+        api_key = os.getenv('GOOGLE_API_KEY')
         
         # Si no hay API key, usar recomendación básica
-        if not api_key or api_key.strip() == '' or api_key == 'clave api':
+        if not api_key or api_key.strip() == '':
             recomendacion = IAService.generar_recomendacion_basica(ticket)
             return jsonify({
                 "message": "Recomendación generada (modo básico)",
@@ -119,8 +119,8 @@ def generar_recomendacion_ia(ticket_id):
                 "ticket_id": ticket_id
             }), 200
 
-        # Usar OpenAI
-        recomendacion, error = IAService.generar_recomendacion_openai(ticket, api_key)
+        # Usar Gemini
+        recomendacion, error = IAService.generar_recomendacion_gemini(ticket, api_key)
         
         if error:
             return jsonify({"message": error, "error": error}), 500
@@ -144,7 +144,7 @@ def generar_recomendacion_ia(ticket_id):
 def cloud_vision_status():
     """Verificar estado de configuración de Cloud Vision API"""
     try:
-        status = IAService.get_cloud_vision_status()
+        status = IAService.get_gemini_status()
         status["message"] = "Configuración verificada"
         return jsonify(status), 200
     except Exception as e:
@@ -157,19 +157,52 @@ def cloud_vision_status():
 @ia_bp.route('/analyze-image', methods=['POST'])
 @require_role(['cliente', 'analista', 'supervisor', 'administrador'])
 def analyze_image():
-    """Analizar imagen usando Google Cloud Vision API"""
+    """Analizar imagen usando Gemini API con contexto del ticket"""
     try:
-        if 'image' not in request.files:
-            return jsonify({"message": "No se encontró archivo de imagen"}), 400
-        
-        file = request.files['image']
-        if file.filename == '':
-            return jsonify({"message": "No se seleccionó archivo"}), 400
-        
+        # Obtener datos del request
         ticket_id = request.form.get('ticket_id')
-        image_content = file.read()
+        ticket_title = request.form.get('ticket_title')
+        ticket_description = request.form.get('ticket_description')
+        additional_details = request.form.get('additional_details')
         
-        result, error = IAService.analizar_imagen_cloud_vision(image_content, ticket_id)
+        # Verificar si hay imagen en archivos o usar imagen del ticket
+        image_content = None
+        
+        if 'image' in request.files:
+            file = request.files['image']
+            if file.filename != '':
+                image_content = file.read()
+        
+        # Si no hay imagen subida, intentar usar la del ticket
+        if not image_content and ticket_id:
+            from api.models import Ticket
+            ticket = Ticket.query.get(ticket_id)
+            if ticket and ticket.url_imagen:
+                # Descargar imagen desde Cloudinary
+                import requests as http_requests
+                try:
+                    response = http_requests.get(ticket.url_imagen, timeout=10)
+                    if response.status_code == 200:
+                        image_content = response.content
+                except Exception as e:
+                    return jsonify({
+                        "message": f"Error al descargar imagen del ticket: {str(e)}"
+                    }), 500
+        
+        # Verificar que tenemos una imagen
+        if not image_content:
+            return jsonify({
+                "message": "No se encontró imagen. El ticket no tiene imagen y no se subió ninguna."
+            }), 400
+        
+        # Analizar imagen con contexto completo
+        result, error = IAService.analizar_imagen_gemini(
+            image_content, 
+            ticket_id,
+            ticket_title,
+            ticket_description,
+            additional_details
+        )
         
         if error:
             return jsonify({"message": error, "error": error}), 500

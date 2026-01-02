@@ -29,6 +29,7 @@ const IdentificarImagenEmbedded = ({ ticketId, onBack }) => {
     const [loading, setLoading] = useState(false);
     const [image, setImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [useExistingImage, setUseExistingImage] = useState(false);
     const [additionalDetails, setAdditionalDetails] = useState('');
     const [analysisResult, setAnalysisResult] = useState(null);
     const [error, setError] = useState(null);
@@ -58,6 +59,12 @@ const IdentificarImagenEmbedded = ({ ticketId, onBack }) => {
 
                 const ticketData = await response.json();
                 setTicket(ticketData);
+
+                // Auto-detectar imagen del ticket
+                if (ticketData.url_imagen) {
+                    setUseExistingImage(true);
+                    setImagePreview(ticketData.url_imagen);
+                }
             } catch (err) {
                 setError('Error al cargar el ticket');
             }
@@ -139,7 +146,8 @@ const IdentificarImagenEmbedded = ({ ticketId, onBack }) => {
     };
 
     const handleAnalyze = async () => {
-        if (!image) {
+        // Validar que tengamos imagen (subida o del ticket)
+        if (!useExistingImage && !image) {
             setError('Por favor selecciona una imagen');
             return;
         }
@@ -156,9 +164,13 @@ const IdentificarImagenEmbedded = ({ ticketId, onBack }) => {
             const token = store.auth.token;
 
             const formData = new FormData();
-            formData.append('image', image);
+
+            // Solo agregar imagen si NO estamos usando la del ticket
+            if (!useExistingImage && image) {
+                formData.append('image', image);
+            }
+
             formData.append('ticket_id', ticketId);
-            formData.append('use_ticket_context', true); // Siempre usar contexto del ticket
 
             // Siempre incluir título y descripción del ticket
             if (ticket) {
@@ -197,6 +209,30 @@ const IdentificarImagenEmbedded = ({ ticketId, onBack }) => {
         try {
             const token = store.auth.token;
 
+            // Construir texto del análisis completo
+            let textoAnalisis = '🤖 ANÁLISIS DE IMAGEN CON IA:\n\n';
+
+            // Problema Detectado
+            textoAnalisis += '📋 PROBLEMA DETECTADO:\n';
+            textoAnalisis += `${analysisResult.analysis}\n\n`;
+
+            // Cómo Abordarlo
+            if (analysisResult.recomendaciones && analysisResult.recomendaciones.length > 0) {
+                textoAnalisis += '💡 CÓMO ABORDARLO:\n';
+                analysisResult.recomendaciones.forEach((recomendacion, index) => {
+                    textoAnalisis += `${index + 1}. ${recomendacion}\n`;
+                });
+                textoAnalisis += '\n';
+            }
+
+            // Preguntas para el Analista
+            if (analysisResult.preguntas_para_analista && analysisResult.preguntas_para_analista.length > 0) {
+                textoAnalisis += '❓ PREGUNTAS PARA EL ANALISTA:\n';
+                analysisResult.preguntas_para_analista.forEach((pregunta) => {
+                    textoAnalisis += `• ${pregunta}\n`;
+                });
+            }
+
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/comentarios`, {
                 method: 'POST',
                 headers: {
@@ -205,7 +241,7 @@ const IdentificarImagenEmbedded = ({ ticketId, onBack }) => {
                 },
                 body: JSON.stringify({
                     id_ticket: parseInt(ticketId),
-                    texto: `🤖 ANÁLISIS DE IMAGEN CON IA:\n\n${analysisResult.analysis}`
+                    texto: textoAnalisis.trim()
                 })
             });
 
@@ -308,23 +344,54 @@ const IdentificarImagenEmbedded = ({ ticketId, onBack }) => {
 
                                 {/* Carga de imagen */}
                                 <div className="mb-4">
-                                    <label htmlFor="imageUpload" className="form-label">
-                                        Seleccionar imagen del problema:
-                                    </label>
-                                    <input
-                                        type="file"
-                                        className="form-control"
-                                        id="imageUpload"
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                    />
-                                    {imagePreview && (
-                                        <div className="mt-3">
-                                            <img
-                                                src={imagePreview}
-                                                alt="Preview"
-                                                className="img-fluid img-preview-sm"
+                                    {useExistingImage ? (
+                                        <div>
+                                            <label className="form-label">
+                                                <i className="fas fa-check-circle text-success me-2"></i>
+                                                Imagen del ticket cargada:
+                                            </label>
+                                            <div className="mt-2">
+                                                <img
+                                                    src={imagePreview}
+                                                    alt="Imagen del ticket"
+                                                    className="img-fluid img-preview-sm"
+                                                />
+                                            </div>
+                                            <div className="form-text mt-2">
+                                                <i className="fas fa-info-circle me-1"></i>
+                                                Se usará la imagen cargada en el ticket.
+                                                <button
+                                                    className="btn btn-link btn-sm p-0 ms-2"
+                                                    onClick={() => {
+                                                        setUseExistingImage(false);
+                                                        setImagePreview(null);
+                                                    }}
+                                                >
+                                                    Subir otra imagen
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <label htmlFor="imageUpload" className="form-label">
+                                                Seleccionar imagen del problema:
+                                            </label>
+                                            <input
+                                                type="file"
+                                                className="form-control"
+                                                id="imageUpload"
+                                                accept="image/*"
+                                                onChange={handleImageChange}
                                             />
+                                            {imagePreview && (
+                                                <div className="mt-3">
+                                                    <img
+                                                        src={imagePreview}
+                                                        alt="Preview"
+                                                        className="img-fluid img-preview-sm"
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -334,7 +401,7 @@ const IdentificarImagenEmbedded = ({ ticketId, onBack }) => {
                                     <button
                                         className="btn btn-primary"
                                         onClick={handleAnalyze}
-                                        disabled={loading || !image || !additionalDetails.trim()}
+                                        disabled={loading || (!useExistingImage && !image) || !additionalDetails.trim()}
                                     >
                                         {loading ? (
                                             <>
@@ -356,56 +423,47 @@ const IdentificarImagenEmbedded = ({ ticketId, onBack }) => {
                                         <h5>Resultado del Análisis</h5>
                                         <div className="card">
                                             <div className="card-body">
-                                                <h6>Análisis General:</h6>
-                                                <p className="mb-3">{analysisResult.analysis}</p>
+                                                {/* Problema Detectado */}
+                                                <div className="mb-4">
+                                                    <h6>
+                                                        <i className="fas fa-search me-2 text-primary"></i>
+                                                        Problema Detectado:
+                                                    </h6>
+                                                    <div className="alert alert-info">
+                                                        <p className="mb-0">{analysisResult.analysis}</p>
+                                                    </div>
+                                                </div>
 
-                                                {analysisResult.labels && analysisResult.labels.length > 0 && (
-                                                    <div className="mb-3">
-                                                        <h6>Elementos Detectados:</h6>
-                                                        <div className="d-flex flex-wrap gap-2">
-                                                            {analysisResult.labels.map((label, index) => (
-                                                                <span key={index} className="badge bg-primary">
-                                                                    {label.description} ({Math.round(label.score * 100)}%)
-                                                                </span>
+                                                {/* Cómo Abordarlo */}
+                                                {analysisResult.recomendaciones && analysisResult.recomendaciones.length > 0 && (
+                                                    <div className="mb-4">
+                                                        <h6>
+                                                            <i className="fas fa-lightbulb me-2 text-warning"></i>
+                                                            Cómo Abordarlo:
+                                                        </h6>
+                                                        <ol className="list-group list-group-numbered">
+                                                            {analysisResult.recomendaciones.map((rec, index) => (
+                                                                <li key={index} className="list-group-item">{rec}</li>
                                                             ))}
-                                                        </div>
+                                                        </ol>
                                                     </div>
                                                 )}
 
-                                                {analysisResult.text && analysisResult.text.length > 0 && (
-                                                    <div className="mb-3">
-                                                        <h6>Texto Detectado:</h6>
-                                                        <div className="alert alert-info">
-                                                            {analysisResult.text.map((textItem, index) => (
-                                                                <div key={index} className="mb-1">
-                                                                    <strong>{textItem.description}</strong>
-                                                                    {textItem.locale && (
-                                                                        <small className="text-muted ms-2">({textItem.locale})</small>
-                                                                    )}
-                                                                </div>
+                                                {/* Preguntas para el Analista */}
+                                                {analysisResult.preguntas_para_analista && analysisResult.preguntas_para_analista.length > 0 && (
+                                                    <div className="mb-4">
+                                                        <h6>
+                                                            <i className="fas fa-question-circle me-2 text-success"></i>
+                                                            Preguntas para el Analista:
+                                                        </h6>
+                                                        <ul className="list-group">
+                                                            {analysisResult.preguntas_para_analista.map((pregunta, index) => (
+                                                                <li key={index} className="list-group-item">
+                                                                    <i className="fas fa-angle-right me-2"></i>
+                                                                    {pregunta}
+                                                                </li>
                                                             ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {analysisResult.objects && analysisResult.objects.length > 0 && (
-                                                    <div className="mb-3">
-                                                        <h6>Objetos Localizados:</h6>
-                                                        <div className="row">
-                                                            {analysisResult.objects.map((obj, index) => (
-                                                                <div key={index} className="col-md-6 mb-2">
-                                                                    <div className="card">
-                                                                        <div className="card-body p-2">
-                                                                            <strong>{obj.name}</strong>
-                                                                            <br />
-                                                                            <small className="text-muted">
-                                                                                Confianza: {Math.round(obj.score * 100)}%
-                                                                            </small>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
+                                                        </ul>
                                                     </div>
                                                 )}
 
