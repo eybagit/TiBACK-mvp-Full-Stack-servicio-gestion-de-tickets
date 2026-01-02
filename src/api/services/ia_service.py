@@ -5,8 +5,14 @@ Según documentacion/modular.md: Servicios contienen lógica de negocio pura.
 import os
 import json
 import re
+import base64
 import requests
 from difflib import SequenceMatcher
+import google.generativeai as genai
+
+# Modelos Gemini para IA unificada
+IMAGE_MODEL = "gemini-2.5-flash-image"
+TEXT_MODEL = "gemini-2.5-flash"
 
 
 class IAService:
@@ -151,180 +157,148 @@ class IAService:
         }
 
     @staticmethod
-    def generar_recomendacion_openai(ticket, api_key):
-        """Generar recomendación usando OpenAI"""
-        prompt = f"""
-        Como experto en soporte técnico, analiza el siguiente ticket y proporciona una recomendación detallada.
-        
-        Título del ticket: {ticket.titulo}
-        Descripción: {ticket.descripcion}
-        Prioridad: {ticket.prioridad}
-        Estado actual: {ticket.estado}
-        
-        Proporciona una recomendación estructurada en formato JSON con:
-        - diagnostico: Análisis del problema identificado
-        - pasos_solucion: Array de pasos específicos para resolver
-        - tiempo_estimado: Tiempo estimado en horas
-        - recursos_necesarios: Lista de recursos o herramientas
-        - nivel_dificultad: Baja, Media o Alta
-        - recomendaciones_adicionales: Consejos adicionales
-        
-        Responde únicamente con el JSON, sin texto adicional.
-        """
-
-        headers = {
-            'Authorization': f'Bearer {api_key}',
-            'Content-Type': 'application/json'
-        }
-
-        data = {
-            'model': 'gpt-3.5-turbo',
-            'messages': [
-                {
-                    'role': 'system',
-                    'content': 'Eres un experto en soporte técnico. Responde siempre en formato JSON válido.'
-                },
-                {'role': 'user', 'content': prompt}
-            ],
-            'max_tokens': 1000,
-            'temperature': 0.7
-        }
-
-        response = requests.post(
-            'https://api.openai.com/v1/chat/completions',
-            headers=headers,
-            json=data,
-            timeout=30
-        )
-
-        if response.status_code != 200:
-            error_msg = f"Error en la API de OpenAI: {response.status_code}"
+    def generar_recomendacion_gemini(ticket, api_key):
+        """Generar recomendación usando Google Gemini"""
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(TEXT_MODEL)
+            
+            prompt = f"""
+            Como experto en soporte técnico, analiza el siguiente ticket y proporciona una recomendación detallada.
+            
+            Título del ticket: {ticket.titulo}
+            Descripción: {ticket.descripcion}
+            Prioridad: {ticket.prioridad}
+            Estado actual: {ticket.estado}
+            
+            Proporciona una recomendación estructurada en formato JSON con:
+            - diagnostico: Análisis del problema identificado
+            - pasos_solucion: Array de pasos específicos para resolver
+            - tiempo_estimado: Tiempo estimado en horas
+            - recursos_necesarios: Lista de recursos o herramientas
+            - nivel_dificultad: Baja, Media o Alta
+            - recomendaciones_adicionales: Consejos adicionales
+            
+            Responde únicamente con el JSON, sin texto adicional.
+            """
+            
+            response = model.generate_content(prompt)
+            recomendacion_texto = response.text.strip()
+            
+            # Limpiar posibles marcadores de código markdown
+            if recomendacion_texto.startswith('```'):
+                lines = recomendacion_texto.split('\n')
+                recomendacion_texto = '\n'.join(lines[1:-1] if lines[-1] == '```' else lines[1:])
+            
             try:
-                error_data = response.json()
-                if 'error' in error_data:
-                    error_msg += f" - {error_data['error'].get('message', 'Error desconocido')}"
-            except:
-                error_msg += f" - {response.text}"
-            return None, error_msg
-
-        try:
-            openai_response = response.json()
-            if 'choices' not in openai_response or len(openai_response['choices']) == 0:
-                return None, "Respuesta de OpenAI sin contenido"
-
-            recomendacion_texto = openai_response['choices'][0]['message']['content'].strip()
-            if not recomendacion_texto:
-                return None, "Respuesta de OpenAI vacía"
-        except (KeyError, ValueError, IndexError) as e:
-            return None, f"Error procesando respuesta de OpenAI: {str(e)}"
-
-        try:
-            recomendacion_json = json.loads(recomendacion_texto)
-        except json.JSONDecodeError:
-            recomendacion_json = {
-                "diagnostico": "Análisis generado por IA",
-                "pasos_solucion": [recomendacion_texto],
-                "tiempo_estimado": "No especificado",
-                "recursos_necesarios": ["Consultar con el equipo técnico"],
-                "nivel_dificultad": "Media",
-                "recomendaciones_adicionales": "Revisar la respuesta generada por la IA"
-            }
-
-        return recomendacion_json, None
+                recomendacion_json = json.loads(recomendacion_texto)
+            except json.JSONDecodeError:
+                recomendacion_json = {
+                    "diagnostico": "Análisis generado por IA",
+                    "pasos_solucion": [recomendacion_texto],
+                    "tiempo_estimado": "No especificado",
+                    "recursos_necesarios": ["Consultar con el equipo técnico"],
+                    "nivel_dificultad": "Media",
+                    "recomendaciones_adicionales": "Revisar la respuesta generada por la IA"
+                }
+            
+            return recomendacion_json, None
+            
+        except Exception as e:
+            return None, f"Error en Gemini API: {str(e)}"
 
     @staticmethod
-    def get_cloud_vision_status():
-        """Obtener estado de configuración de Cloud Vision"""
-        cloud_vision_api_key = os.getenv('CLOUD_VISION_API')
+    def get_gemini_status():
+        """Obtener estado de configuración de Gemini API"""
+        google_api_key = os.getenv('GOOGLE_API_KEY')
         cloudinary_url = os.getenv('CLOUDINARY_URL')
         
         return {
-            "cloud_vision_configured": bool(cloud_vision_api_key),
+            "gemini_configured": bool(google_api_key),
             "cloudinary_configured": bool(cloudinary_url),
-            "cloud_vision_key_length": len(cloud_vision_api_key) if cloud_vision_api_key else 0,
-            "cloudinary_url_length": len(cloudinary_url) if cloudinary_url else 0
+            "gemini_key_length": len(google_api_key) if google_api_key else 0,
+            "cloudinary_url_length": len(cloudinary_url) if cloudinary_url else 0,
+            "image_model": IMAGE_MODEL,
+            "text_model": TEXT_MODEL
         }
 
     @staticmethod
-    def analizar_imagen_cloud_vision(image_content, ticket_id=None):
-        """Analizar imagen usando Google Cloud Vision API"""
-        from google.cloud import vision
-        
-        cloud_vision_api_key = os.getenv('CLOUD_VISION_API')
-        if not cloud_vision_api_key:
-            return None, "Cloud Vision API no configurada"
+    def analizar_imagen_gemini(image_content, ticket_id=None, ticket_title=None, ticket_description=None, additional_details=None):
+        """Analizar imagen usando Google Gemini API con contexto del ticket"""
+        google_api_key = os.getenv('GOOGLE_API_KEY')
+        if not google_api_key:
+            return None, "Gemini API no configurada (GOOGLE_API_KEY)"
         
         try:
-            client = vision.ImageAnnotatorClient(
-                client_options={'api_key': cloud_vision_api_key}
-            )
+            genai.configure(api_key=google_api_key)
+            model = genai.GenerativeModel(IMAGE_MODEL)
+            
+            # Convertir imagen a base64
+            image_data = base64.b64encode(image_content).decode('utf-8')
+            
+            # Construir contexto
+            context = ""
+            if ticket_title:
+                context += f"Título del problema: {ticket_title}\n"
+            if ticket_description:
+                context += f"Descripción reportada: {ticket_description}\n"
+            if additional_details:
+                context += f"Detalles adicionales: {additional_details}\n"
+            
+            prompt = f"""Eres un asistente técnico experto. Analiza esta imagen en el contexto de un ticket de soporte.
+
+CONTEXTO DEL TICKET:
+{context if context else "No hay contexto adicional"}
+
+TAREA:
+1. Identifica el problema técnico visible en la imagen
+2. Proporciona recomendaciones BREVES y PRÁCTICAS (máximo 3 pasos)
+3. Sugiere 2-3 preguntas específicas que el cliente debería hacer al analista
+
+FORMATO DE RESPUESTA (JSON):
+{{
+    "problema_detectado": "Descripción breve del problema visible (1-2 oraciones)",
+    "recomendaciones": [
+        "Paso 1 concreto y breve",
+        "Paso 2 concreto y breve"
+    ],
+    "preguntas_para_analista": [
+        "¿Pregunta específica 1?",
+        "¿Pregunta específica 2?"
+    ]
+}}
+
+IMPORTANTE: Sé BREVE y ESPECÍFICO. Responde SOLO con el JSON."""
+            
+            response = model.generate_content([
+                prompt,
+                {"mime_type": "image/jpeg", "data": image_data}
+            ])
+            
+            response_text = response.text.strip()
+            
+            # Limpiar posibles marcadores de código markdown
+            if response_text.startswith('```'):
+                lines = response_text.split('\n')
+                response_text = '\n'.join(lines[1:-1] if lines[-1] == '```' else lines[1:])
+            
+            try:
+                result_json = json.loads(response_text)
+            except json.JSONDecodeError:
+                result_json = {
+                    "problema_detectado": response_text,
+                    "recomendaciones": [],
+                    "preguntas_para_analista": []
+                }
+            
+            return {
+                "analysis": result_json.get("problema_detectado", "Análisis no disponible"),
+                "recomendaciones": result_json.get("recomendaciones", []),
+                "preguntas_para_analista": result_json.get("preguntas_para_analista", []),
+                "model_used": IMAGE_MODEL,
+                "ticket_id": ticket_id
+            }, None
+            
         except Exception as e:
-            return None, f"Error configurando Cloud Vision API: {str(e)}"
-        
-        image = vision.Image(content=image_content)
-        
-        features = [
-            vision.Feature(type_=vision.Feature.Type.LABEL_DETECTION),
-            vision.Feature(type_=vision.Feature.Type.TEXT_DETECTION),
-            vision.Feature(type_=vision.Feature.Type.OBJECT_LOCALIZATION),
-            vision.Feature(type_=vision.Feature.Type.IMAGE_PROPERTIES)
-        ]
-        
-        response = client.annotate_image({'image': image, 'features': features})
-        
-        # Procesar labels
-        labels = []
-        if response.label_annotations:
-            labels = [
-                {'description': label.description, 'score': label.score, 'mid': label.mid}
-                for label in response.label_annotations
-            ]
-        
-        # Procesar texto detectado
-        text_detections = []
-        if response.text_annotations:
-            text_detections = [
-                {
-                    'description': text.description,
-                    'locale': text.locale,
-                    'bounding_poly': [
-                        {'x': vertex.x, 'y': vertex.y}
-                        for vertex in text.bounding_poly.vertices
-                    ] if text.bounding_poly else []
-                }
-                for text in response.text_annotations
-            ]
-        
-        # Procesar objetos
-        objects = []
-        if response.localized_object_annotations:
-            objects = [
-                {
-                    'name': obj.name,
-                    'score': obj.score,
-                    'bounding_poly': [
-                        {'x': vertex.x, 'y': vertex.y}
-                        for vertex in obj.bounding_poly.normalized_vertices
-                    ]
-                }
-                for obj in response.localized_object_annotations
-            ]
-        
-        # Generar análisis
-        analysis_text = f"Análisis de la imagen para el ticket #{ticket_id}. " if ticket_id else "Análisis de imagen. "
-        
-        if labels:
-            top_labels = sorted(labels, key=lambda x: x['score'], reverse=True)[:5]
-            elements = [label['description'] for label in top_labels]
-            analysis_text += f"Elementos detectados: {', '.join(elements)}. "
-        
-        if text_detections:
-            analysis_text += "Se detectó texto en la imagen. "
-        
-        return {
-            "analysis": analysis_text,
-            "labels": labels,
-            "text_detections": text_detections,
-            "objects": objects,
-            "ticket_id": ticket_id
-        }, None
+            return None, f"Error en Gemini API: {str(e)}"
+

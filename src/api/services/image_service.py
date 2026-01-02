@@ -16,33 +16,14 @@ class ImageService:
     @staticmethod
     def is_cloudinary_configured():
         """Verificar si Cloudinary está configurado"""
-        cloudinary_url = os.getenv('CLOUDINARY_URL')
-        cloudinary_cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME')
-        cloudinary_api_key = os.getenv('CLOUDINARY_API_KEY')
-        cloudinary_api_secret = os.getenv('CLOUDINARY_API_SECRET')
-
-        return (
-            cloudinary_url or 
-            (cloudinary_cloud_name and cloudinary_api_key and cloudinary_api_secret)
-        )
+        return bool(os.getenv('CLOUDINARY_URL'))
 
     @staticmethod
     def configure_cloudinary():
-        """Configurar Cloudinary si las credenciales están disponibles"""
+        """Configurar Cloudinary con CLOUDINARY_URL"""
         cloudinary_url = os.getenv('CLOUDINARY_URL')
-        cloudinary_cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME')
-        cloudinary_api_key = os.getenv('CLOUDINARY_API_KEY')
-        cloudinary_api_secret = os.getenv('CLOUDINARY_API_SECRET')
-
         if cloudinary_url:
             cloudinary.config(cloudinary_url=cloudinary_url)
-            return True
-        elif cloudinary_cloud_name and cloudinary_api_key and cloudinary_api_secret:
-            cloudinary.config(
-                cloud_name=cloudinary_cloud_name,
-                api_key=cloudinary_api_key,
-                api_secret=cloudinary_api_secret
-            )
             return True
         return False
 

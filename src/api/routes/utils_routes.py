@@ -13,18 +13,8 @@ utils_bp = Blueprint('utils', __name__)
 
 # Configurar Cloudinary usando CLOUDINARY_URL
 cloudinary_url = os.getenv('CLOUDINARY_URL')
-cloudinary_cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME')
-cloudinary_api_key = os.getenv('CLOUDINARY_API_KEY')
-cloudinary_api_secret = os.getenv('CLOUDINARY_API_SECRET')
-
 if cloudinary_url:
     cloudinary.config(cloudinary_url=cloudinary_url)
-elif cloudinary_cloud_name and cloudinary_api_key and cloudinary_api_secret:
-    cloudinary.config(
-        cloud_name=cloudinary_cloud_name,
-        api_key=cloudinary_api_key,
-        api_secret=cloudinary_api_secret
-    )
 
 # ==================== FUNCIONES HELPER WEBSOCKET ====================
 # SIMPLIFICADO: Todas las emisiones van a global_tickets (todos reciben todo)
@@ -170,19 +160,9 @@ def handle_options(path):
 def cloudinary_status():
     """Verificar el estado de la configuración de Cloudinary"""
     cloudinary_url = os.getenv('CLOUDINARY_URL')
-    cloudinary_cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME')
-    cloudinary_api_key = os.getenv('CLOUDINARY_API_KEY')
-    cloudinary_api_secret = os.getenv('CLOUDINARY_API_SECRET')
-    
-    cloudinary_configured = (
-        cloudinary_url or 
-        (cloudinary_cloud_name and cloudinary_api_key and cloudinary_api_secret)
-    )
     
     return jsonify({
-        "cloudinary_configured": cloudinary_configured,
-        "cloudinary_url": bool(cloudinary_url),
-        "cloudinary_cloud_name": cloudinary_cloud_name,
-        "cloudinary_api_key": bool(cloudinary_api_key),
-        "cloudinary_api_secret": bool(cloudinary_api_secret)
+        "cloudinary_configured": bool(cloudinary_url),
+        "message": "Configuración verificada"
     }), 200
+

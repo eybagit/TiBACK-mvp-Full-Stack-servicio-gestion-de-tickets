@@ -177,7 +177,7 @@ function TicketRow({
                             <button
                                 className="btn btn-sidebar-teal btn-sm"
                                 title="Ver detalles"
-                                onClick={() => changeView(`ticket - ${ticket.id} `)}
+                                onClick={() => changeView(`ticket-${ticket.id}`)}
                             >
                                 <i className="fas fa-eye"></i>
                             </button>
@@ -224,7 +224,7 @@ function TicketRow({
                                             className="dropdown-item"
                                             onClick={() => {
                                                 setSelectedTicketId(ticket.id);
-                                                changeView(`identificar - ${ticket.id} `);
+                                                changeView(`identificar-${ticket.id}`);
                                             }}
                                         >
                                             <i className="fas fa-camera me-2"></i>

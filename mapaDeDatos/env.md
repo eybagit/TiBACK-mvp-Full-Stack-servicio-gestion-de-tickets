@@ -1,6 +1,6 @@
 # 🔐 Variables de Entorno - TiBACK
 
-> **Última actualización:** 19 de Diciembre, 2025  
+> **Última actualización:** 02 de Enero, 2026  
 > **Propósito:** Documentación de todas las variables de API y configuración usadas en el proyecto
 
 ---
@@ -49,32 +49,25 @@ JWT_SECRET_KEY="clave-super-secreta-jwt-cambiar-en-produccion"
 #### Cloudinary (Almacenamiento de Imágenes)
 ```bash
 CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
-CLOUDINARY_CLOUD_NAME=tu-cloud-name
-CLOUDINARY_API_KEY=tu-api-key
-CLOUDINARY_API_SECRET=tu-api-secret
 ```
+- **Formato:** `cloudinary://API_KEY:API_SECRET@CLOUD_NAME`
 - **Uso:** Upload y gestión de imágenes de tickets
 - **Ubicación:** 
   - `src/api/services/image_service.py`
   - `src/api/routes/utils_routes.py`
 - **Requerido:** ✅ Sí
 
-#### Google Cloud Vision (Reconocimiento de Imágenes)
+#### Google Gemini (Inteligencia Artificial Unificada)
 ```bash
-CLOUD_VISION_API=tu-google-cloud-vision-api-key
+GOOGLE_API_KEY=tu-google-api-key
 ```
-- **Uso:** Análisis de imágenes con IA (detección de objetos, texto, etiquetas)
-- **Ubicación:** `src/api/services/ia_service.py` (líneas 238, 253)
-- **Requerido:** ⚠️ Opcional (funcionalidad de IA)
-
-#### OpenAI (Inteligencia Artificial)
-```bash
-API_KEY_IA=sk-tu-openai-api-key
-```
-- **Uso:** Generación de recomendaciones inteligentes para tickets
+- **Uso:** Análisis de imágenes y generación de recomendaciones inteligentes para tickets
+- **Modelos:** 
+  - `gemini-2.5-flash-image` (análisis de imágenes)
+  - `gemini-2.5-flash` (generación de texto)
 - **Ubicación:** 
-  - `src/api/routes/ia_routes.py` (línea 110)
-  - `src/api/services/ia_service.py` (método `generar_recomendacion_openai`)
+  - `src/api/routes/ia_routes.py`
+  - `src/api/services/ia_service.py`
 - **Requerido:** ⚠️ Opcional (funcionalidad de IA)
 
 ---
@@ -131,11 +124,7 @@ VITE_BASENAME=/
 | `FLASK_APP_KEY` | Flask | ✅ | Backend |
 | `JWT_SECRET_KEY` | JWT Auth | ✅ | Backend |
 | `CLOUDINARY_URL` | Cloudinary | ✅ | Backend |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary | ✅ | Backend |
-| `CLOUDINARY_API_KEY` | Cloudinary | ✅ | Backend |
-| `CLOUDINARY_API_SECRET` | Cloudinary | ✅ | Backend |
-| `CLOUD_VISION_API` | Google Vision | ⚠️ | Backend IA |
-| `API_KEY_IA` | OpenAI | ⚠️ | Backend IA |
+| `GOOGLE_API_KEY` | Google Gemini | ⚠️ | Backend IA |
 | `VITE_BACKEND_URL` | Backend API | ✅ | Frontend |
 | `VITE_BASENAME` | React Router | ✅ | Frontend |
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Maps | ⚠️ | Frontend |
@@ -157,17 +146,13 @@ DEBUG=TRUE
 
 # Cloudinary (requerido)
 CLOUDINARY_URL=cloudinary://key:secret@cloud
-CLOUDINARY_CLOUD_NAME=tu-cloud
-CLOUDINARY_API_KEY=tu-key
-CLOUDINARY_API_SECRET=tu-secret
 
 # Frontend
 VITE_BACKEND_URL=http://localhost:3001
 VITE_BASENAME=/
 
 # Opcional - IA y servicios externos
-# CLOUD_VISION_API=
-# API_KEY_IA=
+# GOOGLE_API_KEY=
 # VITE_GOOGLE_MAPS_API_KEY=
 # VITE_GOOGLE_SPEECH_API_KEY=
 # VITE_EMAILJS_PUBLIC_KEY=
@@ -184,17 +169,13 @@ DEBUG=FALSE
 
 # Cloudinary (requerido)
 CLOUDINARY_URL=cloudinary://prod-key:prod-secret@prod-cloud
-CLOUDINARY_CLOUD_NAME=prod-cloud-name
-CLOUDINARY_API_KEY=prod-api-key
-CLOUDINARY_API_SECRET=prod-api-secret
 
 # Frontend
 VITE_BACKEND_URL=https://api.tudominio.com
 VITE_BASENAME=/
 
 # IA y servicios (configurar según necesidad)
-CLOUD_VISION_API=prod-vision-key
-API_KEY_IA=sk-prod-openai-key
+GOOGLE_API_KEY=prod-google-api-key
 VITE_GOOGLE_MAPS_API_KEY=prod-maps-key
 VITE_GOOGLE_SPEECH_API_KEY=prod-speech-key
 VITE_EMAILJS_PUBLIC_KEY=prod-emailjs-key
@@ -215,8 +196,7 @@ VITE_EMAILJS_PUBLIC_KEY=prod-emailjs-key
 ## 📚 REFERENCIAS
 
 - **Cloudinary:** https://cloudinary.com/documentation
-- **Google Cloud Vision:** https://cloud.google.com/vision/docs
-- **OpenAI API:** https://platform.openai.com/docs
+- **Google Gemini:** https://ai.google.dev/docs
 - **Google Maps API:** https://developers.google.com/maps/documentation
 - **Google Speech API:** https://cloud.google.com/speech-to-text/docs
 - **EmailJS:** https://www.emailjs.com/docs

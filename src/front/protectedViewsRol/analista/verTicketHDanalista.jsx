@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { TICKET_STATES } from '../../constants/ticketEnums';
-import { normalizeFromBackend } from '../../utils/normalize';
-import * as storeUtils from '../../store';
 import useGlobalReducer from '../../hooks/useGlobalReducer';
 
-export const VerTicketHDAnalista = ({ ticketId, tickets, ticketsConRecomendaciones, onBack }) => {
+/**
+ * VerTicketHDAnalista - Vista detallada del ticket (Solo lectura)
+ * Solo muestra información del ticket sin botones de acciones
+ */
+export const VerTicketHDAnalista = ({ ticketId, tickets, onBack }) => {
     const { store } = useGlobalReducer();
     const [ticket, setTicket] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -12,7 +13,7 @@ export const VerTicketHDAnalista = ({ ticketId, tickets, ticketsConRecomendacion
 
     // Función para verificar si un ticket tiene analista asignado
     const tieneAnalistaAsignado = (ticket) => {
-        return ticket.asignacion_actual && ticket.asignacion_actual.analista;
+        return ticket?.asignacion_actual && ticket.asignacion_actual.analista;
     };
 
     // Función para obtener el nombre del analista asignado
@@ -24,30 +25,35 @@ export const VerTicketHDAnalista = ({ ticketId, tickets, ticketsConRecomendacion
         return null;
     };
 
-
-
     useEffect(() => {
         const fetchTicket = async () => {
             try {
                 setLoading(true);
-                console.log('VerTicketHDAnalista - Buscando ticket:', {
-                    ticketId,
-                    tickets: tickets,
-                    ticketsLength: tickets?.length
+
+                // Primero intentar usar los tickets pasados como prop
+                if (tickets && tickets.length > 0) {
+                    const foundTicket = tickets.find(t => t.id === ticketId);
+                    if (foundTicket) {
+                        setTicket(foundTicket);
+                        setLoading(false);
+                        return;
+                    }
+                }
+
+                // Si no está en props, hacer fetch al API
+                const token = store.auth.token;
+                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticketId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
 
-                // Usar los tickets pasados como prop desde AnalistaPage
-                const ticketsArray = tickets || [];
-                console.log('VerTicketHDAnalista - Tickets disponibles:', ticketsArray);
-
-                const foundTicket = ticketsArray.find(t => t.id === ticketId);
-                console.log('VerTicketHDAnalista - Ticket encontrado:', foundTicket);
-
-                if (foundTicket) {
-                    setTicket(foundTicket);
+                if (response.ok) {
+                    const ticketData = await response.json();
+                    setTicket(ticketData);
                 } else {
-                    console.log('VerTicketHDAnalista - Ticket no encontrado, IDs disponibles:', ticketsArray.map(t => t.id));
-                    setError('Ticket no encontrado');
+                    setError('Error al cargar el ticket');
                 }
             } catch (err) {
                 setError('Error al cargar el ticket');
@@ -57,117 +63,28 @@ export const VerTicketHDAnalista = ({ ticketId, tickets, ticketsConRecomendacion
             }
         };
 
-        if (ticketId && tickets) {
+        if (ticketId) {
             fetchTicket();
         }
-    }, [ticketId, tickets]);
+    }, [ticketId, tickets, store.auth.token]);
 
     const getEstadoColor = (estado) => {
         switch (estado?.toLowerCase()) {
-            case 'solucionado':
-                return 'success';
-            case 'en_proceso':
-                return 'warning';
-            case 'en_espera':
-                return 'info';
-            case 'escalado':
-                return 'danger';
-            case 'cerrado':
-                return 'secondary';
-            default:
-                return 'primary';
+            case 'solucionado': return 'success';
+            case 'en_proceso': return 'warning';
+            case 'en_espera': return 'info';
+            case 'cerrado': return 'dark';
+            default: return 'primary';
         }
     };
 
     const getPrioridadColor = (prioridad) => {
         switch (prioridad?.toLowerCase()) {
-            case 'critica':
-                return 'dark';
-            case 'alta':
-                return 'danger';
-            case 'media':
-                return 'warning';
-            case 'baja':
-                return 'success';
-            default:
-                return 'secondary';
-        }
-    };
-
-
-
-    const iniciarTrabajo = async () => {
-        if (confirm('¿Estás seguro de que quieres iniciar el trabajo en este ticket?')) {
-            try {
-                const token = store.auth.token;
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket.id}/iniciar`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    alert('Trabajo iniciado exitosamente');
-                    window.location.reload();
-                } else {
-                    const errorData = await response.json();
-                    alert(`Error al iniciar trabajo: ${errorData.message || 'Error desconocido'}`);
-                }
-            } catch (err) {
-                alert(`Error al iniciar trabajo: ${err.message}`);
-            }
-        }
-    };
-
-    const marcarComoResuelto = async () => {
-        if (confirm('¿Estás seguro de que quieres marcar este ticket como resuelto?')) {
-            try {
-                const token = store.auth.token;
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket.id}/resolver`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    alert('Ticket marcado como resuelto exitosamente');
-                    window.location.reload();
-                } else {
-                    const errorData = await response.json();
-                    alert(`Error al resolver ticket: ${errorData.message || 'Error desconocido'}`);
-                }
-            } catch (err) {
-                alert(`Error al resolver ticket: ${err.message}`);
-            }
-        }
-    };
-
-    const escalarTicket = async () => {
-        if (confirm('¿Estás seguro de que quieres escalar este ticket al supervisor?')) {
-            try {
-                const token = store.auth.token;
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tickets/${ticket.id}/escalar`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    alert('Ticket escalado exitosamente');
-                    window.location.reload();
-                } else {
-                    const errorData = await response.json();
-                    alert(`Error al escalar ticket: ${errorData.message || 'Error desconocido'}`);
-                }
-            } catch (err) {
-                alert(`Error al escalar ticket: ${err.message}`);
-            }
+            case 'critica': return 'dark';
+            case 'alta': return 'danger';
+            case 'media': return 'warning';
+            case 'baja': return 'success';
+            default: return 'secondary';
         }
     };
 
@@ -190,12 +107,8 @@ export const VerTicketHDAnalista = ({ ticketId, tickets, ticketsConRecomendacion
                 <div className="text-center">
                     <i className="fas fa-exclamation-triangle fa-4x text-warning mb-3"></i>
                     <h4 className="text-muted">{error || 'Ticket no encontrado'}</h4>
-                    <button
-                        className="btn btn-primary mt-3"
-                        onClick={onBack}
-                    >
-                        <i className="fas fa-arrow-left me-2"></i>
-                        Volver
+                    <button className="btn btn-primary mt-3" onClick={onBack}>
+                        <i className="fas fa-arrow-left me-2"></i>Volver
                     </button>
                 </div>
             </div>
@@ -209,16 +122,12 @@ export const VerTicketHDAnalista = ({ ticketId, tickets, ticketsConRecomendacion
                 <div className="col-12">
                     <div className="d-flex align-items-center justify-content-between mb-3">
                         <div className="d-flex align-items-center gap-3">
-                            <button
-                                className="btn btn-outline-secondary"
-                                onClick={onBack}
-                            >
-                                <i className="fas fa-arrow-left me-2"></i>
-                                Volver
+                            <button className="btn btn-outline-secondary" onClick={onBack}>
+                                <i className="fas fa-arrow-left me-2"></i>Volver
                             </button>
                             <div>
                                 <h1 className="mb-0 fw-bold">Ticket #{ticket.id}</h1>
-                                <p className="text-muted mb-0">Vista detallada del ticket - Analista</p>
+                                <p className="text-muted mb-0">Vista detallada del ticket</p>
                             </div>
                         </div>
                         <div className="d-flex gap-4">
@@ -339,16 +248,30 @@ export const VerTicketHDAnalista = ({ ticketId, tickets, ticketsConRecomendacion
                                 </div>
                             </div>
                             <h6 className="fw-semibold">{ticket.cliente?.nombre} {ticket.cliente?.apellido}</h6>
-                            <p className="text-muted mb-3">{ticket.cliente?.email}</p>
-                            <button
-                                className="btn btn-sidebar-primary btn-sm"
-                                onClick={() => window.open(`/ticket/${ticket.id}/chat-analista-cliente`, '_blank')}
-                            >
-                                <i className="fas fa-comments me-1"></i>
-                                Chat con Cliente
-                            </button>
+                            <p className="text-muted mb-0">{ticket.cliente?.email}</p>
                         </div>
                     </div>
+
+                    {/* Información del Analista */}
+                    {tieneAnalistaAsignado(ticket) && (
+                        <div className="card border-0 shadow-sm mb-4">
+                            <div className="card-header bg-white border-0">
+                                <h5 className="card-title mb-0">
+                                    <i className="fas fa-user-tie text-success me-2"></i>
+                                    Analista Asignado
+                                </h5>
+                            </div>
+                            <div className="card-body text-center">
+                                <div className="mb-3">
+                                    <div className="bg-success rounded-circle d-inline-flex align-items-center justify-content-center avatar-large">
+                                        <i className="fas fa-user-tie text-white fs-4"></i>
+                                    </div>
+                                </div>
+                                <h6 className="fw-semibold">{getAnalistaAsignado(ticket)}</h6>
+                                <p className="text-muted mb-0">Analista de Soporte</p>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Calificación */}
                     {ticket.calificacion && (
@@ -373,7 +296,6 @@ export const VerTicketHDAnalista = ({ ticketId, tickets, ticketsConRecomendacion
                             </div>
                         </div>
                     )}
-
                 </div>
             </div>
 
@@ -394,7 +316,7 @@ export const VerTicketHDAnalista = ({ ticketId, tickets, ticketsConRecomendacion
                                     <div className="timeline-content">
                                         <h6 className="fw-semibold">Ticket Creado</h6>
                                         <p className="text-muted mb-1">{new Date(ticket.fecha_creacion).toLocaleString()}</p>
-                                        <p className="mb-0">El ticket fue creado por el cliente: {ticket.cliente?.nombre} {ticket.cliente?.apellido}</p>
+                                        <p className="mb-0">El ticket fue creado por: {ticket.cliente?.nombre} {ticket.cliente?.apellido}</p>
                                     </div>
                                 </div>
 
@@ -405,28 +327,6 @@ export const VerTicketHDAnalista = ({ ticketId, tickets, ticketsConRecomendacion
                                             <h6 className="fw-semibold">Analista Asignado</h6>
                                             <p className="text-muted mb-1">Analista: {getAnalistaAsignado(ticket)}</p>
                                             <p className="mb-0">El ticket ha sido asignado a un analista.</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {normalizeFromBackend(ticket.estado) === TICKET_STATES.EN_PROCESO && (
-                                    <div className="timeline-item">
-                                        <div className="timeline-marker bg-warning"></div>
-                                        <div className="timeline-content">
-                                            <h6 className="fw-semibold">Trabajo Iniciado</h6>
-                                            <p className="text-muted mb-1">Analista: {getAnalistaAsignado(ticket)}</p>
-                                            <p className="mb-0">El analista ha iniciado el trabajo en el ticket.</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {ticket.estado === 'escalado' && (
-                                    <div className="timeline-item">
-                                        <div className="timeline-marker bg-danger"></div>
-                                        <div className="timeline-content">
-                                            <h6 className="fw-semibold">Ticket Escalado</h6>
-                                            <p className="text-muted mb-1">Requiere atención del supervisor</p>
-                                            <p className="mb-0">El ticket ha sido escalado por prioridad o complejidad.</p>
                                         </div>
                                     </div>
                                 )}

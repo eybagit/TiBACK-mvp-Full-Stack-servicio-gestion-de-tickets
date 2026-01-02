@@ -637,3 +637,23 @@ html body .modal-backdrop-custom { background-color: rgba(0,0,0,0.5); }
   height: 100px;
   object-fit: cover;
 }
+
+/* ============================================
+   GOOGLE MAPS ERROR MODAL FIX
+   Oculta el modal de error de Google Maps
+   que bloquea la interfaz cuando no hay billing
+   ============================================ */
+
+/* Ocultar modal de error de Google Maps */
+.gm-err-container,
+.gm-err-content,
+.gm-style-mtc,
+.gm-err-autocomplete {
+  display: none !important;
+}
+
+/* Asegurar que el autocomplete siga funcionando */
+.pac-container {
+  z-index: 10000 !important;
+  display: block !important;
+}

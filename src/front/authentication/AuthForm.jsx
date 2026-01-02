@@ -18,9 +18,9 @@ export function AuthForm() {
         role: 'cliente'
     });
     const backgroundImages = {
-        cliente: "https://i.pravatar.cc/1000?img=68",
-        analista: "https://i.pravatar.cc/1000?img=12",
-        supervisor: "https://i.pravatar.cc/1000?img=54",
+        cliente: "https://i.pravatar.cc/1000?img=5",
+        analista: "https://i.pravatar.cc/1000?img=41",
+        supervisor: "https://i.pravatar.cc/1000?img=9",
         administrador: "https://i.pravatar.cc/1000?img=10",
     };
     const [locationData, setLocationData] = useState({
