@@ -9,7 +9,9 @@ from functools import wraps
 from flask import request, jsonify
 
 # JWT Configuration
-JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'your-super-secret-jwt-key-change-in-production')
+JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
+if not JWT_SECRET_KEY:
+    raise RuntimeError("CRÍTICO: La variable de entorno JWT_SECRET_KEY no está definida. Configure una clave secreta segura antes de iniciar la aplicación.")
 JWT_ALGORITHM = 'HS256'
 TOKEN_EXPIRE_HOURS = 24  # 24 hours
 

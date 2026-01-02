@@ -31,8 +31,11 @@ app.url_map.strict_slashes = False
 # Configurar CORS global
 CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
-# Configurar CORS para SocketIO
-app.config['SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-super-secret-jwt-key-change-in-production')
+# Configurar SECRET_KEY para SocketIO (usa JWT_SECRET_KEY que ya fue validada en jwt_utils)
+jwt_secret = os.getenv('JWT_SECRET_KEY')
+if not jwt_secret:
+    raise RuntimeError("CRÍTICO: La variable de entorno JWT_SECRET_KEY no está definida. Configure una clave secreta segura.")
+app.config['SECRET_KEY'] = jwt_secret
 
 # Configuración más robusta para SocketIO
 socketio = SocketIO(

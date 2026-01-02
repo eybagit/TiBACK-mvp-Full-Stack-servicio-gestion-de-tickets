@@ -6,38 +6,62 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-flask-migrate = "*"
-flask-swagger = "*"
-psycopg2-binary = "*"
-python-dotenv = "*"
-flask-cors = "*"
-gunicorn = "*"
-typing-extensions = "*"
+# Core Flask Framework
+flask = "==3.1.2"
+flask-sqlalchemy = "==3.1.1"
+flask-migrate = "==4.1.0"
+flask-cors = "==6.0.1"
+flask-admin = "==1.6.1"
+flask-swagger = "==0.2.14"
 flask-jwt-extended = "==4.6.0"
-wtforms = "==3.1.2"
-sqlalchemy = "*"
-flask-admin = "*"
-diagram = "*"
 flask-socketio = "==5.3.6"
-google-generativeai = "*"
-pyjwt = "*"
-requests = "==2.31.0"
+
+# Database
+psycopg2-binary = "==2.9.10"
+sqlalchemy = "==2.0.43"
+
+# Authentication & Security
+pyjwt = "==2.10.1"
+python-dotenv = "==1.1.1"
+
+# WebSocket & Real-time
 python-socketio = "==5.8.0"
-flask = "*"
-cloudinary = "*"
-flask-sqlalchemy = "*"
+python-engineio = "==4.12.3"
+eventlet = "==0.36.1"
+
+# Google Cloud Services
+google-cloud-vision = "==3.10.2"
+google-generativeai = "*"
+
+# Cloud Services
+cloudinary = "==1.44.1"
+
+# HTTP & API
+requests = "==2.31.0"
+
+# Utilities
+typing-extensions = "==4.15.0"
 colorama = "*"
+
+# Forms
+wtforms = "==3.1.2"
+
+# Production Server
+gunicorn = "==23.0.0"
+
+# Additional
+diagram = "==0.2.28"
 
 [requires]
 python_version = "3.13"
 
 [scripts]
-start="flask run -p 3001 -h 0.0.0.0"
-init="flask db init"
-migrate="flask db migrate"
-local="heroku local"
-upgrade="flask db upgrade"
-downgrade="flask db downgrade"
-insert-test-data="flask insert-test-data"
-reset_db="bash ./docs/assets/reset_migrations.bash"
-deploy="echo 'Please follow this 3 steps to deploy: https://github.com/4GeeksAcademy/flask-rest-hello/blob/master/README.md#deploy-your-website-to-heroku' "
+start = "flask run -p 3001 -h 0.0.0.0"
+init = "flask db init"
+migrate = "flask db migrate"
+local = "heroku local"
+upgrade = "flask db upgrade"
+downgrade = "flask db downgrade"
+insert-test-data = "flask insert-test-data"
+reset_db = "bash ./docs/assets/reset_migrations.bash"
+deploy = "echo 'Please follow this 3 steps to deploy: https://github.com/4GeeksAcademy/flask-rest-hello/blob/master/README.md#deploy-your-website-to-heroku'"
