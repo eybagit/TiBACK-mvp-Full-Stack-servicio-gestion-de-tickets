@@ -9,17 +9,22 @@
 
 ## 💎 La Historia de la Transformación
 
-### **Antes: La Pesadilla Monolítica**
+### **Versión 1.0: La Pesadilla Monolítica** 
+📦 [Repositorio Desactualizado (v1)](https://github.com/eybagit/-Desactualizado-TiBACK-mvp-dinosaurio) - _Preservado como referencia histórica_
+
 - 📄 Archivos únicos excediendo **5,000+ líneas**
 - 🔴 Código espagueti imposible de mantener
 - ⚠️ Imposible de escalar
 - 😓 La incorporación de desarrolladores tomaba semanas
+- 💸 Deuda técnica acumulada sin control
 
-### **Después: La Revolución Modular**
+### **Versión 2.0: La Revolución Modular** (Este Repositorio)
 - ✅ **Arquitectura 100% modularizada**
 - ✅ Archivos promediando **200-300 líneas**
 - ✅ **~97 archivos de documentación**
 - ✅ Nuevos desarrolladores productivos en horas
+- ✅ **Deuda técnica eliminada** y refactorizada completamente
+- ✅ **Optimizado para producción** con deployment en Railway
 
 
 > **"No solo construimos un sistema de tickets. Diseñamos una plataforma de la que empresas Fortune 500 estarían orgullosas de desplegar."**
