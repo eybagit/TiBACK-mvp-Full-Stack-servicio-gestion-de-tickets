@@ -10,5 +10,8 @@ sys.path.insert(0, current_dir)
 
 from app import app
 
+# Gunicorn expects 'application' by default
+application = app
+
 if __name__ == "__main__":
     app.run()
