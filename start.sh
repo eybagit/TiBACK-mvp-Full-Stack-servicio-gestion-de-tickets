@@ -10,4 +10,4 @@ flask insert-test-data || echo "Test data already exists or command failed"
 
 # Iniciar Gunicorn
 echo "Starting Gunicorn..."
-exec gunicorn wsgi:application --chdir ./src/ --bind 0.0.0.0:$PORT
+exec gunicorn --worker-class eventlet -w 1 wsgi:application --chdir ./src/ --bind 0.0.0.0:$PORT
