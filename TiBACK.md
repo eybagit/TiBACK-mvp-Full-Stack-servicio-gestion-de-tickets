@@ -1,6 +1,8 @@
 # 🚀 TiBACK: Sistema de Gestión de Tickets de Nivel Empresarial
 ### _"De 5,000 Líneas de Caos a Arquitectura Lista para Producción"_
 
+🌐 **[Demo en Producción](https://tiback-mvp-full-stack-servicio-gestion-de-ticket-production.up.railway.app/)** | Desplegado en Railway
+
 > **Construido por ingenieros fundadores que entienden que el gran software no es solo código—es arquitectura, disciplina y visión.**
 
 ---
