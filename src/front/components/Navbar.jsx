@@ -75,19 +75,20 @@ export const Navbar = () => {
 						)}
 					</ul> */}
 
-					{/* Menús de administración - Ocupan toda la mitad del navbar */}
+					{/* Menús de administración - Responsive para móviles */}
 					{role === 'administrador' && (
-						<div className="d-flex justify-content-center flex-grow-1">
+						<div className="d-flex flex-column flex-lg-row justify-content-lg-center flex-grow-1 gap-2 gap-lg-0">
 							{/* Menú de usuarios */}
-							<div className="dropdown me-4">
+							<div className="dropdown me-lg-4">
 								<button
-									className="btn dropdown-toggle d-flex align-items-center px-4 py-2 btn-admin-teal"
+									className="btn dropdown-toggle d-flex align-items-center justify-content-center w-100 w-lg-auto px-3 px-lg-4 py-2 btn-admin-teal"
 									type="button"
 									data-bs-toggle="dropdown"
 									aria-expanded="false"
 								>
 									<i className="fas fa-users-cog me-2"></i>
-									Gestión de Usuarios
+									<span className="d-none d-sm-inline">Gestión de Usuarios</span>
+									<span className="d-inline d-sm-none">Usuarios</span>
 								</button>
 								<ul className="dropdown-menu dropdown-menu-center">
 									<li>
@@ -124,15 +125,16 @@ export const Navbar = () => {
 							</div>
 
 							{/* Menú de gestión */}
-							<div className="dropdown ms-4">
+							<div className="dropdown ms-lg-4">
 								<button
-									className="btn dropdown-toggle d-flex align-items-center px-4 py-2 btn-admin-cyan"
+									className="btn dropdown-toggle d-flex align-items-center justify-content-center w-100 w-lg-auto px-3 px-lg-4 py-2 btn-admin-cyan"
 									type="button"
 									data-bs-toggle="dropdown"
 									aria-expanded="false"
 								>
 									<i className="fas fa-cogs me-2"></i>
-									Herramientas de Gestión
+									<span className="d-none d-sm-inline">Herramientas de Gestión</span>
+									<span className="d-inline d-sm-none">Herramientas</span>
 								</button>
 								<ul className="dropdown-menu dropdown-menu-center">
 									<li>
@@ -172,12 +174,12 @@ export const Navbar = () => {
 
 					{/* Estado de sincronización - Solo para administrador */}
 					{isAuthenticated && role === 'administrador' && (
-						<div className="d-flex align-items-center">
+						<div className="d-flex flex-column flex-lg-row align-items-start align-items-lg-center mt-2 mt-lg-0 ms-lg-auto">
 							<div className="d-flex align-items-center">
 								<span className={`badge me-2 badge-sync ${getSyncBadgeClass()}`}>
-									{realtimeStatus.statusIcon} {realtimeStatus.statusText}
+									{realtimeStatus.statusIcon} <span className="d-none d-sm-inline">{realtimeStatus.statusText}</span>
 								</span>
-								<small className="sync-text">
+								<small className="sync-text d-none d-md-inline">
 									Sync: {realtimeStatus.lastSyncFormatted}
 								</small>
 							</div>

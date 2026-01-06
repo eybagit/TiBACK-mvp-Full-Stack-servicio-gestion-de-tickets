@@ -70,7 +70,7 @@ const Layout = () => {
       {NavbarToShow}
 
       {/* Aquí se van a renderizar las páginas hijas */}
-      <main>
+      <main className={`${isPrivateRoleView ? '' : 'container-fluid px-0'}`}>
         <Outlet />
       </main>
 

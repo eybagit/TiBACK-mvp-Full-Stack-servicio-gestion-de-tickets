@@ -264,13 +264,14 @@ export const Ticket = () => {
                                     {store.tickets.map((ticket) => (
                                         <tr key={ticket.id}>
                                             <td>
-                                                <div className="d-flex align-items-center">
-                                                    <span className="me-2">#{ticket.id}</span>
+                                                <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-1 gap-sm-2">
+                                                    <span className="fw-semibold">#{ticket.id}</span>
                                                     {ticket.url_imagen ? (
                                                         <img
                                                             src={ticket.url_imagen}
                                                             alt="Imagen del ticket"
                                                             className="img-thumbnail img-thumb-xs"
+                                                            style={{ maxWidth: '40px', maxHeight: '40px' }}
                                                         />
                                                     ) : (
                                                         <span className="text-muted">
@@ -305,20 +306,22 @@ export const Ticket = () => {
                                             </td>
                                             <td>{ticket.fecha_creacion ? new Date(ticket.fecha_creacion).toLocaleString() : ''}</td>
                                             <td>
-                                                <Link
-                                                    to={`/ver-ticket/${ticket.id}`}
-                                                    className="btn btn-info mx-1"
-                                                    title="Ver Ticket"
-                                                >
-                                                    <i className="fas fa-eye"></i>
-                                                </Link>
-                                                <button
-                                                    className="btn btn-danger mx-1"
-                                                    title="Eliminar Ticket"
-                                                    onClick={() => eliminarTicket(ticket.id)}
-                                                >
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
+                                                <div className="d-flex flex-column flex-sm-row gap-2">
+                                                    <Link
+                                                        to={`/ver-ticket/${ticket.id}`}
+                                                        className="btn btn-info btn-sm"
+                                                        title="Ver Ticket"
+                                                    >
+                                                        <i className="fas fa-eye"></i>
+                                                    </Link>
+                                                    <button
+                                                        className="btn btn-danger btn-sm"
+                                                        title="Eliminar Ticket"
+                                                        onClick={() => eliminarTicket(ticket.id)}
+                                                    >
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

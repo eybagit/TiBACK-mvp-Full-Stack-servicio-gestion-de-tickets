@@ -30,23 +30,25 @@ function ClienteHeader({
     logout
 }) {
     return (
-        <header className="hyper-header bg-white border-bottom p-3">
+        <header className="hyper-header bg-white border-bottom p-2 p-md-3">
             <div className="d-flex align-items-center justify-content-between w-100">
-                <div className="d-flex align-items-center gap-3">
+                <div className="d-flex align-items-center gap-2 gap-md-3">
+                    {/* Botón toggle - VISIBLE EN MÓVILES */}
                     <button
-                        className="hyper-sidebar-toggle btn btn-link p-2"
+                        className="btn btn-link text-dark p-2 fs-4"
                         onClick={toggleSidebar}
                         title={sidebarHidden ? "Mostrar menú" : "Ocultar menú"}
                     >
                         <i className="fas fa-bars"></i>
                     </button>
 
-                    <div className="hyper-search position-relative">
+                    {/* Búsqueda - oculta en xs, visible sm+ */}
+                    <div className="hyper-search position-relative d-none d-sm-block flex-grow-1">
                         <i className="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
                         <input
                             type="text"
                             className="form-control"
-                            placeholder="Buscar tickets por título..."
+                            placeholder="Buscar tickets..."
                             value={searchQuery}
                             onChange={(e) => handleSearch(e.target.value)}
                             onFocus={() => {
@@ -106,10 +108,10 @@ function ClienteHeader({
                     </div>
                 </div>
 
-                <div className="d-flex align-items-center gap-3">
-                    {/* Botón de sincronizar */}
+                <div className="d-flex align-items-center gap-2 gap-md-3">
+                    {/* Botón sincronizar - solo icono en móviles */}
                     <button
-                        className="btn btn-outline-primary btn-sync d-flex align-items-center gap-2"
+                        className="btn btn-outline-primary btn-sync d-flex align-items-center gap-2 px-2 px-md-3"
                         onClick={async () => {
                             try {
                                 console.log('🔄 Iniciando sincronización desde ClienteHeader...');
@@ -122,7 +124,7 @@ function ClienteHeader({
                         title="Sincronizar datos"
                     >
                         <i className="fas fa-sync-alt"></i>
-                        <span>Sincronizar</span>
+                        <span className="d-none d-md-inline">Sincronizar</span>
                     </button>
 
                     {/* Dropdown del usuario */}

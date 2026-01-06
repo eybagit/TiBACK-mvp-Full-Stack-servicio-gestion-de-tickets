@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SideBarCentral } from '../../components/SideBarCentral';
 import { VerTicketHDCliente } from './verTicketHDcliente';
 import ComentariosTicketEmbedded from '../../components/ComentariosTicketEmbedded';
@@ -109,6 +109,7 @@ function ClientePage() {
                 sidebarHidden={sidebarHidden}
                 activeView={activeView}
                 changeView={changeView}
+                toggleSidebar={toggleSidebar}
             />
 
             {/* Contenido principal */}
@@ -136,7 +137,7 @@ function ClientePage() {
                 />
 
                 {/* Contenido del dashboard */}
-                <div className="p-4">
+                <div className="p-2 p-md-3 p-lg-4">
                     {error && (
                         <div className="alert alert-danger" role="alert">
                             {error}

@@ -89,82 +89,88 @@ export const ContactView = () => {
     return (
         <section className="py-5 bg-light-lighten border-top border-bottom border-light" id="contact-us-landing">
             <div className="container">
-                <div className="row justify-content-center gap-4">
-                    <h1 className="text-center"></h1>
+                <div className="row justify-content-center">
+                    <div className="col-12">
+                        <h1 className="text-center mb-4"></h1>
+                    </div>
                     <CardCreadores />
                 </div>
-                <div className="row mt-5">
-                    <div className="col-lg-12">
-                        <div className="text-center mt-5">
-                            <i className="fa-solid fa-address-book fa-2xl pb-4"></i>
-                            <h3 className="text-muted pb-2" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample" ><span className="text-primary">Contactanos</span></h3>
-                            <p className="text-muted mt-2">Por favor, rellene el siguiente formulario y nos pondremos en contacto con usted en breve. <br /> Para más información, contáctenos.</p>
+                <div className="row mt-4 mt-md-5">
+                    <div className="col-12">
+                        <div className="text-center mt-3 mt-md-5">
+                            <i className="fa-solid fa-address-book fa-2xl pb-3 pb-md-4"></i>
+                            <h3 className="text-muted pb-2" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample" ><span className="text-primary">Contáctanos</span></h3>
+                            <p className="text-muted mt-2 px-3 px-md-0">Por favor, rellene el siguiente formulario y nos pondremos en contacto con usted en breve. <br className="d-none d-md-inline" /> Para más información, contáctenos.</p>
                         </div>
                     </div>
                 </div>
                 <div className="row">
 
                 </div>
-                <div className="align-items-center mt-4 ms-5 row gap-2">
-                    <div className="col-md-2 shadow border border-dark-subtle rounded py-4 px-3">
-                        <p className="text-muted mt-3"><span className="fw-bold">Atención al cliente:</span><br /> <span className="d-block mt-1">+1 234 56 7894</span></p>
-                        <p className="text-muted mt-4"><span className="fw-bold">Email Address:</span><br /> <span className="d-block mt-1">info@gmail.com</span></p>
-                        <p className="text-muted mt-4"><span className="fw-bold">Office Address:</span><br /><span className="d-block mt-1">4461 Cedar Street Moro, AR 72368</span></p>
-                        <p className="text-muted mt-4"><span className="fw-bold">Office Time:</span><br /> <span className="d-block mt-1">9:00AM To 6:00PM</span></p>
+                <div className="row justify-content-center mt-3 mt-md-4">
+                    <div className="col-12 col-lg-3 mb-3 mb-lg-0">
+                        <div className="shadow border border-light rounded py-3 py-md-4 px-3 h-100">
+                            <p className="text-muted mt-2 mt-md-3"><span className="fw-bold">Atención al cliente:</span><br /> <span className="d-block mt-1">+1 234 56 7894</span></p>
+                            <p className="text-muted mt-3 mt-md-4"><span className="fw-bold">Email Address:</span><br /> <span className="d-block mt-1">info@gmail.com</span></p>
+                            <p className="text-muted mt-3 mt-md-4"><span className="fw-bold">Office Address:</span><br /><span className="d-block mt-1">4461 Cedar Street Moro, AR 72368</span></p>
+                            <p className="text-muted mt-3 mt-md-4 mb-0"><span className="fw-bold">Office Time:</span><br /> <span className="d-block mt-1">9:00AM To 6:00PM</span></p>
+                        </div>
                     </div>
-                    <div className="col-md-9 shadow border border-dark-subtle rounded p-3">
-                        <form ref={formRef} onSubmit={handleSendEmail}>
-                            <div className="mt-4 row">
-                                <div className="col-lg-6">
-                                    <div className="mb-2">
-                                        <label htmlform="name" className="form-label">Nombre Completo</label>
-                                        <input placeholder="Ingrese su Nombre..." onChange={handleChange} className="form-control form-control-light" type="text" defaultValue={formData.name} name="name" />
+                    <div className="col-12 col-lg-8">
+                        <div className="shadow border border-light rounded p-3 p-md-4">
+                            <form ref={formRef} onSubmit={handleSendEmail}>
+                                <div className="row">
+                                    <div className="col-12 col-md-6">
+                                        <div className="mb-3">
+                                            <label htmlForm="name" className="form-label">Nombre Completo</label>
+                                            <input placeholder="Ingrese su Nombre..." onChange={handleChange} className="form-control form-control-light" type="text" defaultValue={formData.name} name="name" />
+                                        </div>
+                                    </div>
+                                    <div className="col-12 col-md-6">
+                                        <div className="mb-3">
+                                            <label htmlForm="email" className="form-label">Correo Electrónico</label>
+                                            <input placeholder="Ingresa tu Correo..." onChange={handleChange} className="form-control form-control-light form-control" type="email" defaultValue={formData.email} name="email" />
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="col-lg-6">
-                                    <div className="mb-2">
-                                        <label htmlform="email" className="form-label">Correo Electronico</label>
-                                        <input placeholder="Ingresa tu Correo..." onChange={handleChange} className="form-control form-control-light form-control" type="email" defaultValue={formData.email} name="email" />
+                                <div className="row">
+                                    <div className="col-12">
+                                        <div className="mb-3">
+                                            <label htmlFrom="title" className="form-label">Título</label>
+                                            <input placeholder="Ingresa tu Titulo..." onChange={handleChange} className="form-control form-control-light" type="text" defaultValue={formData.title} name="title" />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="mt-1 row">
-                                <div className="col-lg-12">
-                                    <div className="mb-2">
-                                        <label htmlfrom="title" className="form-label">Titulo</label>
-                                        <input placeholder="Ingresa tu Titulo..." onChange={handleChange} className="form-control form-control-light" type="text" defaultValue={formData.title} name="title" />
+                                <div className="row">
+                                    <div className="col-12">
+                                        <div className="mb-3">
+                                            <label htmlFrom="message" className="form-label">Mensaje</label>
+                                            <textarea name="message" placeholder="Type your message here..." onChange={handleChange} className="form-control form-control-light" rows="4" defaultValue={formData.message}></textarea>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="mt-1 row">
-                                <div className="col-lg-12">
-                                    <div className="mb-2">
-                                        <label htmlfrom="message" className="form-label">Mensaje</label>
-                                        <textarea name="message" placeholder="Type your message here..." onChange={handleChange} className="form-control form-control-light" defaultValue={formData.message}></textarea>
+                                <div className="row">
+                                    <div className="col-12 text-end">
+                                        <button className="btn btn-info-default text-white w-100 w-sm-auto" type="submit">Send a Message</button>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="mt-2 row">
-                                <div className="col-12 text-end col">
-                                    <button className="btn btn-info-default text-white" type="submit">Send a Message</button>
-                                </div>
-                            </div>
-                        </form>
-                        <Modal
-                            show={showModal}
-                            onHide={() => setShowModal(false)}
-                            centered
-                        >
-                            <Modal.Header closeButton className={modalContent.type === "success" ? "bg-primary text-white" : "bg-danger text-white"}>
-                                <Modal.Title>{modalContent.title}</Modal.Title>
-                            </Modal.Header>
-                            <Modal.Body>{modalContent.message}</Modal.Body>
-                            <Modal.Footer>
-                                <Button variant="secondary" onClick={() => setShowModal(false)}>
-                                    Cerrar
-                                </Button>
-                            </Modal.Footer>
-                        </Modal>
+                            </form>
+                            <Modal
+                                show={showModal}
+                                onHide={() => setShowModal(false)}
+                                centered
+                            >
+                                <Modal.Header closeButton className={modalContent.type === "success" ? "bg-primary text-white" : "bg-danger text-white"}>
+                                    <Modal.Title>{modalContent.title}</Modal.Title>
+                                </Modal.Header>
+                                <Modal.Body>{modalContent.message}</Modal.Body>
+                                <Modal.Footer>
+                                    <Button variant="secondary" onClick={() => setShowModal(false)}>
+                                        Cerrar
+                                    </Button>
+                                </Modal.Footer>
+                            </Modal>
+                        </div>
                     </div>
                 </div>
             </div>

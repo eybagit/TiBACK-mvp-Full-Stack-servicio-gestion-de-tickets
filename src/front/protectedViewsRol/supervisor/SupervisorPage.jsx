@@ -136,7 +136,7 @@ export function SupervisorPage() {
                     logout={logout}
                 />
 
-                <div className="p-4">
+                <div className="p-2 p-md-3 p-lg-4">
                     {error && (
                         <div className="alert alert-danger" role="alert">
                             <i className="fas fa-exclamation-triangle me-2"></i>

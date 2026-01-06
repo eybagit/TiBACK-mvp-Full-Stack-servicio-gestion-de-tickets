@@ -210,18 +210,28 @@
 @media (max-width: 768px) {
   .hyper-sidebar {
     transform: translateX(-100%);
+    width: 260px; /* Más ancho en móviles para mejor UX */
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Sidebar visible en móviles */
+  .hyper-sidebar:not(.hidden) {
+    transform: translateX(0) !important;
+    z-index: 1050 !important;
   }
   
   .hyper-sidebar.show {
     transform: translateX(0);
+    z-index: 1050;
   }
   
   .hyper-main-content {
-    margin-left: 0;
+    margin-left: 0 !important;
   }
   
   .hyper-search input {
-    width: 200px;
+    width: 100%;
+    max-width: 200px;
   }
   
   .footer-with-sidebar {
