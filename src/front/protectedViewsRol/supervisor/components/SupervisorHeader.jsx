@@ -26,24 +26,24 @@ function SupervisorHeader({
     logout
 }) {
     return (
-        <header className="hyper-header bg-white border-bottom p-3">
+        <header className="hyper-header bg-white border-bottom p-2 p-md-3">
             <div className="d-flex align-items-center justify-content-between w-100">
-                <div className="d-flex align-items-center gap-3">
+                <div className="d-flex align-items-center gap-2 gap-md-3 flex-grow-1">
                     <button
-                        className="hyper-sidebar-toggle btn btn-link p-2"
+                        className="hyper-sidebar-toggle btn btn-link p-2 flex-shrink-0"
                         onClick={toggleSidebar}
                         title={sidebarHidden ? "Mostrar menú" : "Ocultar menú"}
                     >
-                        <i className="fas fa-bars"></i>
+                        <i className="fas fa-bars fs-5"></i>
                     </button>
 
-                    {/* Barra de búsqueda */}
-                    <div className="hyper-search position-relative">
+                    {/* Barra de búsqueda - oculta en xs, visible en sm+ */}
+                    <div className="hyper-search position-relative d-none d-sm-block flex-grow-1">
                         <i className="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
                         <input
                             type="text"
                             className="form-control pe-5"
-                            placeholder="Buscar tickets por titulo..."
+                            placeholder="Buscar tickets..."
                             value={searchQuery}
                             onChange={(e) => handleSearch(e.target.value)}
                             onFocus={() => {
@@ -100,10 +100,10 @@ function SupervisorHeader({
                     </div>
                 </div>
 
-                <div className="d-flex align-items-center gap-3">
-                    {/* Botón de sincronizar */}
+                <div className="d-flex align-items-center gap-2 gap-md-3">
+                    {/* Botón de sincronizar - solo icono en móviles */}
                     <button
-                        className="btn btn-outline-primary btn-sync d-flex align-items-center gap-2"
+                        className="btn btn-outline-primary btn-sync d-flex align-items-center gap-2 px-2 px-md-3"
                         onClick={async () => {
                             try {
                                 console.log('🔄 Iniciando sincronización desde SupervisorPage...');
@@ -119,7 +119,7 @@ function SupervisorHeader({
                         title="Sincronizar datos"
                     >
                         <i className="fas fa-sync-alt"></i>
-                        <span>Sincronizar</span>
+                        <span className="d-none d-md-inline">Sincronizar</span>
                     </button>
 
                     {/* Dropdown del usuario */}

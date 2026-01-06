@@ -242,46 +242,48 @@ function AdministradorPage() {
             <div className="row mb-4">
                 <div className="col-12">
                     <div className="card">
-                        <div className="card-body d-flex justify-content-between align-items-center">
-                            <div>
-                                <h2 className="mb-1">Panel de Administración</h2>
-                                <p className="text-muted mb-0">Bienvenido, {store.auth.user?.email}</p>
-                                <div className="mt-2">
-                                    <span className="badge badge-ct-success">
-                                        <i className="fas fa-wifi me-1"></i>
-                                        Conectado
-                                    </span>
+                        <div className="card-body">
+                            <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                                <div>
+                                    <h2 className="mb-1">Panel de Administración</h2>
+                                    <p className="text-muted mb-0">Bienvenido, {store.auth.user?.email}</p>
+                                    <div className="mt-2">
+                                        <span className="badge badge-ct-success">
+                                            <i className="fas fa-wifi me-1"></i>
+                                            Conectado
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="d-flex gap-2 align-items-center">
-                                <Link to="/administradores" className="btn btn-ct-primary">
-                                    Ir al CRUD
-                                </Link>
+                                <div className="d-flex flex-column flex-sm-row gap-2 align-items-stretch align-items-sm-center w-100 w-md-auto">
+                                    <Link to="/administradores" className="btn btn-ct-primary">
+                                        <i className="fas fa-user-cog me-2 d-sm-none"></i>Ir al CRUD
+                                    </Link>
 
-                                {/* Switch de Modo Oscuro */}
-                                <div className="form-check form-switch">
-                                    <input
-                                        className="form-check-input"
-                                        type="checkbox"
-                                        id="darkModeSwitch"
-                                        checked={darkMode}
-                                        onChange={(e) => setDarkMode(e.target.checked)}
-                                    />
-                                    <label className="form-check-label" htmlFor="darkModeSwitch">
-                                        <i className={`fas ${darkMode ? 'fa-moon' : 'fa-sun'} me-1`}></i>
-                                        {darkMode ? 'Oscuro' : 'Claro'}
-                                    </label>
+                                    {/* Switch de Modo Oscuro */}
+                                    <div className="form-check form-switch d-flex align-items-center justify-content-center">
+                                        <input
+                                            className="form-check-input me-2"
+                                            type="checkbox"
+                                            id="darkModeSwitch"
+                                            checked={darkMode}
+                                            onChange={(e) => setDarkMode(e.target.checked)}
+                                        />
+                                        <label className="form-check-label mb-0" htmlFor="darkModeSwitch">
+                                            <i className={`fas ${darkMode ? 'fa-moon' : 'fa-sun'} me-1`}></i>
+                                            {darkMode ? 'Oscuro' : 'Claro'}
+                                        </label>
+                                    </div>
+
+                                    <Link to="/tickets" className="btn btn-ct-secondary">
+                                        <i className="fas fa-ticket-alt me-2"></i>Tickets
+                                    </Link>
+                                    <button
+                                        className="btn btn-ct-danger-outline"
+                                        onClick={logout}
+                                    >
+                                        <i className="fas fa-sign-out-alt me-2 d-sm-none"></i>Cerrar Sesión
+                                    </button>
                                 </div>
-
-                                <Link to="/tickets" className="btn btn-ct-secondary">
-                                    <i className="fas fa-ticket-alt me-2"></i>Tickets
-                                </Link>
-                                <button
-                                    className="btn btn-ct-danger-outline"
-                                    onClick={logout}
-                                >
-                                    Cerrar Sesión
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -309,7 +311,7 @@ function AdministradorPage() {
                 ) : (
                     <>
                         {/* Estadísticas de Tickets */}
-                        <div className="col-md-6 col-lg-3 mb-3">
+                        <div className="col-sm-6 col-lg-3 mb-3">
                             <div className="card text-white card-ct-primary">
                                 <div className="card-body">
                                     <div className="d-flex justify-content-between">
@@ -325,7 +327,7 @@ function AdministradorPage() {
                             </div>
                         </div>
 
-                        <div className="col-md-6 col-lg-3 mb-3">
+                        <div className="col-sm-6 col-lg-3 mb-3">
                             <div className="card text-white card-ct-secondary">
                                 <div className="card-body">
                                     <div className="d-flex justify-content-between">
@@ -341,7 +343,7 @@ function AdministradorPage() {
                             </div>
                         </div>
 
-                        <div className="col-md-6 col-lg-3 mb-3">
+                        <div className="col-sm-6 col-lg-3 mb-3">
                             <div className="card text-white card-ct-warning">
                                 <div className="card-body">
                                     <div className="d-flex justify-content-between">
@@ -357,7 +359,7 @@ function AdministradorPage() {
                             </div>
                         </div>
 
-                        <div className="col-md-6 col-lg-3 mb-3">
+                        <div className="col-sm-6 col-lg-3 mb-3">
                             <div className="card text-white card-ct-success">
                                 <div className="card-body">
                                     <div className="d-flex justify-content-between">
@@ -374,7 +376,7 @@ function AdministradorPage() {
                         </div>
 
                         {/* Estadísticas de Usuarios */}
-                        <div className="col-md-4 mb-3">
+                        <div className="col-sm-6 col-md-4 mb-3">
                             <div className="card text-white card-ct-info">
                                 <div className="card-body">
                                     <div className="d-flex justify-content-between">
@@ -390,7 +392,7 @@ function AdministradorPage() {
                             </div>
                         </div>
 
-                        <div className="col-md-4 mb-3">
+                        <div className="col-sm-6 col-md-4 mb-3">
                             <div className="card text-white card-ct-dark">
                                 <div className="card-body">
                                     <div className="d-flex justify-content-between">
@@ -406,7 +408,7 @@ function AdministradorPage() {
                             </div>
                         </div>
 
-                        <div className="col-md-4 mb-3">
+                        <div className="col-sm-6 col-md-4 mb-3">
                             <div className="card text-white card-ct-danger">
                                 <div className="card-body">
                                     <div className="d-flex justify-content-between">
@@ -431,7 +433,7 @@ function AdministradorPage() {
                     <h4 className="mb-3">Gestión del Sistema</h4>
                 </div>
 
-                <div className="col-md-6 col-lg-3 mb-3">
+                <div className="col-sm-6 col-lg-4 col-xl-3 mb-3">
                     <Link to="/clientes" className="card text-decoration-none h-100">
                         <div className="card-body text-center">
                             <i className="fas fa-users fa-3x mb-3 icon-ct-primary"></i>
@@ -441,7 +443,7 @@ function AdministradorPage() {
                     </Link>
                 </div>
 
-                <div className="col-md-6 col-lg-3 mb-3">
+                <div className="col-sm-6 col-lg-4 col-xl-3 mb-3">
                     <Link to="/analistas" className="card text-decoration-none h-100">
                         <div className="card-body text-center">
                             <i className="fas fa-user-tie fa-3x mb-3 icon-ct-success"></i>
@@ -451,7 +453,7 @@ function AdministradorPage() {
                     </Link>
                 </div>
 
-                <div className="col-md-6 col-lg-3 mb-3">
+                <div className="col-sm-6 col-lg-4 col-xl-3 mb-3">
                     <Link to="/supervisores" className="card text-decoration-none h-100">
                         <div className="card-body text-center">
                             <i className="fas fa-user-shield fa-3x mb-3 icon-ct-warning"></i>
@@ -462,7 +464,7 @@ function AdministradorPage() {
                 </div>
 
 
-                <div className="col-md-6 col-lg-3 mb-3">
+                <div className="col-sm-6 col-lg-4 col-xl-3 mb-3">
                     <Link to="/tickets" className="card text-decoration-none h-100">
                         <div className="card-body text-center">
                             <i className="fas fa-ticket-alt fa-3x mb-3 icon-ct-info"></i>
@@ -472,7 +474,7 @@ function AdministradorPage() {
                     </Link>
                 </div>
 
-                <div className="col-md-6 col-lg-3 mb-3">
+                <div className="col-sm-6 col-lg-4 col-xl-3 mb-3">
                     <Link to="/comentarios" className="card text-decoration-none h-100">
                         <div className="card-body text-center">
                             <i className="fas fa-comments fa-3x mb-3 icon-ct-dark"></i>
@@ -483,7 +485,7 @@ function AdministradorPage() {
                 </div>
 
                 {/* Mapa de Calor */}
-                <div className="col-md-6 col-lg-3 mb-3">
+                <div className="col-sm-6 col-lg-4 col-xl-3 mb-3">
                     <div className="card h-100">
                         <div className="card-body text-center">
                             <i className="fas fa-map-marked-alt fa-3x mb-3 icon-ct-success"></i>

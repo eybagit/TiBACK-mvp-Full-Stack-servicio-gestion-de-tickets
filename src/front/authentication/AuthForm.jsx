@@ -294,7 +294,7 @@ export function AuthForm() {
                     style={{
                         backgroundImage: `url("${backgroundImages[formData.role] || backgroundImages.cliente}")`,
                         backgroundSize: "cover",
-                        backgroundPosition: "center"
+                        backgroundPosition: formData.role === 'cliente' ? "center 25%" : "center"
                     }}
                 >
                     <div className="p-5 mt-auto rounded text-center">

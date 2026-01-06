@@ -27,24 +27,27 @@ function AnalistaHeader({
     logout
 }) {
     return (
-        <header className="hyper-header bg-white border-bottom p-3">
+        <header className="hyper-header bg-white border-bottom p-2 p-md-3">
             <div className="d-flex align-items-center justify-content-between w-100">
-                <div className="d-flex align-items-center gap-3">
+                <div className="d-flex align-items-center gap-2 gap-md-3 flex-grow-1">
+                    {/* Botón toggle SIEMPRE VISIBLE */}
                     <button
-                        className="hyper-sidebar-toggle btn btn-link p-2"
+                        className="hyper-sidebar-toggle btn btn-link p-2 flex-shrink-0"
                         onClick={toggleSidebar}
                         title={sidebarHidden ? "Mostrar menú" : "Ocultar menú"}
+                        style={{ fontSize: '1.25rem', minWidth: '40px' }}
                     >
                         <i className="fas fa-bars"></i>
                     </button>
 
                     {/* Barra de búsqueda */}
-                    <div className="hyper-search position-relative">
+                    {/* Búsqueda - oculta en xs, visible sm+ */}
+                    <div className="hyper-search position-relative d-none d-sm-block flex-grow-1">
                         <i className="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
                         <input
                             type="text"
                             className="form-control pe-5"
-                            placeholder="Buscar tickets por título..."
+                            placeholder="Buscar tickets..."
                             value={searchQuery}
                             onChange={(e) => handleSearch(e.target.value)}
                             onFocus={() => {

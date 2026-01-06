@@ -1,7 +1,7 @@
 import React from 'react';
 import useGlobalReducer from '../hooks/useGlobalReducer';
 
-export const SideBarCentral = ({ sidebarHidden, activeView, changeView }) => {
+export const SideBarCentral = ({ sidebarHidden, activeView, changeView, toggleSidebar }) => {
     const { store } = useGlobalReducer();
     const userData = store.auth.user;
 
@@ -137,20 +137,35 @@ export const SideBarCentral = ({ sidebarHidden, activeView, changeView }) => {
 
     return (
         <div className={`hyper-sidebar ${sidebarHidden ? 'hidden' : ''} overflow-auto`} data-hidden={sidebarHidden}>
+            {/* Botón de cierre flotante - SOLO MÓVILES */}
+            {!sidebarHidden && toggleSidebar && (
+                <button
+                    className="btn btn-link position-absolute top-0 end-0 m-2 d-md-none text-white"
+                    onClick={toggleSidebar}
+                    style={{ zIndex: 1100, fontSize: '1.5rem' }}
+                    title="Cerrar menú"
+                >
+                    <i className="fas fa-times"></i>
+                </button>
+            )}
 
-
-            <div className="hyper-sidebar-header p-4">
-                <img src="https://res.cloudinary.com/mystoreimg/image/upload/v1759679927/fsq6shibpipmssroqwe4.png" className="w-default-logo" />
+            {/* Header con logo - responsive */}
+            <div className="hyper-sidebar-header p-3 p-md-4">
+                <img
+                    src="https://res.cloudinary.com/mystoreimg/image/upload/v1759679927/fsq6shibpipmssroqwe4.webp"
+                    className="w-default-logo d-block mx-auto"
+                    alt="TiBACK Logo"
+                />
             </div>
 
-            <nav className="p-3">
-                <div className="mb-4">
-                    <div className="hyper-nav-title px-3 mb-2">Navegación</div>
+            <nav className="p-2 p-md-3">
+                <div className="mb-3 mb-md-4">
+                    <div className="hyper-nav-title px-3 mb-2 d-none d-md-block">Navegación</div>
                     {navigationItems.map((item) => (
                         <a
                             key={item.id}
                             href="#"
-                            className={`hyper-nav-item d-flex align-items-center gap-3 px-3 py-2 rounded text-decoration-none ${activeView === item.view ? 'active' : ''}`}
+                            className={`hyper-nav-item d-flex align-items-center justify-content-start gap-2 gap-md-3 px-2 px-md-3 py-2 rounded text-decoration-none ${activeView === item.view ? 'active' : ''}`}
                             onClick={(e) => {
                                 e.preventDefault();
                                 // Si es Dashboard y estamos en comentarios o chat, redirigir al dashboard del rol
@@ -171,27 +186,27 @@ export const SideBarCentral = ({ sidebarHidden, activeView, changeView }) => {
                                 }
                             }}
                         >
-                            <i className={item.icon}></i>
-                            {!sidebarHidden && <span>{item.label}</span>}
+                            <i className={`${item.icon} fs-5`}></i>
+                            {!sidebarHidden && <span className="flex-grow-1">{item.label}</span>}
                         </a>
                     ))}
                 </div>
 
 
 
-                {/* Información del usuario */}
+                {/* Información del usuario - responsive */}
                 {!sidebarHidden && (
-                    <div className="px-3 py-2">
-                        <div className="hyper-nav-title mb-2">Usuario</div>
+                    <div className="px-2 px-md-3 py-2 mt-auto">
+                        <div className="hyper-nav-title mb-2 d-none d-md-block">Usuario</div>
                         <div className="d-flex align-items-center gap-2 p-2 bg-light rounded">
-                            <div className="hyper-user-avatar bg-primary d-flex align-items-center justify-content-center rounded-circle sidebar-user-avatar">
+                            <div className="hyper-user-avatar bg-primary d-flex align-items-center justify-content-center rounded-circle sidebar-user-avatar flex-shrink-0">
                                 <i className="fas fa-user text-white icon-small"></i>
                             </div>
-                            <div className="flex-grow-1">
-                                <div className="fw-semibold sidebar-user-name">
+                            <div className="flex-grow-1 overflow-hidden">
+                                <div className="fw-semibold sidebar-user-name text-truncate">
                                     {userData?.nombre === 'Pendiente' ? userRole : userData?.nombre}
                                 </div>
-                                <div className="text-muted sidebar-user-role">
+                                <div className="text-muted sidebar-user-role small text-truncate">
                                     {userRole === 'cliente' ? 'Cliente' :
                                         userRole === 'analista' ? 'Analista' :
                                             userRole === 'supervisor' ? 'Supervisor' :
