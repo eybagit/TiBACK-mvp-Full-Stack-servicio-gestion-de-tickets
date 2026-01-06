@@ -31,7 +31,8 @@ export const Landing = () => {
                         </div>
                         <div className="col-md-5 offset-md-2 pb-5">
                             <div className="text-md-end mt-3 mt-md-0 pb-5">
-                                <img alt="" className="img-fluid rounded-4 w-update" src="https://res.cloudinary.com/mystoreimg/image/upload/v1759733480/ndlmhi9clq2vwuvjzaid.png" />
+                                {/* <img alt="" className="img-fluid rounded-4 w-update" src="https://res.cloudinary.com/mystoreimg/image/upload/v1759733480/ndlmhi9clq2vwuvjzaid.png" /> */}
+                                <img alt="" className="img-fluid rounded-4 w-update" src="https://res.cloudinary.com/mystoreimg/image/upload/v1759733480/ndlmhi9clq2vwuvjzaid.webp" />
                             </div>
                         </div>
                     </div>

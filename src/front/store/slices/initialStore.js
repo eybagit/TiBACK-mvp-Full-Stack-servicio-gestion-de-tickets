@@ -87,7 +87,7 @@ export const initialStore = () => {
     imagegentle: [
       {
         id: 1,
-        src: "https://res.cloudinary.com/mystoreimg/image/upload/v1759732962/zsxxv0qlqrbsdt5760cv.png",
+        src: "https://res.cloudinary.com/mystoreimg/image/upload/v1759732962/zsxxv0qlqrbsdt5760cv.webp",
         name: "Elkin Botero",
         subtit: "Técnico Web",
         prrfo: "Mejorando procesos de sistemas para clientes.",
@@ -103,10 +103,10 @@ export const initialStore = () => {
       },
       {
         id: 2,
-        src: "https://res.cloudinary.com/mystoreimg/image/upload/v1759732963/xb3jsgkapv50aj4vtzty.png",
+        src: "https://res.cloudinary.com/mystoreimg/image/upload/v1759732963/xb3jsgkapv50aj4vtzty.webp",
         name: "Johan Gómez",
         subtit: "Tecnico Web",
-        prrfo: "Trabajando para mejorar los rocesos para los sistemas de nuestros clientes",
+        prrfo: "Trabajando para mejorar los procesos para los sistemas de nuestros clientes",
         stl: "img-clp-w-2",
         skillstech: ["JavaScript", "Python", "Flask", "PostgreSQL", "React", "Node.js"],
         experiencia: ["Diseño de interfaces modernas"],
@@ -119,10 +119,10 @@ export const initialStore = () => {
       },
       {
         id: 3,
-        src: "https://res.cloudinary.com/mystoreimg/image/upload/v1759732962/flzh94tm0xienaqf5kbf.png",
+        src: "https://res.cloudinary.com/mystoreimg/image/upload/v1759732962/flzh94tm0xienaqf5kbf.webp",
         name: "Manuel Freire",
         subtit: "Tecnico Web",
-        prrfo: "Trabajando para mejorar los rocesos para los sistemas de nuestros clientes",
+        prrfo: "Trabajando para mejorar los procesos para los sistemas de nuestros clientes",
         stl: "img-clp-w-3",
         skillstech: ["JavaScript", "Python", "Flask", "PostgreSQL", "React", "Node.js"],
         experiencia: ["Desarrollo de APIs REST", "Automatización de procesos internos"],
@@ -136,14 +136,17 @@ export const initialStore = () => {
     ],
 
     designs: [
-      { img: "https://res.cloudinary.com/mystoreimg/image/upload/v1759717169/ggffu4ot48feqozj7ryl.png", title: "Diseño Visualización de Tickets" },
-      { img: "https://res.cloudinary.com/mystoreimg/image/upload/v1759728155/caoub9ckl0cdak37zkk8.png", title: "Diseño de Dashboard" },
-      { img: "https://res.cloudinary.com/mystoreimg/image/upload/v1759716845/cgnezuaawg2up8uhsg9c.png", title: "Diseño de Vistas" },
-      { img: "https://res.cloudinary.com/mystoreimg/image/upload/v1759728508/znxsjqcmikpmdzqt100x.png", title: "Disposición de Navegador Lateral Ligero" },
-      { img: "https://res.cloudinary.com/mystoreimg/image/upload/v1759728628/nnk1kdwtj0a04qygaecl.png", title: "Diseño en Caja" },
-      { img: "https://res.cloudinary.com/mystoreimg/image/upload/v1759728314/cgnrshquvfk2rgj1hxsr.png", title: "Diseño Semi Oscuro" },
+    { img: "https://res.cloudinary.com/mystoreimg/image/upload/v1759717169/ggffu4ot48feqozj7ryl.webp", title: "Diseño Visualización de Tickets" },
+      { img: "https://res.cloudinary.com/mystoreimg/image/upload/v1759728155/caoub9ckl0cdak37zkk8.webp", title: "Diseño de Dashboard" },
+      { img: "https://res.cloudinary.com/mystoreimg/image/upload/v1759716845/cgnezuaawg2up8uhsg9c.webp", title: "Diseño de Vistas" },
+      { img: "https://res.cloudinary.com/mystoreimg/image/upload/v1759728508/znxsjqcmikpmdzqt100x.webp", title: "Disposición de Navegador Lateral Ligero" },
+      { img: "https://res.cloudinary.com/mystoreimg/image/upload/v1759728628/nnk1kdwtj0a04qygaecl.webp", title: "Diseño en Caja" },
+      { img: "https://res.cloudinary.com/mystoreimg/image/upload/v1759728314/cgnrshquvfk2rgj1hxsr.webp", title: "Diseño Semi Oscuro" },
     ],
 
     api: { loading: false, error: null },
   };
 };
+
+
+
