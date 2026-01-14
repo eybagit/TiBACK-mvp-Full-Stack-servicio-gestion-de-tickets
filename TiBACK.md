@@ -7,6 +7,23 @@
 
 ---
 
+## 🔑 Usuarios de Prueba
+
+Para facilitar la revisión y prueba del sistema desde todos los roles, utilice las siguientes credenciales:
+
+| Rol | Email | Contraseña | Nombre Completo |
+|-----|-------|------------|-----------------|
+| **👤 Cliente** | `cliente1@test.com` | `123456` | Juan Pérez |
+| **🔧 Analista** | `analista1@test.com` | `123456` | María González |
+| **👔 Supervisor** | `supervisor1@test.com` | `123456` | Pedro López |
+| **⚙️ Administrador** | `admin@test.com` | `123456` | Administrador del Sistema |
+
+> **💡 Tip:** Abra múltiples navegadores o ventanas de incógnito para probar la sincronización en tiempo real entre diferentes roles simultáneamente.
+
+> **📝 Nota:** El sistema incluye usuarios adicionales de prueba (cliente2, cliente3, analista2, analista3, supervisor2) con la misma contraseña `123456`.
+
+---
+
 ## 💎 La Historia de la Transformación
 
 ### **Versión 1.0: La Pesadilla Monolítica** 
