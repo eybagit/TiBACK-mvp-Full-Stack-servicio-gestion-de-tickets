@@ -1,8 +1,6 @@
 # 🚀 TiBACK: Sistema de Gestión de Tickets de Nivel Empresarial
 ### _"De 5,000 Líneas de Caos a Arquitectura Lista para Producción"_
 
-🌐 **[Demo en Producción](https://tiback-mvp-full-stack-servicio-gestion-de-ticket-production.up.railway.app/)** | Desplegado en Railway
-
 > **Construido por ingenieros fundadores que entienden que el gran software no es solo código—es arquitectura, disciplina y visión.**
 
 ---
@@ -258,9 +256,6 @@ No nos conformamos con "suficientemente bueno". Nuestra UI presenta:
 - **CDN:** Cloudinary para entrega global de activos
 - **SSL:** HTTPS automático en todas partes
 - **Monitoreo:** Verificaciones de salud WebSocket integradas
-
-### **Demo en Vivo**
-🌐 **[TiBACK Producción](https://tiback-production.onrender.com)**
 
 ---
 
